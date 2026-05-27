@@ -18,11 +18,11 @@
 
     <div class="controls">
         <h2>🌤️ Visualizador Meteorológico Sincronizado</h2>
-        <p>Selecciona tu carpeta. Radar, Satélite y WRF se alinearán a la misma hora UTC.</p>
+        <p>Selecciona tu carpeta. Radar, Satélite y WRF se alinearán por su <strong>Hora Válida (UTC)</strong>.</p>
         <input type="file" id="folderInput" webkitdirectory directory multiple>
         
         <div id="sliderContainer" style="display: none; margin-top: 20px;">
-            <p><strong>Hora de Análisis: </strong> <span id="timeDisplay" style="color:#4CAF50; font-weight:bold; font-size:18px;"></span></p>
+            <p><strong>Hora Válida de Análisis: </strong> <span id="timeDisplay" style="color:#4CAF50; font-weight:bold; font-size:18px;"></span></p>
             <input type="range" id="timeSlider" min="0" max="0" value="0">
         </div>
     </div>
@@ -49,24 +49,28 @@
         }
 
         document.getElementById('folderInput').addEventListener('change', function(e) {
-            // Permitimos png, jpg y también archivos sin extensión visible por si acaso
-            const files = Array.from(e.target.files).filter(f => !f.name.startsWith('.'));
+            const files = Array.from(e.target.files).filter(f => !f.name.startsWith('.') && (f.name.endsWith('.png') || f.name.endsWith('.jpg')));
             archivosAgrupados = {};
             
             files.forEach(file => {
-                // Buscamos patrones de hora
                 const matchHora = file.name.match(/_(\d{4,6})(?:Z|_|\.)/); 
-                // Busca específicamente el patrón de tu WRF (ej. _18UTC_)
-                const matchWrf = file.name.match(/_(\d{2})UTC_/i); 
+                const matchWrf = file.name.match(/_(\d{2})UTC_(\d{3})/i); 
 
                 let tiempoClave = null;
                 
                 if (matchWrf) {
-                    // Extrae la hora del WRF (ej. 18) y le asigna 00 minutos
-                    let hh = matchWrf[1];
-                    tiempoClave = redondearHora(hh, "00");
+                    // CÁLCULO DE HORA VÁLIDA DEL WRF
+                    let initHour = parseInt(matchWrf[1], 10);  // Ej: 18
+                    let leadTime = parseInt(matchWrf[2], 10);  // Ej: 016, 017...
+                    
+                    // Sumamos la hora de corrida + las horas de pronóstico
+                    let validHour = (initHour + leadTime) % 24; 
+                    
+                    // Al ser salidas por hora justa, los minutos son "00"
+                    tiempoClave = redondearHora(validHour, "00");
+                    
                 } else if (matchHora) {
-                    // Extrae la hora del radar/satélite
+                    // LECTURA DE RADAR Y SATÉLITE
                     let hh = matchHora[1].substring(0, 2);
                     let mm = matchHora[1].substring(2, 4);
                     tiempoClave = redondearHora(hh, mm);
