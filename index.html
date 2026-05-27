@@ -17,12 +17,12 @@
 <body>
 
     <div class="controls">
-        <h2>🌤️ Visualizador Meteorológico HTML (Con Tolerancia)</h2>
-        <p>Selecciona la carpeta. Las imágenes se agruparán automáticamente en bloques de 15 minutos.</p>
+        <h2>🌤️ Visualizador Meteorológico HTML Sincronizado</h2>
+        <p>Selecciona la carpeta. WRF, Radar y Satélite se alinearán a la misma hora UTC (bloques de 15 min).</p>
         <input type="file" id="folderInput" webkitdirectory directory multiple>
         
         <div id="sliderContainer" style="display: none; margin-top: 20px;">
-            <p><strong>Hora agrupada (Bloques de 15m): </strong> <span id="timeDisplay" style="color:#4CAF50; font-weight:bold; font-size:18px;"></span></p>
+            <p><strong>Hora de Análisis: </strong> <span id="timeDisplay" style="color:#4CAF50; font-weight:bold; font-size:18px;"></span></p>
             <input type="range" id="timeSlider" min="0" max="0" value="0">
         </div>
     </div>
@@ -34,18 +34,17 @@
         let archivosAgrupados = {}; 
         let tiemposOrdenados = [];
 
-        // Función para redondear al bloque de 15 minutos más cercano
+        // Función para redondear al bloque de 15 minutos más cercano y dar formato de hora
         function redondearHora(hh, mm) {
             let minutosTotales = (parseInt(hh) * 60) + parseInt(mm);
-            let bloque15 = Math.round(minutosTotales / 15) * 15; // Cambia este 15 a 10 o 30 si prefieres otros intervalos
+            let bloque15 = Math.round(minutosTotales / 15) * 15; 
             
             let nuevaHora = Math.floor(bloque15 / 60);
             let nuevosMinutos = bloque15 % 60;
             
-            // Si se pasa de 23:59, vuelve a 00 (para el final del día)
-            if (nuevaHora >= 24) nuevaHora = 0;
+            // Si pasa de la medianoche, da la vuelta (ej. 25:00 -> 01:00)
+            if (nuevaHora >= 24) nuevaHora = nuevaHora % 24;
 
-            // Formatear a HH:MM
             let horaStr = nuevaHora.toString().padStart(2, '0');
             let minStr = nuevosMinutos.toString().padStart(2, '0');
             return `${horaStr}:${minStr} UTC`;
@@ -56,22 +55,31 @@
             archivosAgrupados = {};
             
             files.forEach(file => {
-                // Buscamos patrones de hora
+                // Buscamos patrones: _HHMM para radar/satélite, y _XXUTC_XXX para el WRF
                 const matchHora = file.name.match(/_(\d{4,6})(?:Z|_|\.)/); 
-                const matchWrf = file.name.match(/18UTC_(\d{3})/); // Adaptación simple para WRF
+                const matchWrf = file.name.match(/_(\d{2})UTC_(\d{3})/); 
 
                 let tiempoClave = null;
                 
-                if (matchHora) {
+                if (matchWrf) {
+                    // TRADUCCIÓN DEL WRF A HORA REAL
+                    let horaBase = parseInt(matchWrf[1]); // ej: 18
+                    let step = parseInt(matchWrf[2]);     // ej: 016
+                    
+                    // Asumimos 15 minutos por cada timestep
+                    let minutosASumar = step * 15;
+                    let minutosTotalesSimulacion = (horaBase * 60) + minutosASumar;
+                    
+                    let horaValida = Math.floor(minutosTotalesSimulacion / 60) % 24;
+                    let minValido = minutosTotalesSimulacion % 60;
+                    
+                    tiempoClave = redondearHora(horaValida, minValido);
+                    
+                } else if (matchHora) {
+                    // LECTURA DE RADARES Y SATÉLITES
                     let hh = matchHora[1].substring(0, 2);
                     let mm = matchHora[1].substring(2, 4);
-                    // Aplicamos el redondeo para crear la "ventana de tiempo"
                     tiempoClave = redondearHora(hh, mm);
-                } else if (matchWrf) {
-                    // Para tu WRF, asumiendo que el nombre no tiene la hora exacta en HHMM, 
-                    // lo agrupamos temporalmente por su timestep o prefijo si no coincide.
-                    // (Si tus cartas WRF tuvieran la hora exacta, usaríamos la misma lógica de arriba).
-                    tiempoClave = `WRF Step ${matchWrf[1]}`; 
                 }
 
                 if (tiempoClave) {
