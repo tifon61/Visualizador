@@ -2,14 +2,14 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Visualizador Meteorológico</title>
+    <title>Visualizador Meteorológico Operativo</title>
     <style>
         body { font-family: Arial, sans-serif; background-color: #1e1e1e; color: #fff; padding: 20px; }
         .controls { background: #2d2d2d; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
         .grid { display: flex; flex-wrap: wrap; gap: 15px; }
         .card { background: #333; padding: 10px; border-radius: 8px; flex: 1; min-width: 300px; }
         img { max-width: 100%; height: auto; border-radius: 4px; }
-        input[type="range"] { width: 100%; margin-top: 15px; }
+        input[type="range"] { width: 100%; margin-top: 15px; cursor: pointer; }
         h3 { margin-top: 0; font-size: 16px; color: #4CAF50; }
         .info { font-size: 14px; color: #aaa; margin-top: 5px; word-break: break-all;}
     </style>
@@ -17,8 +17,8 @@
 <body>
 
     <div class="controls">
-        <h2>🌤️ Visualizador Meteorológico HTML Sincronizado</h2>
-        <p>Selecciona la carpeta. WRF, Radar y Satélite se alinearán a la misma hora UTC (bloques de 15 min).</p>
+        <h2>🌤️ Visualizador Meteorológico Sincronizado</h2>
+        <p>Selecciona tu carpeta. Radar, Satélite y WRF se alinearán a la misma hora UTC.</p>
         <input type="file" id="folderInput" webkitdirectory directory multiple>
         
         <div id="sliderContainer" style="display: none; margin-top: 20px;">
@@ -34,7 +34,6 @@
         let archivosAgrupados = {}; 
         let tiemposOrdenados = [];
 
-        // Función para redondear al bloque de 15 minutos más cercano y dar formato de hora
         function redondearHora(hh, mm) {
             let minutosTotales = (parseInt(hh) * 60) + parseInt(mm);
             let bloque15 = Math.round(minutosTotales / 15) * 15; 
@@ -42,7 +41,6 @@
             let nuevaHora = Math.floor(bloque15 / 60);
             let nuevosMinutos = bloque15 % 60;
             
-            // Si pasa de la medianoche, da la vuelta (ej. 25:00 -> 01:00)
             if (nuevaHora >= 24) nuevaHora = nuevaHora % 24;
 
             let horaStr = nuevaHora.toString().padStart(2, '0');
@@ -51,32 +49,24 @@
         }
 
         document.getElementById('folderInput').addEventListener('change', function(e) {
-            const files = Array.from(e.target.files).filter(f => f.name.endsWith('.png') || f.name.endsWith('.jpg'));
+            // Permitimos png, jpg y también archivos sin extensión visible por si acaso
+            const files = Array.from(e.target.files).filter(f => !f.name.startsWith('.'));
             archivosAgrupados = {};
             
             files.forEach(file => {
-                // Buscamos patrones: _HHMM para radar/satélite, y _XXUTC_XXX para el WRF
+                // Buscamos patrones de hora
                 const matchHora = file.name.match(/_(\d{4,6})(?:Z|_|\.)/); 
-                const matchWrf = file.name.match(/_(\d{2})UTC_(\d{3})/); 
+                // Busca específicamente el patrón de tu WRF (ej. _18UTC_)
+                const matchWrf = file.name.match(/_(\d{2})UTC_/i); 
 
                 let tiempoClave = null;
                 
                 if (matchWrf) {
-                    // TRADUCCIÓN DEL WRF A HORA REAL
-                    let horaBase = parseInt(matchWrf[1]); // ej: 18
-                    let step = parseInt(matchWrf[2]);     // ej: 016
-                    
-                    // Asumimos 15 minutos por cada timestep
-                    let minutosASumar = step * 15;
-                    let minutosTotalesSimulacion = (horaBase * 60) + minutosASumar;
-                    
-                    let horaValida = Math.floor(minutosTotalesSimulacion / 60) % 24;
-                    let minValido = minutosTotalesSimulacion % 60;
-                    
-                    tiempoClave = redondearHora(horaValida, minValido);
-                    
+                    // Extrae la hora del WRF (ej. 18) y le asigna 00 minutos
+                    let hh = matchWrf[1];
+                    tiempoClave = redondearHora(hh, "00");
                 } else if (matchHora) {
-                    // LECTURA DE RADARES Y SATÉLITES
+                    // Extrae la hora del radar/satélite
                     let hh = matchHora[1].substring(0, 2);
                     let mm = matchHora[1].substring(2, 4);
                     tiempoClave = redondearHora(hh, mm);
@@ -122,10 +112,12 @@
                 card.className = 'card';
                 
                 let titulo = "Imagen";
-                if(file.name.includes('WRF')) titulo = "Modelo WRF";
-                else if(file.name.includes('RMA')) titulo = "Radar RMA";
-                else if(file.name.includes('glm')) titulo = "Rayos GLM";
-                else if(file.name.includes('AIRMASS') || file.name.includes('TOP')) titulo = "Satélite GOES";
+                let upperName = file.name.toUpperCase();
+                
+                if(upperName.includes('WRF')) titulo = "Modelo WRF";
+                else if(upperName.includes('RMA')) titulo = "Radar RMA";
+                else if(upperName.includes('GLM')) titulo = "Rayos GLM";
+                else if(upperName.includes('AIRMASS') || upperName.includes('TOP')) titulo = "Satélite GOES";
 
                 card.innerHTML = `
                     <h3>${titulo}</h3>
