@@ -2,18 +2,17 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Dashboard Meteorológico Fijo</title>
+    <title>Dashboard Meteorológico - Avanzado</title>
     <style>
         body { font-family: Arial, sans-serif; background-color: #1e1e1e; color: #fff; padding: 20px; margin: 0; }
         .controls { background: #2d2d2d; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
         input[type="range"] { width: 100%; margin-top: 15px; cursor: pointer; }
-        h3 { margin-top: 0; font-size: 16px; color: #4CAF50; border-bottom: 1px solid #555; padding-bottom: 10px; }
+        h3 { margin-top: 0; font-size: 16px; color: #4CAF50; border-bottom: 1px solid #555; padding-bottom: 10px; display: flex; justify-content: space-between; align-items: center;}
         .info { font-size: 12px; color: #aaa; margin-top: 5px; word-break: break-all;}
         
-        /* ESTRUCTURA FIJA DEL DASHBOARD */
         .dashboard { 
             display: grid; 
-            grid-template-columns: repeat(4, 1fr); /* 4 columnas de igual tamaño siempre */
+            grid-template-columns: repeat(4, 1fr); 
             gap: 15px; 
             align-items: start;
         }
@@ -22,29 +21,40 @@
             background: #333; 
             border-radius: 8px; 
             padding: 15px; 
-            min-height: 400px; /* Mantiene la altura aunque no haya imagen */
+            min-height: 400px; 
             display: flex; 
             flex-direction: column;
         }
 
-        .content-area {
-            display: flex;
-            flex-direction: column;
-            gap: 15px; /* Por si hay más de un producto del mismo tipo (ej. 2 cartas WRF) */
-        }
-
+        .content-area { display: flex; flex-direction: column; gap: 15px; }
         .img-container { background: #222; padding: 10px; border-radius: 6px; }
         img { width: 100%; height: auto; border-radius: 4px; display: block; }
         
-        .badge { background-color: #4CAF50; color: white; padding: 2px 6px; border-radius: 4px; font-size: 11px; float: right; margin-top: -2px;}
+        .badge { background-color: #4CAF50; color: white; padding: 2px 6px; border-radius: 4px; font-size: 11px; }
+        .badge-bolivar { background-color: #008CBA; }
+        .badge-ezeiza { background-color: #f44336; }
+        
         .empty-state { color: #666; font-style: italic; text-align: center; margin-top: 50px; font-size: 14px; }
+        
+        /* Estilos para el selector de WRF */
+        select.wrf-selector {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 15px;
+            background-color: #444;
+            color: white;
+            border: 1px solid #555;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+    </select>
     </style>
 </head>
 <body>
 
     <div class="controls">
-        <h2>🌤️ Dashboard Meteorológico (Secciones Fijas)</h2>
-        <p>Selecciona tu carpeta. Las columnas están ancladas; nada cambiará de posición al mover el tiempo.</p>
+        <h2>🌤️ Dashboard Meteorológico (Control de Variables)</h2>
+        <p>Selecciona la carpeta. Usa el selector en la columna del WRF para cambiar el producto sin hacer scroll.</p>
         <input type="file" id="folderInput" webkitdirectory directory multiple>
         
         <div id="sliderContainer" style="display: none; margin-top: 20px;">
@@ -56,29 +66,30 @@
     <div class="dashboard">
         <div class="panel" id="panel-wrf">
             <h3>Modelo WRF</h3>
+            <select id="wrfSelect" class="wrf-selector" style="display: none;"></select>
             <div class="content-area" id="content-wrf">
-                <div class="empty-state">Esperando selección de carpeta...</div>
+                <div class="empty-state">Esperando selección...</div>
             </div>
         </div>
 
         <div class="panel" id="panel-radar">
             <h3>Radar RMA</h3>
             <div class="content-area" id="content-radar">
-                <div class="empty-state">Esperando selección de carpeta...</div>
+                <div class="empty-state">Esperando selección...</div>
             </div>
         </div>
 
         <div class="panel" id="panel-sat">
             <h3>Satélite GOES</h3>
             <div class="content-area" id="content-sat">
-                <div class="empty-state">Esperando selección de carpeta...</div>
+                <div class="empty-state">Esperando selección...</div>
             </div>
         </div>
 
         <div class="panel" id="panel-glm">
             <h3>Rayos GLM</h3>
             <div class="content-area" id="content-glm">
-                <div class="empty-state">Esperando selección de carpeta...</div>
+                <div class="empty-state">Esperando selección...</div>
             </div>
         </div>
     </div>
@@ -87,6 +98,7 @@
         let radarSatPorTiempo = {}; 
         let wrfPorHora = {};        
         let tiemposOrdenados = [];
+        let productoWrfActivo = ""; // Memoria para saber qué producto estamos viendo
 
         function redondearMinutos(minutos) {
             return Math.round(minutos / 15) * 15;
@@ -107,11 +119,14 @@
                     let initHour = parseInt(matchWrf[1], 10);
                     let leadTime = parseInt(matchWrf[2], 10);
                     let validHour = (initHour + leadTime) % 24; 
-                    
                     let hh = validHour.toString().padStart(2, '0');
                     
-                    if (!wrfPorHora[hh]) wrfPorHora[hh] = [];
-                    wrfPorHora[hh].push(file);
+                    // Extraemos el nombre del producto (ej: capaMezclaEstab)
+                    let matchProducto = file.name.match(/4km_(.+?)_NOR_NOR/i);
+                    let nombreProducto = matchProducto ? matchProducto[1] : "Desconocido";
+                    
+                    if (!wrfPorHora[hh]) wrfPorHora[hh] = {};
+                    wrfPorHora[hh][nombreProducto] = file;
                     
                     tiemposDisponibles.add(`${hh}:00`); 
                     
@@ -127,9 +142,7 @@
                         hh = (hh + 1) % 24;
                     }
                     
-                    let hhFinal = hh.toString().padStart(2, '0');
-                    let mmFinal = mins.toString().padStart(2, '0');
-                    let tiempoObs = `${hhFinal}:${mmFinal}`;
+                    let tiempoObs = `${hh.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
 
                     if (!radarSatPorTiempo[tiempoObs]) radarSatPorTiempo[tiempoObs] = [];
                     radarSatPorTiempo[tiempoObs].push(file);
@@ -155,10 +168,67 @@
             actualizarVista(e.target.value);
         });
 
-        // Función auxiliar para crear el HTML interno de cada imagen
-        function crearHTMLImagen(file, esWrf, hhActual) {
+        // Evento para cuando cambiamos de variable en el selector del WRF
+        document.getElementById('wrfSelect').addEventListener('change', function(e) {
+            productoWrfActivo = e.target.value;
+            // Refrescamos solo la vista del WRF sin mover el slider
+            const sliderIndex = document.getElementById('timeSlider').value;
+            const hhActual = tiemposOrdenados[sliderIndex].split(':')[0];
+            renderizarWRF(hhActual);
+        });
+
+        // Función que dibuja EXCLUSIVAMENTE el panel del WRF
+        function renderizarWRF(hhActual) {
+            const colWrf = document.getElementById('content-wrf');
+            const selectWrf = document.getElementById('wrfSelect');
+            
+            if (wrfPorHora[hhActual]) {
+                const productosDisponibles = Object.keys(wrfPorHora[hhActual]).sort();
+                
+                // Llenamos el dropdown
+                selectWrf.innerHTML = "";
+                productosDisponibles.forEach(prod => {
+                    let option = document.createElement('option');
+                    option.value = prod;
+                    option.text = "Var: " + prod;
+                    selectWrf.appendChild(option);
+                });
+                
+                // Si el producto que veníamos mirando existe en esta hora, lo mantenemos. Si no, agarramos el primero.
+                if (!productosDisponibles.includes(productoWrfActivo)) {
+                    productoWrfActivo = productosDisponibles[0];
+                }
+                selectWrf.value = productoWrfActivo;
+                selectWrf.style.display = "block";
+
+                // Mostramos SOLO el archivo correspondiente al producto seleccionado
+                let file = wrfPorHora[hhActual][productoWrfActivo];
+                const imgUrl = URL.createObjectURL(file);
+                
+                colWrf.innerHTML = `
+                    <div class="img-container">
+                        <span class="badge">Válido ${hhActual}:00Z</span>
+                        <img src="${imgUrl}" alt="${file.name}">
+                        <div class="info">${file.name}</div>
+                    </div>
+                `;
+            } else {
+                selectWrf.style.display = "none";
+                colWrf.innerHTML = `<div class="empty-state">Sin salida del modelo para esta hora</div>`;
+            }
+        }
+
+        // Función auxiliar para radares y satélites
+        function crearHTMLObservacion(file) {
             const imgUrl = URL.createObjectURL(file);
-            let badge = esWrf ? `<span class="badge">Válido ${hhActual}:00Z</span>` : "";
+            let upperName = file.name.toUpperCase();
+            let badge = "";
+
+            // Distinciones solicitadas
+            if (upperName.includes('RMA14')) badge = `<span class="badge badge-bolivar">Bolívar</span>`;
+            else if (upperName.includes('RMA2')) badge = `<span class="badge badge-ezeiza">Ezeiza</span>`;
+            else if (upperName.includes('AIRMASS')) badge = `<span class="badge">Airmass</span>`;
+            else if (upperName.includes('TOP')) badge = `<span class="badge">Tope Nuboso</span>`;
             
             return `
                 <div class="img-container">
@@ -174,42 +244,40 @@
             document.getElementById('timeDisplay').innerText = tiempoActual + " UTC";
             const hhActual = tiempoActual.split(':')[0]; 
 
-            // 1. Limpiamos todas las columnas y preparamos el texto "vacío"
-            const colWrf = document.getElementById('content-wrf');
             const colRadar = document.getElementById('content-radar');
             const colSat = document.getElementById('content-sat');
             const colGlm = document.getElementById('content-glm');
 
             const txtVacio = `<div class="empty-state">Sin datos para esta hora</div>`;
-            colWrf.innerHTML = txtVacio;
             colRadar.innerHTML = txtVacio;
             colSat.innerHTML = txtVacio;
             colGlm.innerHTML = txtVacio;
 
-            let hayWrf = false, hayRadar = false, haySat = false, hayGlm = false;
+            // Renderizamos el WRF con su lógica aislada
+            renderizarWRF(hhActual);
 
-            // 2. Cargamos el WRF (fijo por hora)
-            if (wrfPorHora[hhActual]) {
-                colWrf.innerHTML = ""; // Quitamos el texto vacío
-                wrfPorHora[hhActual].forEach(file => {
-                    colWrf.innerHTML += crearHTMLImagen(file, true, hhActual);
-                });
-            }
-
-            // 3. Distribuimos las observaciones a sus respectivas columnas
+            // Renderizamos Observaciones
             if (radarSatPorTiempo[tiempoActual]) {
-                radarSatPorTiempo[tiempoActual].forEach(file => {
-                    let upperName = file.name.toUpperCase();
-                    let htmlImg = crearHTMLImagen(file, false, null);
+                let hayRadar = false, haySat = false, hayGlm = false;
 
+                // Ordenamos para que, por ejemplo, Bolívar y Ezeiza aparezcan siempre en el mismo orden
+                let archivosOrdenados = radarSatPorTiempo[tiempoActual].sort((a, b) => a.name.localeCompare(b.name));
+
+                archivosOrdenados.forEach(file => {
+                    let upperName = file.name.toUpperCase();
+                    let htmlImg = crearHTMLObservacion(file);
+
+                    // RMA a Radar
                     if (upperName.includes('RMA')) {
                         if(!hayRadar) { colRadar.innerHTML = ""; hayRadar = true; }
                         colRadar.innerHTML += htmlImg;
                     } 
+                    // AIRMASS y TOP al Satélite (Cumpliendo la condición solicitada)
                     else if (upperName.includes('AIRMASS') || upperName.includes('TOP')) {
                         if(!haySat) { colSat.innerHTML = ""; haySat = true; }
                         colSat.innerHTML += htmlImg;
                     }
+                    // GLM a Rayos
                     else if (upperName.includes('GLM')) {
                         if(!hayGlm) { colGlm.innerHTML = ""; hayGlm = true; }
                         colGlm.innerHTML += htmlImg;
