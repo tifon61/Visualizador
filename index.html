@@ -42,9 +42,10 @@
             color: white; border: 1px solid #555; border-radius: 4px; cursor: pointer;
         }
 
+        /* LIGHTBOX Y ZOOM */
         #zoomModal {
             display: none; position: fixed; z-index: 9999; top: 0; left: 0;
-            width: 100%; height: 100%; background-color: rgba(0,0,0,0.85);
+            width: 100%; height: 100%; background-color: rgba(0,0,0,0.9);
             justify-content: center; align-items: center; overflow: hidden;
         }
         #zoomImg {
@@ -56,13 +57,17 @@
             position: absolute; top: 20px; right: 30px; color: white;
             font-size: 40px; font-weight: bold; cursor: pointer; z-index: 10000;
         }
+        .zoom-info {
+            position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
+            color: #ccc; font-size: 14px; background: rgba(0,0,0,0.5); padding: 5px 15px; border-radius: 20px; pointer-events: none;
+        }
     </style>
 </head>
 <body>
 
     <div class="controls">
         <h2>🌤️ Dashboard Meteorológico</h2>
-        <p>Selecciona la carpeta. <strong>Haz clic en cualquier imagen</strong> para abrir el modo de análisis (Zoom con la ruedita y arrastrar para mover).</p>
+        <p>Selecciona la carpeta. Haz clic para Zoom. <strong>Usa las flechas &larr; &rarr; para animar el tiempo manteniendo el zoom.</strong></p>
         <input type="file" id="folderInput" webkitdirectory directory multiple>
         
         <div id="sliderContainer" style="display: none; margin-top: 20px;">
@@ -94,6 +99,7 @@
     <div id="zoomModal">
         <span class="close-btn" onclick="cerrarZoom()">&times;</span>
         <img id="zoomImg" src="" alt="Zoom Image">
+        <div class="zoom-info">Use las flechas &larr; &rarr; para cambiar el tiempo</div>
     </div>
 
     <script>
@@ -101,6 +107,7 @@
         let wrfPorHora = {};        
         let tiemposOrdenados = [];
         let productoWrfActivo = ""; 
+        let categoriaZoomActual = ""; // Para saber qué producto está ampliado
 
         function redondearMinutos(minutos) {
             return Math.round(minutos / 15) * 15;
@@ -111,7 +118,8 @@
             radarSatPorTiempo = {}; wrfPorHora = {}; let tiemposDisponibles = new Set();
             
             files.forEach(file => {
-                const matchHora = file.name.match(/_(\d{4,6})(?:Z|_|\.)/); 
+                // CORRECCIÓN GLM: Forzamos a que busque la hora pegada a la "Z" o al ".png/.jpg"
+                const matchHora = file.name.match(/_(\d{4,6})(?:Z)?\.(?:png|jpg)/i); 
                 const matchWrf = file.name.match(/_(\d{2})UTC_(\d{3})/i); 
 
                 if (matchWrf) {
@@ -127,6 +135,7 @@
                     tiemposDisponibles.add(`${hh}:00`); 
                     
                 } else if (matchHora) {
+                    // Ahora matchHora[1] es seguro que es la hora (ej. 180200) y no la fecha
                     let hhStr = matchHora[1].substring(0, 2);
                     let mmStr = matchHora[1].substring(2, 4);
                     let mins = redondearMinutos(parseInt(mmStr, 10));
@@ -177,10 +186,11 @@
                 let file = wrfPorHora[hhActual][productoWrfActivo];
                 const imgUrl = URL.createObjectURL(file);
                 
+                // Se añade un data-cat para identificarlo al apretar las flechas
                 colWrf.innerHTML = `
                     <div class="img-container">
                         <span class="badge">Válido ${hhActual}:00Z</span>
-                        <img src="${imgUrl}" alt="${file.name}" onclick="abrirZoom(this.src)">
+                        <img src="${imgUrl}" alt="${file.name}" data-cat="wrf" onclick="abrirZoom(this.src, 'wrf')">
                         <div class="info">${file.name}</div>
                     </div>
                 `;
@@ -190,20 +200,21 @@
             }
         }
 
-        function crearHTMLObservacion(file) {
+        function crearHTMLObservacion(file, categoria) {
             const imgUrl = URL.createObjectURL(file);
             let upperName = file.name.toUpperCase();
             let badge = "";
 
-            if (upperName.includes('RMA14')) badge = `<span class="badge badge-bolivar">Bolívar</span>`;
-            else if (upperName.includes('RMA2')) badge = `<span class="badge badge-ezeiza">Ezeiza</span>`;
-            else if (upperName.includes('AIRMASS')) badge = `<span class="badge">Airmass</span>`;
-            else if (upperName.includes('TOP')) badge = `<span class="badge">Tope Nuboso</span>`;
+            if (categoria === 'radar-rma14') badge = `<span class="badge badge-bolivar">Bolívar</span>`;
+            else if (categoria === 'radar-rma2') badge = `<span class="badge badge-ezeiza">Ezeiza</span>`;
+            else if (categoria === 'sat-airmass') badge = `<span class="badge">Airmass</span>`;
+            else if (categoria === 'sat-top') badge = `<span class="badge">Tope Nuboso</span>`;
+            else if (categoria === 'glm') badge = `<span class="badge">Rayos GLM</span>`;
             
             return `
                 <div class="img-container">
                     ${badge}
-                    <img src="${imgUrl}" alt="${file.name}" onclick="abrirZoom(this.src)">
+                    <img src="${imgUrl}" alt="${file.name}" data-cat="${categoria}" onclick="abrirZoom(this.src, '${categoria}')">
                     <div class="info">${file.name}</div>
                 </div>
             `;
@@ -230,35 +241,46 @@
 
                 archivosOrdenados.forEach(file => {
                     let upperName = file.name.toUpperCase();
-                    let htmlImg = crearHTMLObservacion(file);
+                    let cat = "";
 
-                    // --- AQUÍ ESTÁ LA CORRECCIÓN ---
-                    // Primero evaluamos Satélite para que "AIRMASS" no caiga en la trampa de "RMA"
-                    if (upperName.includes('AIRMASS') || upperName.includes('TOP')) {
-                        if(!haySat) { colSat.innerHTML = ""; haySat = true; }
-                        colSat.innerHTML += htmlImg;
-                    }
-                    // Luego evaluamos el Radar
-                    else if (upperName.includes('RMA')) {
-                        if(!hayRadar) { colRadar.innerHTML = ""; hayRadar = true; }
-                        colRadar.innerHTML += htmlImg;
-                    } 
-                    // Finalmente evaluamos los Rayos
-                    else if (upperName.includes('GLM')) {
-                        if(!hayGlm) { colGlm.innerHTML = ""; hayGlm = true; }
-                        colGlm.innerHTML += htmlImg;
+                    // Identificación minuciosa para que las flechas sepan exactamente a qué imagen cambiar
+                    if (upperName.includes('AIRMASS')) { cat = 'sat-airmass'; }
+                    else if (upperName.includes('TOP')) { cat = 'sat-top'; }
+                    else if (upperName.includes('RMA14')) { cat = 'radar-rma14'; }
+                    else if (upperName.includes('RMA2')) { cat = 'radar-rma2'; }
+                    else if (upperName.includes('GLM')) { cat = 'glm'; }
+
+                    if (cat) {
+                        let htmlImg = crearHTMLObservacion(file, cat);
+
+                        if (cat.startsWith('sat')) {
+                            if(!haySat) { colSat.innerHTML = ""; haySat = true; }
+                            colSat.innerHTML += htmlImg;
+                        } 
+                        else if (cat.startsWith('radar')) {
+                            if(!hayRadar) { colRadar.innerHTML = ""; hayRadar = true; }
+                            colRadar.innerHTML += htmlImg;
+                        } 
+                        else if (cat === 'glm') {
+                            if(!hayGlm) { colGlm.innerHTML = ""; hayGlm = true; }
+                            colGlm.innerHTML += htmlImg;
+                        }
                     }
                 });
             }
         }
 
+        // --- LÓGICA DE NAVEGACIÓN Y ZOOM ---
         let scale = 1, panning = false, pointX = 0, pointY = 0, startX = 0, startY = 0;
         const zoomModal = document.getElementById('zoomModal');
         const zoomImg = document.getElementById('zoomImg');
 
-        function abrirZoom(src) {
+        function abrirZoom(src, categoria) {
             zoomModal.style.display = 'flex';
             zoomImg.src = src;
+            categoriaZoomActual = categoria;
+            
+            // Solo resetea el zoom si estás abriendo una imagen nueva de cero
             scale = 1; pointX = 0; pointY = 0;
             aplicarTransformacion();
         }
@@ -290,12 +312,49 @@
         });
 
         window.addEventListener('mouseup', function() { panning = false; });
-
         window.addEventListener('mousemove', function(e) {
             if (!panning) return;
             pointX = e.clientX - startX;
             pointY = e.clientY - startY;
             aplicarTransformacion();
+        });
+
+        // --- MAGIA: NAVEGACIÓN POR TECLADO ---
+        window.addEventListener('keydown', function(e) {
+            if (zoomModal.style.display === 'flex') {
+                if (e.key === 'Escape') {
+                    cerrarZoom();
+                    return;
+                }
+                
+                if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+                    let slider = document.getElementById('timeSlider');
+                    let currentVal = parseInt(slider.value);
+                    
+                    if (e.key === 'ArrowRight' && currentVal < slider.max) {
+                        slider.value = currentVal + 1;
+                    } else if (e.key === 'ArrowLeft' && currentVal > 0) {
+                        slider.value = currentVal - 1;
+                    } else {
+                        return; // Límite de tiempo
+                    }
+
+                    // 1. Movemos el tiempo global por debajo
+                    actualizarVista(slider.value);
+
+                    // 2. Buscamos en el HTML actualizado si hay una imagen que coincida con la que estábamos mirando
+                    // Ej. Si estábamos mirando "radar-rma14" (Bolívar), buscamos esa misma categoría en la nueva hora
+                    let nuevaImagenDom = document.querySelector(`img[data-cat="${categoriaZoomActual}"]`);
+                    
+                    if (nuevaImagenDom) {
+                        zoomImg.src = nuevaImagenDom.src;
+                        // NOTA: NO reseteamos scale ni pointX/Y. Esto mantiene el paneo perfecto.
+                    } else {
+                        // Si justo en ese paso de tiempo no hubo barrido de radar o satélite, cerramos el zoom
+                        cerrarZoom();
+                    }
+                }
+            }
         });
     </script>
 </body>
