@@ -12,17 +12,20 @@
         input[type="range"] { width: 100%; margin-top: 15px; cursor: pointer; }
         h3 { margin-top: 0; font-size: 16px; color: #4CAF50; }
         .info { font-size: 14px; color: #aaa; margin-top: 5px; word-break: break-all;}
+        
+        /* Pequeña etiqueta para distinguir qué imágenes están fijas */
+        .badge { background-color: #4CAF50; color: white; padding: 2px 6px; border-radius: 4px; font-size: 12px; float: right;}
     </style>
 </head>
 <body>
 
     <div class="controls">
-        <h2>🌤️ Visualizador Meteorológico Sincronizado</h2>
-        <p>Selecciona tu carpeta. Radar, Satélite y WRF se alinearán por su <strong>Hora Válida (UTC)</strong>.</p>
+        <h2>🌤️ Visualizador Meteorológico (Modo Persistencia)</h2>
+        <p>Selecciona tu carpeta. El WRF se mantendrá fijo por hora, mientras puedes observar la evolución del radar y satélite en los minutos intermedios.</p>
         <input type="file" id="folderInput" webkitdirectory directory multiple>
         
         <div id="sliderContainer" style="display: none; margin-top: 20px;">
-            <p><strong>Hora Válida de Análisis: </strong> <span id="timeDisplay" style="color:#4CAF50; font-weight:bold; font-size:18px;"></span></p>
+            <p><strong>Tiempo de Observación: </strong> <span id="timeDisplay" style="color:#4CAF50; font-weight:bold; font-size:18px;"></span></p>
             <input type="range" id="timeSlider" min="0" max="0" value="0">
         </div>
     </div>
@@ -31,60 +34,67 @@
         </div>
 
     <script>
-        let archivosAgrupados = {}; 
+        // Separamos los diccionarios: uno para observaciones (radar/sat) y otro para pronósticos (WRF)
+        let radarSatPorTiempo = {}; // Se agrupa por "HH:MM"
+        let wrfPorHora = {};        // Se agrupa solo por "HH"
         let tiemposOrdenados = [];
 
-        function redondearHora(hh, mm) {
-            let minutosTotales = (parseInt(hh) * 60) + parseInt(mm);
-            let bloque15 = Math.round(minutosTotales / 15) * 15; 
-            
-            let nuevaHora = Math.floor(bloque15 / 60);
-            let nuevosMinutos = bloque15 % 60;
-            
-            if (nuevaHora >= 24) nuevaHora = nuevaHora % 24;
-
-            let horaStr = nuevaHora.toString().padStart(2, '0');
-            let minStr = nuevosMinutos.toString().padStart(2, '0');
-            return `${horaStr}:${minStr} UTC`;
+        function redondearMinutos(minutos) {
+            // Agrupamos el radar y satélite cada 15 minutos para que coincidan entre sí
+            return Math.round(minutos / 15) * 15;
         }
 
         document.getElementById('folderInput').addEventListener('change', function(e) {
             const files = Array.from(e.target.files).filter(f => !f.name.startsWith('.') && (f.name.endsWith('.png') || f.name.endsWith('.jpg')));
-            archivosAgrupados = {};
+            
+            radarSatPorTiempo = {};
+            wrfPorHora = {};
+            let tiemposDisponibles = new Set();
             
             files.forEach(file => {
                 const matchHora = file.name.match(/_(\d{4,6})(?:Z|_|\.)/); 
                 const matchWrf = file.name.match(/_(\d{2})UTC_(\d{3})/i); 
 
-                let tiempoClave = null;
-                
                 if (matchWrf) {
-                    // CÁLCULO DE HORA VÁLIDA DEL WRF
-                    let initHour = parseInt(matchWrf[1], 10);  // Ej: 18
-                    let leadTime = parseInt(matchWrf[2], 10);  // Ej: 016, 017...
-                    
-                    // Sumamos la hora de corrida + las horas de pronóstico
+                    // LÓGICA PARA EL WRF (Solo extraemos la HORA válida)
+                    let initHour = parseInt(matchWrf[1], 10);
+                    let leadTime = parseInt(matchWrf[2], 10);
                     let validHour = (initHour + leadTime) % 24; 
                     
-                    // Al ser salidas por hora justa, los minutos son "00"
-                    tiempoClave = redondearHora(validHour, "00");
+                    let hh = validHour.toString().padStart(2, '0');
+                    
+                    if (!wrfPorHora[hh]) wrfPorHora[hh] = [];
+                    wrfPorHora[hh].push(file);
+                    
+                    // Nos aseguramos de que el deslizador tenga una "parada" en la hora en punto
+                    tiemposDisponibles.add(`${hh}:00`); 
                     
                 } else if (matchHora) {
-                    // LECTURA DE RADAR Y SATÉLITE
-                    let hh = matchHora[1].substring(0, 2);
-                    let mm = matchHora[1].substring(2, 4);
-                    tiempoClave = redondearHora(hh, mm);
-                }
-
-                if (tiempoClave) {
-                    if (!archivosAgrupados[tiempoClave]) {
-                        archivosAgrupados[tiempoClave] = [];
+                    // LÓGICA PARA RADAR Y SATÉLITE (Extraemos HORA y MINUTO)
+                    let hhStr = matchHora[1].substring(0, 2);
+                    let mmStr = matchHora[1].substring(2, 4);
+                    
+                    let mins = redondearMinutos(parseInt(mmStr, 10));
+                    let hh = parseInt(hhStr, 10);
+                    
+                    if (mins >= 60) {
+                        mins = 0;
+                        hh = (hh + 1) % 24;
                     }
-                    archivosAgrupados[tiempoClave].push(file);
+                    
+                    let hhFinal = hh.toString().padStart(2, '0');
+                    let mmFinal = mins.toString().padStart(2, '0');
+                    let tiempoObs = `${hhFinal}:${mmFinal}`;
+
+                    if (!radarSatPorTiempo[tiempoObs]) radarSatPorTiempo[tiempoObs] = [];
+                    radarSatPorTiempo[tiempoObs].push(file);
+
+                    tiemposDisponibles.add(tiempoObs);
                 }
             });
 
-            tiemposOrdenados = Object.keys(archivosAgrupados).sort();
+            // Ordenamos todos los tiempos encontrados (ej. 10:00, 10:15, 10:30, 11:00...)
+            tiemposOrdenados = Array.from(tiemposDisponibles).sort();
             
             if (tiemposOrdenados.length > 0) {
                 const slider = document.getElementById('timeSlider');
@@ -102,29 +112,46 @@
         });
 
         function actualizarVista(index) {
-            const tiempoActual = tiemposOrdenados[index];
-            document.getElementById('timeDisplay').innerText = tiempoActual;
+            const tiempoActual = tiemposOrdenados[index]; // ej: "10:15"
+            document.getElementById('timeDisplay').innerText = tiempoActual + " UTC";
+            
+            const hhActual = tiempoActual.split(':')[0]; // Extraemos solo el "10" para buscar el WRF
             
             const grid = document.getElementById('imageGrid');
             grid.innerHTML = ''; 
 
-            const archivosDelTiempo = archivosAgrupados[tiempoActual];
+            let archivosAMostrar = [];
+
+            // 1. Cargamos el WRF fijo para esa hora
+            if (wrfPorHora[hhActual]) {
+                archivosAMostrar = archivosAMostrar.concat(wrfPorHora[hhActual]);
+            }
+
+            // 2. Cargamos las observaciones de ese minuto específico
+            if (radarSatPorTiempo[tiempoActual]) {
+                archivosAMostrar = archivosAMostrar.concat(radarSatPorTiempo[tiempoActual]);
+            }
             
-            archivosDelTiempo.forEach(file => {
+            archivosAMostrar.forEach(file => {
                 const imgUrl = URL.createObjectURL(file);
                 const card = document.createElement('div');
                 card.className = 'card';
                 
                 let titulo = "Imagen";
+                let badge = "";
                 let upperName = file.name.toUpperCase();
                 
-                if(upperName.includes('WRF')) titulo = "Modelo WRF";
+                if(upperName.includes('WRF')) {
+                    titulo = "Modelo WRF";
+                    // Etiqueta visual para indicar que esta imagen se mantiene por toda la hora
+                    badge = `<span class="badge">Fijo para las ${hhActual}:00Z</span>`; 
+                }
                 else if(upperName.includes('RMA')) titulo = "Radar RMA";
                 else if(upperName.includes('GLM')) titulo = "Rayos GLM";
                 else if(upperName.includes('AIRMASS') || upperName.includes('TOP')) titulo = "Satélite GOES";
 
                 card.innerHTML = `
-                    <h3>${titulo}</h3>
+                    <h3>${titulo} ${badge}</h3>
                     <img src="${imgUrl}" alt="${file.name}">
                     <div class="info">${file.name}</div>
                 `;
