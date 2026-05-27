@@ -1,8 +1,9 @@
-<!DOCTYPE html>
+
+       <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Dashboard Meteorológico - Avanzado</title>
+    <title>Dashboard Meteorológico - Operativo</title>
     <style>
         body { font-family: Arial, sans-serif; background-color: #1e1e1e; color: #fff; padding: 20px; margin: 0; }
         .controls { background: #2d2d2d; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
@@ -27,8 +28,10 @@
         }
 
         .content-area { display: flex; flex-direction: column; gap: 15px; }
-        .img-container { background: #222; padding: 10px; border-radius: 6px; }
-        img { width: 100%; height: auto; border-radius: 4px; display: block; }
+        .img-container { background: #222; padding: 10px; border-radius: 6px; position: relative; }
+        
+        /* El cursor cambia a "zoom-in" para indicarle al usuario que puede clickear */
+        .img-container img { width: 100%; height: auto; border-radius: 4px; display: block; cursor: zoom-in; }
         
         .badge { background-color: #4CAF50; color: white; padding: 2px 6px; border-radius: 4px; font-size: 11px; }
         .badge-bolivar { background-color: #008CBA; }
@@ -36,25 +39,33 @@
         
         .empty-state { color: #666; font-style: italic; text-align: center; margin-top: 50px; font-size: 14px; }
         
-        /* Estilos para el selector de WRF */
         select.wrf-selector {
-            width: 100%;
-            padding: 8px;
-            margin-bottom: 15px;
-            background-color: #444;
-            color: white;
-            border: 1px solid #555;
-            border-radius: 4px;
-            cursor: pointer;
+            width: 100%; padding: 8px; margin-bottom: 15px; background-color: #444;
+            color: white; border: 1px solid #555; border-radius: 4px; cursor: pointer;
         }
-    </select>
+
+        /* --- ESTILOS DEL VISOR DE ZOOM (LIGHTBOX) --- */
+        #zoomModal {
+            display: none; position: fixed; z-index: 9999; top: 0; left: 0;
+            width: 100%; height: 100%; background-color: rgba(0,0,0,0.85);
+            justify-content: center; align-items: center; overflow: hidden;
+        }
+        #zoomImg {
+            max-width: 90vw; max-height: 90vh; cursor: grab;
+            transition: transform 0.05s linear; /* Suaviza el zoom */
+        }
+        #zoomImg:active { cursor: grabbing; }
+        .close-btn {
+            position: absolute; top: 20px; right: 30px; color: white;
+            font-size: 40px; font-weight: bold; cursor: pointer; z-index: 10000;
+        }
     </style>
 </head>
 <body>
 
     <div class="controls">
-        <h2>🌤️ Dashboard Meteorológico (Control de Variables)</h2>
-        <p>Selecciona la carpeta. Usa el selector en la columna del WRF para cambiar el producto sin hacer scroll.</p>
+        <h2>🌤️ Dashboard Meteorológico</h2>
+        <p>Selecciona la carpeta. <strong>Haz clic en cualquier imagen</strong> para abrir el modo de análisis (Zoom con la ruedita y arrastrar para mover).</p>
         <input type="file" id="folderInput" webkitdirectory directory multiple>
         
         <div id="sliderContainer" style="display: none; margin-top: 20px;">
@@ -67,38 +78,33 @@
         <div class="panel" id="panel-wrf">
             <h3>Modelo WRF</h3>
             <select id="wrfSelect" class="wrf-selector" style="display: none;"></select>
-            <div class="content-area" id="content-wrf">
-                <div class="empty-state">Esperando selección...</div>
-            </div>
+            <div class="content-area" id="content-wrf"><div class="empty-state">Esperando selección...</div></div>
         </div>
-
         <div class="panel" id="panel-radar">
             <h3>Radar RMA</h3>
-            <div class="content-area" id="content-radar">
-                <div class="empty-state">Esperando selección...</div>
-            </div>
+            <div class="content-area" id="content-radar"><div class="empty-state">Esperando selección...</div></div>
         </div>
-
         <div class="panel" id="panel-sat">
             <h3>Satélite GOES</h3>
-            <div class="content-area" id="content-sat">
-                <div class="empty-state">Esperando selección...</div>
-            </div>
+            <div class="content-area" id="content-sat"><div class="empty-state">Esperando selección...</div></div>
         </div>
-
         <div class="panel" id="panel-glm">
             <h3>Rayos GLM</h3>
-            <div class="content-area" id="content-glm">
-                <div class="empty-state">Esperando selección...</div>
-            </div>
+            <div class="content-area" id="content-glm"><div class="empty-state">Esperando selección...</div></div>
         </div>
     </div>
 
+    <div id="zoomModal">
+        <span class="close-btn" onclick="cerrarZoom()">&times;</span>
+        <img id="zoomImg" src="" alt="Zoom Image">
+    </div>
+
     <script>
+        // --- LÓGICA DE DATOS Y DASHBOARD ---
         let radarSatPorTiempo = {}; 
         let wrfPorHora = {};        
         let tiemposOrdenados = [];
-        let productoWrfActivo = ""; // Memoria para saber qué producto estamos viendo
+        let productoWrfActivo = ""; 
 
         function redondearMinutos(minutos) {
             return Math.round(minutos / 15) * 15;
@@ -106,10 +112,7 @@
 
         document.getElementById('folderInput').addEventListener('change', function(e) {
             const files = Array.from(e.target.files).filter(f => !f.name.startsWith('.') && (f.name.endsWith('.png') || f.name.endsWith('.jpg')));
-            
-            radarSatPorTiempo = {};
-            wrfPorHora = {};
-            let tiemposDisponibles = new Set();
+            radarSatPorTiempo = {}; wrfPorHora = {}; let tiemposDisponibles = new Set();
             
             files.forEach(file => {
                 const matchHora = file.name.match(/_(\d{4,6})(?:Z|_|\.)/); 
@@ -120,39 +123,28 @@
                     let leadTime = parseInt(matchWrf[2], 10);
                     let validHour = (initHour + leadTime) % 24; 
                     let hh = validHour.toString().padStart(2, '0');
-                    
-                    // Extraemos el nombre del producto (ej: capaMezclaEstab)
                     let matchProducto = file.name.match(/4km_(.+?)_NOR_NOR/i);
                     let nombreProducto = matchProducto ? matchProducto[1] : "Desconocido";
                     
                     if (!wrfPorHora[hh]) wrfPorHora[hh] = {};
                     wrfPorHora[hh][nombreProducto] = file;
-                    
                     tiemposDisponibles.add(`${hh}:00`); 
                     
                 } else if (matchHora) {
                     let hhStr = matchHora[1].substring(0, 2);
                     let mmStr = matchHora[1].substring(2, 4);
-                    
                     let mins = redondearMinutos(parseInt(mmStr, 10));
                     let hh = parseInt(hhStr, 10);
-                    
-                    if (mins >= 60) {
-                        mins = 0;
-                        hh = (hh + 1) % 24;
-                    }
+                    if (mins >= 60) { mins = 0; hh = (hh + 1) % 24; }
                     
                     let tiempoObs = `${hh.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
-
                     if (!radarSatPorTiempo[tiempoObs]) radarSatPorTiempo[tiempoObs] = [];
                     radarSatPorTiempo[tiempoObs].push(file);
-
                     tiemposDisponibles.add(tiempoObs);
                 }
             });
 
             tiemposOrdenados = Array.from(tiemposDisponibles).sort();
-            
             if (tiemposOrdenados.length > 0) {
                 const slider = document.getElementById('timeSlider');
                 slider.max = tiemposOrdenados.length - 1;
@@ -164,51 +156,36 @@
             }
         });
 
-        document.getElementById('timeSlider').addEventListener('input', function(e) {
-            actualizarVista(e.target.value);
-        });
-
-        // Evento para cuando cambiamos de variable en el selector del WRF
+        document.getElementById('timeSlider').addEventListener('input', function(e) { actualizarVista(e.target.value); });
+        
         document.getElementById('wrfSelect').addEventListener('change', function(e) {
             productoWrfActivo = e.target.value;
-            // Refrescamos solo la vista del WRF sin mover el slider
             const sliderIndex = document.getElementById('timeSlider').value;
             const hhActual = tiemposOrdenados[sliderIndex].split(':')[0];
             renderizarWRF(hhActual);
         });
 
-        // Función que dibuja EXCLUSIVAMENTE el panel del WRF
         function renderizarWRF(hhActual) {
             const colWrf = document.getElementById('content-wrf');
             const selectWrf = document.getElementById('wrfSelect');
-            
             if (wrfPorHora[hhActual]) {
                 const productosDisponibles = Object.keys(wrfPorHora[hhActual]).sort();
-                
-                // Llenamos el dropdown
                 selectWrf.innerHTML = "";
                 productosDisponibles.forEach(prod => {
-                    let option = document.createElement('option');
-                    option.value = prod;
-                    option.text = "Var: " + prod;
+                    let option = document.createElement('option'); option.value = prod; option.text = "Var: " + prod;
                     selectWrf.appendChild(option);
                 });
-                
-                // Si el producto que veníamos mirando existe en esta hora, lo mantenemos. Si no, agarramos el primero.
-                if (!productosDisponibles.includes(productoWrfActivo)) {
-                    productoWrfActivo = productosDisponibles[0];
-                }
-                selectWrf.value = productoWrfActivo;
-                selectWrf.style.display = "block";
+                if (!productosDisponibles.includes(productoWrfActivo)) productoWrfActivo = productosDisponibles[0];
+                selectWrf.value = productoWrfActivo; selectWrf.style.display = "block";
 
-                // Mostramos SOLO el archivo correspondiente al producto seleccionado
                 let file = wrfPorHora[hhActual][productoWrfActivo];
                 const imgUrl = URL.createObjectURL(file);
                 
+                // NOTA: Se añade el evento onclick="abrirZoom(this.src)" a la imagen
                 colWrf.innerHTML = `
                     <div class="img-container">
                         <span class="badge">Válido ${hhActual}:00Z</span>
-                        <img src="${imgUrl}" alt="${file.name}">
+                        <img src="${imgUrl}" alt="${file.name}" onclick="abrirZoom(this.src)">
                         <div class="info">${file.name}</div>
                     </div>
                 `;
@@ -218,13 +195,11 @@
             }
         }
 
-        // Función auxiliar para radares y satélites
         function crearHTMLObservacion(file) {
             const imgUrl = URL.createObjectURL(file);
             let upperName = file.name.toUpperCase();
             let badge = "";
 
-            // Distinciones solicitadas
             if (upperName.includes('RMA14')) badge = `<span class="badge badge-bolivar">Bolívar</span>`;
             else if (upperName.includes('RMA2')) badge = `<span class="badge badge-ezeiza">Ezeiza</span>`;
             else if (upperName.includes('AIRMASS')) badge = `<span class="badge">Airmass</span>`;
@@ -233,7 +208,7 @@
             return `
                 <div class="img-container">
                     ${badge}
-                    <img src="${imgUrl}" alt="${file.name}">
+                    <img src="${imgUrl}" alt="${file.name}" onclick="abrirZoom(this.src)">
                     <div class="info">${file.name}</div>
                 </div>
             `;
@@ -248,36 +223,29 @@
             const colSat = document.getElementById('content-sat');
             const colGlm = document.getElementById('content-glm');
 
-            const txtVacio = `<div class="empty-state">Sin datos para esta hora</div>`;
-            colRadar.innerHTML = txtVacio;
-            colSat.innerHTML = txtVacio;
-            colGlm.innerHTML = txtVacio;
+            colRadar.innerHTML = `<div class="empty-state">Sin datos para esta hora</div>`;
+            colSat.innerHTML = `<div class="empty-state">Sin datos para esta hora</div>`;
+            colGlm.innerHTML = `<div class="empty-state">Sin datos para esta hora</div>`;
 
-            // Renderizamos el WRF con su lógica aislada
             renderizarWRF(hhActual);
 
-            // Renderizamos Observaciones
             if (radarSatPorTiempo[tiempoActual]) {
                 let hayRadar = false, haySat = false, hayGlm = false;
-
-                // Ordenamos para que, por ejemplo, Bolívar y Ezeiza aparezcan siempre en el mismo orden
                 let archivosOrdenados = radarSatPorTiempo[tiempoActual].sort((a, b) => a.name.localeCompare(b.name));
 
                 archivosOrdenados.forEach(file => {
                     let upperName = file.name.toUpperCase();
                     let htmlImg = crearHTMLObservacion(file);
 
-                    // RMA a Radar
+                    // CLASIFICACIÓN ESTRICTA
                     if (upperName.includes('RMA')) {
                         if(!hayRadar) { colRadar.innerHTML = ""; hayRadar = true; }
                         colRadar.innerHTML += htmlImg;
                     } 
-                    // AIRMASS y TOP al Satélite (Cumpliendo la condición solicitada)
                     else if (upperName.includes('AIRMASS') || upperName.includes('TOP')) {
                         if(!haySat) { colSat.innerHTML = ""; haySat = true; }
                         colSat.innerHTML += htmlImg;
                     }
-                    // GLM a Rayos
                     else if (upperName.includes('GLM')) {
                         if(!hayGlm) { colGlm.innerHTML = ""; hayGlm = true; }
                         colGlm.innerHTML += htmlImg;
@@ -285,6 +253,57 @@
                 });
             }
         }
+
+        // --- LÓGICA DEL VISOR DE ZOOM Y PANEO ---
+        let scale = 1, panning = false, pointX = 0, pointY = 0, startX = 0, startY = 0;
+        const zoomModal = document.getElementById('zoomModal');
+        const zoomImg = document.getElementById('zoomImg');
+
+        function abrirZoom(src) {
+            zoomModal.style.display = 'flex';
+            zoomImg.src = src;
+            // Reseteamos las variables de transformación
+            scale = 1; pointX = 0; pointY = 0;
+            aplicarTransformacion();
+        }
+
+        function cerrarZoom() {
+            zoomModal.style.display = 'none';
+        }
+
+        function aplicarTransformacion() {
+            zoomImg.style.transform = `translate(${pointX}px, ${pointY}px) scale(${scale})`;
+        }
+
+        // Cerrar modal al hacer click fuera de la imagen
+        zoomModal.addEventListener('click', function(e) {
+            if (e.target === zoomModal) cerrarZoom();
+        });
+
+        // Hacer zoom con la ruedita del mouse
+        zoomModal.addEventListener('wheel', function(e) {
+            e.preventDefault();
+            const delta = e.deltaY * -0.005; // Ajusta la velocidad del zoom
+            scale = Math.min(Math.max(0.5, scale + delta), 8); // Limita el zoom entre 0.5x y 8x
+            aplicarTransformacion();
+        });
+
+        // Lógica de arrastrar (Pan)
+        zoomImg.addEventListener('mousedown', function(e) {
+            e.preventDefault();
+            startX = e.clientX - pointX;
+            startY = e.clientY - pointY;
+            panning = true;
+        });
+
+        window.addEventListener('mouseup', function() { panning = false; });
+
+        window.addEventListener('mousemove', function(e) {
+            if (!panning) return;
+            pointX = e.clientX - startX;
+            pointY = e.clientY - startY;
+            aplicarTransformacion();
+        });
     </script>
 </body>
 </html>
