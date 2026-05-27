@@ -2,26 +2,49 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Visualizador Meteorológico Operativo</title>
+    <title>Dashboard Meteorológico Fijo</title>
     <style>
-        body { font-family: Arial, sans-serif; background-color: #1e1e1e; color: #fff; padding: 20px; }
+        body { font-family: Arial, sans-serif; background-color: #1e1e1e; color: #fff; padding: 20px; margin: 0; }
         .controls { background: #2d2d2d; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
-        .grid { display: flex; flex-wrap: wrap; gap: 15px; }
-        .card { background: #333; padding: 10px; border-radius: 8px; flex: 1; min-width: 300px; }
-        img { max-width: 100%; height: auto; border-radius: 4px; }
         input[type="range"] { width: 100%; margin-top: 15px; cursor: pointer; }
-        h3 { margin-top: 0; font-size: 16px; color: #4CAF50; }
-        .info { font-size: 14px; color: #aaa; margin-top: 5px; word-break: break-all;}
+        h3 { margin-top: 0; font-size: 16px; color: #4CAF50; border-bottom: 1px solid #555; padding-bottom: 10px; }
+        .info { font-size: 12px; color: #aaa; margin-top: 5px; word-break: break-all;}
         
-        /* Pequeña etiqueta para distinguir qué imágenes están fijas */
-        .badge { background-color: #4CAF50; color: white; padding: 2px 6px; border-radius: 4px; font-size: 12px; float: right;}
+        /* ESTRUCTURA FIJA DEL DASHBOARD */
+        .dashboard { 
+            display: grid; 
+            grid-template-columns: repeat(4, 1fr); /* 4 columnas de igual tamaño siempre */
+            gap: 15px; 
+            align-items: start;
+        }
+        
+        .panel { 
+            background: #333; 
+            border-radius: 8px; 
+            padding: 15px; 
+            min-height: 400px; /* Mantiene la altura aunque no haya imagen */
+            display: flex; 
+            flex-direction: column;
+        }
+
+        .content-area {
+            display: flex;
+            flex-direction: column;
+            gap: 15px; /* Por si hay más de un producto del mismo tipo (ej. 2 cartas WRF) */
+        }
+
+        .img-container { background: #222; padding: 10px; border-radius: 6px; }
+        img { width: 100%; height: auto; border-radius: 4px; display: block; }
+        
+        .badge { background-color: #4CAF50; color: white; padding: 2px 6px; border-radius: 4px; font-size: 11px; float: right; margin-top: -2px;}
+        .empty-state { color: #666; font-style: italic; text-align: center; margin-top: 50px; font-size: 14px; }
     </style>
 </head>
 <body>
 
     <div class="controls">
-        <h2>🌤️ Visualizador Meteorológico (Modo Persistencia)</h2>
-        <p>Selecciona tu carpeta. El WRF se mantendrá fijo por hora, mientras puedes observar la evolución del radar y satélite en los minutos intermedios.</p>
+        <h2>🌤️ Dashboard Meteorológico (Secciones Fijas)</h2>
+        <p>Selecciona tu carpeta. Las columnas están ancladas; nada cambiará de posición al mover el tiempo.</p>
         <input type="file" id="folderInput" webkitdirectory directory multiple>
         
         <div id="sliderContainer" style="display: none; margin-top: 20px;">
@@ -30,17 +53,42 @@
         </div>
     </div>
 
-    <div class="grid" id="imageGrid">
+    <div class="dashboard">
+        <div class="panel" id="panel-wrf">
+            <h3>Modelo WRF</h3>
+            <div class="content-area" id="content-wrf">
+                <div class="empty-state">Esperando selección de carpeta...</div>
+            </div>
         </div>
 
+        <div class="panel" id="panel-radar">
+            <h3>Radar RMA</h3>
+            <div class="content-area" id="content-radar">
+                <div class="empty-state">Esperando selección de carpeta...</div>
+            </div>
+        </div>
+
+        <div class="panel" id="panel-sat">
+            <h3>Satélite GOES</h3>
+            <div class="content-area" id="content-sat">
+                <div class="empty-state">Esperando selección de carpeta...</div>
+            </div>
+        </div>
+
+        <div class="panel" id="panel-glm">
+            <h3>Rayos GLM</h3>
+            <div class="content-area" id="content-glm">
+                <div class="empty-state">Esperando selección de carpeta...</div>
+            </div>
+        </div>
+    </div>
+
     <script>
-        // Separamos los diccionarios: uno para observaciones (radar/sat) y otro para pronósticos (WRF)
-        let radarSatPorTiempo = {}; // Se agrupa por "HH:MM"
-        let wrfPorHora = {};        // Se agrupa solo por "HH"
+        let radarSatPorTiempo = {}; 
+        let wrfPorHora = {};        
         let tiemposOrdenados = [];
 
         function redondearMinutos(minutos) {
-            // Agrupamos el radar y satélite cada 15 minutos para que coincidan entre sí
             return Math.round(minutos / 15) * 15;
         }
 
@@ -56,7 +104,6 @@
                 const matchWrf = file.name.match(/_(\d{2})UTC_(\d{3})/i); 
 
                 if (matchWrf) {
-                    // LÓGICA PARA EL WRF (Solo extraemos la HORA válida)
                     let initHour = parseInt(matchWrf[1], 10);
                     let leadTime = parseInt(matchWrf[2], 10);
                     let validHour = (initHour + leadTime) % 24; 
@@ -66,11 +113,9 @@
                     if (!wrfPorHora[hh]) wrfPorHora[hh] = [];
                     wrfPorHora[hh].push(file);
                     
-                    // Nos aseguramos de que el deslizador tenga una "parada" en la hora en punto
                     tiemposDisponibles.add(`${hh}:00`); 
                     
                 } else if (matchHora) {
-                    // LÓGICA PARA RADAR Y SATÉLITE (Extraemos HORA y MINUTO)
                     let hhStr = matchHora[1].substring(0, 2);
                     let mmStr = matchHora[1].substring(2, 4);
                     
@@ -93,7 +138,6 @@
                 }
             });
 
-            // Ordenamos todos los tiempos encontrados (ej. 10:00, 10:15, 10:30, 11:00...)
             tiemposOrdenados = Array.from(tiemposDisponibles).sort();
             
             if (tiemposOrdenados.length > 0) {
@@ -111,52 +155,67 @@
             actualizarVista(e.target.value);
         });
 
-        function actualizarVista(index) {
-            const tiempoActual = tiemposOrdenados[index]; // ej: "10:15"
-            document.getElementById('timeDisplay').innerText = tiempoActual + " UTC";
+        // Función auxiliar para crear el HTML interno de cada imagen
+        function crearHTMLImagen(file, esWrf, hhActual) {
+            const imgUrl = URL.createObjectURL(file);
+            let badge = esWrf ? `<span class="badge">Válido ${hhActual}:00Z</span>` : "";
             
-            const hhActual = tiempoActual.split(':')[0]; // Extraemos solo el "10" para buscar el WRF
-            
-            const grid = document.getElementById('imageGrid');
-            grid.innerHTML = ''; 
-
-            let archivosAMostrar = [];
-
-            // 1. Cargamos el WRF fijo para esa hora
-            if (wrfPorHora[hhActual]) {
-                archivosAMostrar = archivosAMostrar.concat(wrfPorHora[hhActual]);
-            }
-
-            // 2. Cargamos las observaciones de ese minuto específico
-            if (radarSatPorTiempo[tiempoActual]) {
-                archivosAMostrar = archivosAMostrar.concat(radarSatPorTiempo[tiempoActual]);
-            }
-            
-            archivosAMostrar.forEach(file => {
-                const imgUrl = URL.createObjectURL(file);
-                const card = document.createElement('div');
-                card.className = 'card';
-                
-                let titulo = "Imagen";
-                let badge = "";
-                let upperName = file.name.toUpperCase();
-                
-                if(upperName.includes('WRF')) {
-                    titulo = "Modelo WRF";
-                    // Etiqueta visual para indicar que esta imagen se mantiene por toda la hora
-                    badge = `<span class="badge">Fijo para las ${hhActual}:00Z</span>`; 
-                }
-                else if(upperName.includes('RMA')) titulo = "Radar RMA";
-                else if(upperName.includes('GLM')) titulo = "Rayos GLM";
-                else if(upperName.includes('AIRMASS') || upperName.includes('TOP')) titulo = "Satélite GOES";
-
-                card.innerHTML = `
-                    <h3>${titulo} ${badge}</h3>
+            return `
+                <div class="img-container">
+                    ${badge}
                     <img src="${imgUrl}" alt="${file.name}">
                     <div class="info">${file.name}</div>
-                `;
-                grid.appendChild(card);
-            });
+                </div>
+            `;
+        }
+
+        function actualizarVista(index) {
+            const tiempoActual = tiemposOrdenados[index]; 
+            document.getElementById('timeDisplay').innerText = tiempoActual + " UTC";
+            const hhActual = tiempoActual.split(':')[0]; 
+
+            // 1. Limpiamos todas las columnas y preparamos el texto "vacío"
+            const colWrf = document.getElementById('content-wrf');
+            const colRadar = document.getElementById('content-radar');
+            const colSat = document.getElementById('content-sat');
+            const colGlm = document.getElementById('content-glm');
+
+            const txtVacio = `<div class="empty-state">Sin datos para esta hora</div>`;
+            colWrf.innerHTML = txtVacio;
+            colRadar.innerHTML = txtVacio;
+            colSat.innerHTML = txtVacio;
+            colGlm.innerHTML = txtVacio;
+
+            let hayWrf = false, hayRadar = false, haySat = false, hayGlm = false;
+
+            // 2. Cargamos el WRF (fijo por hora)
+            if (wrfPorHora[hhActual]) {
+                colWrf.innerHTML = ""; // Quitamos el texto vacío
+                wrfPorHora[hhActual].forEach(file => {
+                    colWrf.innerHTML += crearHTMLImagen(file, true, hhActual);
+                });
+            }
+
+            // 3. Distribuimos las observaciones a sus respectivas columnas
+            if (radarSatPorTiempo[tiempoActual]) {
+                radarSatPorTiempo[tiempoActual].forEach(file => {
+                    let upperName = file.name.toUpperCase();
+                    let htmlImg = crearHTMLImagen(file, false, null);
+
+                    if (upperName.includes('RMA')) {
+                        if(!hayRadar) { colRadar.innerHTML = ""; hayRadar = true; }
+                        colRadar.innerHTML += htmlImg;
+                    } 
+                    else if (upperName.includes('AIRMASS') || upperName.includes('TOP')) {
+                        if(!haySat) { colSat.innerHTML = ""; haySat = true; }
+                        colSat.innerHTML += htmlImg;
+                    }
+                    else if (upperName.includes('GLM')) {
+                        if(!hayGlm) { colGlm.innerHTML = ""; hayGlm = true; }
+                        colGlm.innerHTML += htmlImg;
+                    }
+                });
+            }
         }
     </script>
 </body>
