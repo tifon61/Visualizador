@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Visualizador Meteorológico</title>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #1e1e1e; color: #fff; padding: 20px; }
+        .controls { background: #2d2d2d; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
+        .grid { display: flex; flex-wrap: wrap; gap: 15px; }
+        .card { background: #333; padding: 10px; border-radius: 8px; flex: 1; min-width: 300px; }
+        img { max-width: 100%; height: auto; border-radius: 4px; }
+        input[type="range"] { width: 100%; margin-top: 15px; }
+        h3 { margin-top: 0; font-size: 16px; color: #4CAF50; }
+        .info { font-size: 14px; color: #aaa; margin-top: 5px; word-break: break-all;}
+    </style>
+</head>
+<body>
+
+    <div class="controls">
+        <h2>🌤️ Visualizador Meteorológico HTML</h2>
+        <p>1. Selecciona la carpeta con tus imágenes PNG (RMA, WRF, GOES, GLM).</p>
+        <input type="file" id="folderInput" webkitdirectory directory multiple>
+        
+        <div id="sliderContainer" style="display: none; margin-top: 20px;">
+            <p><strong>Tiempo seleccionado: </strong> <span id="timeDisplay"></span></p>
+            <input type="range" id="timeSlider" min="0" max="0" value="0">
+        </div>
+    </div>
+
+    <div class="grid" id="imageGrid">
+        </div>
+
+    <script>
+        let archivosAgrupados = {}; // Guardará { "1800": [archivo1, archivo2], ... }
+        let tiemposOrdenados = [];
+
+        document.getElementById('folderInput').addEventListener('change', function(e) {
+            const files = Array.from(e.target.files).filter(f => f.name.endsWith('.png') || f.name.endsWith('.jpg'));
+            archivosAgrupados = {};
+            
+            files.forEach(file => {
+                // Buscamos un patrón de 4 o 6 números seguidos que suele ser la hora en tus archivos
+                // Ejemplo: 180021Z -> extraemos 1800 o 180200
+                const matchHora = file.name.match(/_(\d{4,6})(?:Z|_|\.)/); 
+                // Adaptación simple para el WRF (busca 18UTC_XXX)
+                const matchWrf = file.name.match(/18UTC_(\d{3})/);
+
+                let tiempoClave = null;
+                
+                if (matchWrf) {
+                    tiempoClave = matchWrf[1]; // ej: 016
+                } else if (matchHora) {
+                    tiempoClave = matchHora[1].substring(0, 4); // Tomamos solo HHMM para agrupar
+                }
+
+                if (tiempoClave) {
+                    if (!archivosAgrupados[tiempoClave]) {
+                        archivosAgrupados[tiempoClave] = [];
+                    }
+                    archivosAgrupados[tiempoClave].push(file);
+                }
+            });
+
+            tiemposOrdenados = Object.keys(archivosAgrupados).sort();
+            
+            if (tiemposOrdenados.length > 0) {
+                const slider = document.getElementById('timeSlider');
+                slider.max = tiemposOrdenados.length - 1;
+                slider.value = 0;
+                document.getElementById('sliderContainer').style.display = 'block';
+                actualizarVista(0);
+            } else {
+                alert("No se encontraron timestamps válidos en los nombres de las imágenes.");
+            }
+        });
+
+        document.getElementById('timeSlider').addEventListener('input', function(e) {
+            actualizarVista(e.target.value);
+        });
+
+        function actualizarVista(index) {
+            const tiempoActual = tiemposOrdenados[index];
+            document.getElementById('timeDisplay').innerText = tiempoActual;
+            
+            const grid = document.getElementById('imageGrid');
+            grid.innerHTML = ''; // Limpiamos la vista anterior
+
+            const archivosDelTiempo = archivosAgrupados[tiempoActual];
+            
+            archivosDelTiempo.forEach(file => {
+                // Creamos una URL temporal para mostrar la imagen local
+                const imgUrl = URL.createObjectURL(file);
+                
+                const card = document.createElement('div');
+                card.className = 'card';
+                
+                // Determinamos el prefijo para el título
+                let titulo = "Imagen";
+                if(file.name.includes('WRF')) titulo = "Modelo WRF";
+                else if(file.name.includes('RMA')) titulo = "Radar RMA";
+                else if(file.name.includes('glm')) titulo = "Rayos GLM";
+                else if(file.name.includes('AIRMASS') || file.name.includes('TOP')) titulo = "Satélite GOES";
+
+                card.innerHTML = `
+                    <h3>${titulo}</h3>
+                    <img src="${imgUrl}" alt="${file.name}">
+                    <div class="info">${file.name}</div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+    </script>
+</body>
+</html>
