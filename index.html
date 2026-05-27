@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Dashboard Meteorológico - Operativo</title>
+    <title>Dashboard Meteorológico - Operativo Pro</title>
     <style>
         body { font-family: Arial, sans-serif; background-color: #1e1e1e; color: #fff; padding: 20px; margin: 0; }
         .controls { background: #2d2d2d; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
@@ -10,37 +10,19 @@
         h3 { margin-top: 0; font-size: 16px; color: #4CAF50; border-bottom: 1px solid #555; padding-bottom: 10px; display: flex; justify-content: space-between; align-items: center;}
         .info { font-size: 12px; color: #aaa; margin-top: 5px; word-break: break-all;}
         
-        .dashboard { 
-            display: grid; 
-            grid-template-columns: repeat(4, 1fr); 
-            gap: 15px; 
-            align-items: start;
-        }
+        .dashboard { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; align-items: start; }
         
-        .panel { 
-            background: #333; 
-            border-radius: 8px; 
-            padding: 15px; 
-            min-height: 400px; 
-            display: flex; 
-            flex-direction: column;
-        }
-
+        .panel { background: #333; border-radius: 8px; padding: 15px; min-height: 400px; display: flex; flex-direction: column; }
         .content-area { display: flex; flex-direction: column; gap: 15px; }
         .img-container { background: #222; padding: 10px; border-radius: 6px; position: relative; }
-        
         .img-container img { width: 100%; height: auto; border-radius: 4px; display: block; cursor: zoom-in; }
         
         .badge { background-color: #4CAF50; color: white; padding: 2px 6px; border-radius: 4px; font-size: 11px; }
         .badge-bolivar { background-color: #008CBA; }
         .badge-ezeiza { background-color: #f44336; }
-        
         .empty-state { color: #666; font-style: italic; text-align: center; margin-top: 50px; font-size: 14px; }
         
-        select.wrf-selector {
-            width: 100%; padding: 8px; margin-bottom: 15px; background-color: #444;
-            color: white; border: 1px solid #555; border-radius: 4px; cursor: pointer;
-        }
+        select.wrf-selector { width: 100%; padding: 8px; margin-bottom: 15px; background-color: #444; color: white; border: 1px solid #555; border-radius: 4px; cursor: pointer; }
 
         /* LIGHTBOX Y ZOOM */
         #zoomModal {
@@ -48,30 +30,36 @@
             width: 100%; height: 100%; background-color: rgba(0,0,0,0.9);
             justify-content: center; align-items: center; overflow: hidden;
         }
-        #zoomImg {
-            max-width: 90vw; max-height: 90vh; cursor: grab;
-            transition: transform 0.05s linear; 
-        }
+        #zoomImg { max-width: 90vw; max-height: 90vh; cursor: grab; transition: transform 0.05s linear; }
         #zoomImg:active { cursor: grabbing; }
-        .close-btn {
-            position: absolute; top: 20px; right: 30px; color: white;
-            font-size: 40px; font-weight: bold; cursor: pointer; z-index: 10000;
+        
+        .close-btn { position: absolute; top: 20px; right: 30px; color: white; font-size: 40px; font-weight: bold; cursor: pointer; z-index: 10000; }
+        
+        /* ESTILO PARA EL NOMBRE DEL ARCHIVO EN ZOOM */
+        #zoomTitle {
+            position: absolute; top: 20px; left: 30px; color: #4CAF50; font-size: 16px; font-weight: bold;
+            background: rgba(0,0,0,0.8); padding: 10px 15px; border-radius: 8px; z-index: 10000;
+            border: 1px solid #4CAF50; pointer-events: none;
         }
+        
         .zoom-info {
             position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
-            color: #ccc; font-size: 14px; background: rgba(0,0,0,0.5); padding: 5px 15px; border-radius: 20px; pointer-events: none;
+            color: #ccc; font-size: 14px; background: rgba(0,0,0,0.7); padding: 8px 20px; border-radius: 20px; pointer-events: none;
+            text-align: center;
         }
     </style>
 </head>
 <body>
 
     <div class="controls">
-        <h2>🌤️ Dashboard Meteorológico</h2>
-        <p>Selecciona la carpeta. Haz clic para Zoom. <strong>Usa las flechas &larr; &rarr; para animar el tiempo manteniendo el zoom.</strong></p>
+        <h2>🌤️ Dashboard Meteorológico Profesional</h2>
+        <p>Selecciona la carpeta. Al hacer Zoom en WRF:<br> 
+        &rarr; <strong>Flechas Izquierda/Derecha:</strong> Cambia la hora (salta 1 hora)<br>
+        &uarr; <strong>Flechas Arriba/Abajo:</strong> Cambia el producto meteorológico (Ej: CAPE, Viento, etc.)</p>
         <input type="file" id="folderInput" webkitdirectory directory multiple>
         
         <div id="sliderContainer" style="display: none; margin-top: 20px;">
-            <p><strong>Tiempo de Observación: </strong> <span id="timeDisplay" style="color:#4CAF50; font-weight:bold; font-size:18px;"></span></p>
+            <p><strong>Tiempo General: </strong> <span id="timeDisplay" style="color:#4CAF50; font-weight:bold; font-size:18px;"></span></p>
             <input type="range" id="timeSlider" min="0" max="0" value="0">
         </div>
     </div>
@@ -97,9 +85,10 @@
     </div>
 
     <div id="zoomModal">
+        <div id="zoomTitle">Nombre del Archivo</div>
         <span class="close-btn" onclick="cerrarZoom()">&times;</span>
         <img id="zoomImg" src="" alt="Zoom Image">
-        <div class="zoom-info">Use las flechas &larr; &rarr; para cambiar el tiempo</div>
+        <div class="zoom-info" id="zoomInstrucciones"></div>
     </div>
 
     <script>
@@ -107,18 +96,15 @@
         let wrfPorHora = {};        
         let tiemposOrdenados = [];
         let productoWrfActivo = ""; 
-        let categoriaZoomActual = ""; // Para saber qué producto está ampliado
+        let categoriaZoomActual = ""; 
 
-        function redondearMinutos(minutos) {
-            return Math.round(minutos / 15) * 15;
-        }
+        function redondearMinutos(minutos) { return Math.round(minutos / 15) * 15; }
 
         document.getElementById('folderInput').addEventListener('change', function(e) {
             const files = Array.from(e.target.files).filter(f => !f.name.startsWith('.') && (f.name.endsWith('.png') || f.name.endsWith('.jpg')));
             radarSatPorTiempo = {}; wrfPorHora = {}; let tiemposDisponibles = new Set();
             
             files.forEach(file => {
-                // CORRECCIÓN GLM: Forzamos a que busque la hora pegada a la "Z" o al ".png/.jpg"
                 const matchHora = file.name.match(/_(\d{4,6})(?:Z)?\.(?:png|jpg)/i); 
                 const matchWrf = file.name.match(/_(\d{2})UTC_(\d{3})/i); 
 
@@ -135,7 +121,6 @@
                     tiemposDisponibles.add(`${hh}:00`); 
                     
                 } else if (matchHora) {
-                    // Ahora matchHora[1] es seguro que es la hora (ej. 180200) y no la fecha
                     let hhStr = matchHora[1].substring(0, 2);
                     let mmStr = matchHora[1].substring(2, 4);
                     let mins = redondearMinutos(parseInt(mmStr, 10));
@@ -156,18 +141,14 @@
                 slider.value = 0;
                 document.getElementById('sliderContainer').style.display = 'block';
                 actualizarVista(0);
-            } else {
-                alert("No se encontraron timestamps válidos.");
-            }
+            } else { alert("No se encontraron timestamps válidos."); }
         });
 
         document.getElementById('timeSlider').addEventListener('input', function(e) { actualizarVista(e.target.value); });
-        
         document.getElementById('wrfSelect').addEventListener('change', function(e) {
             productoWrfActivo = e.target.value;
             const sliderIndex = document.getElementById('timeSlider').value;
-            const hhActual = tiemposOrdenados[sliderIndex].split(':')[0];
-            renderizarWRF(hhActual);
+            renderizarWRF(tiemposOrdenados[sliderIndex].split(':')[0]);
         });
 
         function renderizarWRF(hhActual) {
@@ -186,11 +167,11 @@
                 let file = wrfPorHora[hhActual][productoWrfActivo];
                 const imgUrl = URL.createObjectURL(file);
                 
-                // Se añade un data-cat para identificarlo al apretar las flechas
+                // NOTA: Se envia el file.name a la funcion de zoom
                 colWrf.innerHTML = `
                     <div class="img-container">
                         <span class="badge">Válido ${hhActual}:00Z</span>
-                        <img src="${imgUrl}" alt="${file.name}" data-cat="wrf" onclick="abrirZoom(this.src, 'wrf')">
+                        <img src="${imgUrl}" alt="${file.name}" data-cat="wrf" data-filename="${file.name}" onclick="abrirZoom(this.src, 'wrf', '${file.name}')">
                         <div class="info">${file.name}</div>
                     </div>
                 `;
@@ -202,7 +183,6 @@
 
         function crearHTMLObservacion(file, categoria) {
             const imgUrl = URL.createObjectURL(file);
-            let upperName = file.name.toUpperCase();
             let badge = "";
 
             if (categoria === 'radar-rma14') badge = `<span class="badge badge-bolivar">Bolívar</span>`;
@@ -214,7 +194,7 @@
             return `
                 <div class="img-container">
                     ${badge}
-                    <img src="${imgUrl}" alt="${file.name}" data-cat="${categoria}" onclick="abrirZoom(this.src, '${categoria}')">
+                    <img src="${imgUrl}" alt="${file.name}" data-cat="${categoria}" data-filename="${file.name}" onclick="abrirZoom(this.src, '${categoria}', '${file.name}')">
                     <div class="info">${file.name}</div>
                 </div>
             `;
@@ -243,115 +223,136 @@
                     let upperName = file.name.toUpperCase();
                     let cat = "";
 
-                    // Identificación minuciosa para que las flechas sepan exactamente a qué imagen cambiar
-                    if (upperName.includes('AIRMASS')) { cat = 'sat-airmass'; }
-                    else if (upperName.includes('TOP')) { cat = 'sat-top'; }
-                    else if (upperName.includes('RMA14')) { cat = 'radar-rma14'; }
-                    else if (upperName.includes('RMA2')) { cat = 'radar-rma2'; }
-                    else if (upperName.includes('GLM')) { cat = 'glm'; }
+                    if (upperName.includes('AIRMASS')) cat = 'sat-airmass';
+                    else if (upperName.includes('TOP')) cat = 'sat-top';
+                    else if (upperName.includes('RMA14')) cat = 'radar-rma14';
+                    else if (upperName.includes('RMA2')) cat = 'radar-rma2';
+                    else if (upperName.includes('GLM')) cat = 'glm';
 
                     if (cat) {
                         let htmlImg = crearHTMLObservacion(file, cat);
-
-                        if (cat.startsWith('sat')) {
-                            if(!haySat) { colSat.innerHTML = ""; haySat = true; }
-                            colSat.innerHTML += htmlImg;
-                        } 
-                        else if (cat.startsWith('radar')) {
-                            if(!hayRadar) { colRadar.innerHTML = ""; hayRadar = true; }
-                            colRadar.innerHTML += htmlImg;
-                        } 
-                        else if (cat === 'glm') {
-                            if(!hayGlm) { colGlm.innerHTML = ""; hayGlm = true; }
-                            colGlm.innerHTML += htmlImg;
-                        }
+                        if (cat.startsWith('sat')) { if(!haySat) { colSat.innerHTML = ""; haySat = true; } colSat.innerHTML += htmlImg; } 
+                        else if (cat.startsWith('radar')) { if(!hayRadar) { colRadar.innerHTML = ""; hayRadar = true; } colRadar.innerHTML += htmlImg; } 
+                        else if (cat === 'glm') { if(!hayGlm) { colGlm.innerHTML = ""; hayGlm = true; } colGlm.innerHTML += htmlImg; }
                     }
                 });
             }
         }
 
-        // --- LÓGICA DE NAVEGACIÓN Y ZOOM ---
+        // --- LÓGICA DE VISOR Y PANEO ---
         let scale = 1, panning = false, pointX = 0, pointY = 0, startX = 0, startY = 0;
         const zoomModal = document.getElementById('zoomModal');
         const zoomImg = document.getElementById('zoomImg');
+        const zoomTitle = document.getElementById('zoomTitle');
+        const zoomInst = document.getElementById('zoomInstrucciones');
 
-        function abrirZoom(src, categoria) {
+        function abrirZoom(src, categoria, filename) {
             zoomModal.style.display = 'flex';
             zoomImg.src = src;
             categoriaZoomActual = categoria;
+            zoomTitle.innerText = filename; // Mostrar el nombre del archivo
             
-            // Solo resetea el zoom si estás abriendo una imagen nueva de cero
+            // Textos de ayuda según qué estés viendo
+            if(categoria === 'wrf') zoomInst.innerHTML = "&larr; &rarr; Cambiar Hora | &uarr; &darr; Cambiar Producto";
+            else zoomInst.innerHTML = "&larr; &rarr; Cambiar Tiempo de Observación";
+
             scale = 1; pointX = 0; pointY = 0;
             aplicarTransformacion();
         }
 
-        function cerrarZoom() {
-            zoomModal.style.display = 'none';
-        }
+        function cerrarZoom() { zoomModal.style.display = 'none'; }
+        function aplicarTransformacion() { zoomImg.style.transform = `translate(${pointX}px, ${pointY}px) scale(${scale})`; }
 
-        function aplicarTransformacion() {
-            zoomImg.style.transform = `translate(${pointX}px, ${pointY}px) scale(${scale})`;
-        }
-
-        zoomModal.addEventListener('click', function(e) {
-            if (e.target === zoomModal) cerrarZoom();
-        });
-
+        zoomModal.addEventListener('click', function(e) { if (e.target === zoomModal) cerrarZoom(); });
         zoomModal.addEventListener('wheel', function(e) {
             e.preventDefault();
-            const delta = e.deltaY * -0.005; 
-            scale = Math.min(Math.max(0.5, scale + delta), 8); 
+            scale = Math.min(Math.max(0.5, scale + (e.deltaY * -0.005)), 8); 
             aplicarTransformacion();
         });
 
-        zoomImg.addEventListener('mousedown', function(e) {
-            e.preventDefault();
-            startX = e.clientX - pointX;
-            startY = e.clientY - pointY;
-            panning = true;
-        });
-
+        zoomImg.addEventListener('mousedown', function(e) { e.preventDefault(); startX = e.clientX - pointX; startY = e.clientY - pointY; panning = true; });
         window.addEventListener('mouseup', function() { panning = false; });
         window.addEventListener('mousemove', function(e) {
             if (!panning) return;
-            pointX = e.clientX - startX;
-            pointY = e.clientY - startY;
-            aplicarTransformacion();
+            pointX = e.clientX - startX; pointY = e.clientY - startY; aplicarTransformacion();
         });
 
-        // --- MAGIA: NAVEGACIÓN POR TECLADO ---
+        // --- NAVEGACIÓN MULTI-EJE POR TECLADO ---
         window.addEventListener('keydown', function(e) {
             if (zoomModal.style.display === 'flex') {
-                if (e.key === 'Escape') {
-                    cerrarZoom();
-                    return;
-                }
                 
-                if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
-                    let slider = document.getElementById('timeSlider');
-                    let currentVal = parseInt(slider.value);
-                    
-                    if (e.key === 'ArrowRight' && currentVal < slider.max) {
-                        slider.value = currentVal + 1;
-                    } else if (e.key === 'ArrowLeft' && currentVal > 0) {
-                        slider.value = currentVal - 1;
-                    } else {
-                        return; // Límite de tiempo
+                // Prevenir que las flechas muevan la página detrás del zoom
+                if(['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+                    e.preventDefault();
+                }
+
+                if (e.key === 'Escape') { cerrarZoom(); return; }
+
+                let slider = document.getElementById('timeSlider');
+                let currentVal = parseInt(slider.value);
+                let hhActual = tiemposOrdenados[currentVal].split(':')[0];
+
+                // LÓGICA EXCLUSIVA PARA EL WRF
+                if (categoriaZoomActual === 'wrf') {
+                    // Moverse en el TIEMPO (Izquierda/Derecha)
+                    if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+                        let horasWrf = Object.keys(wrfPorHora).sort();
+                        let idxHora = horasWrf.indexOf(hhActual);
+                        
+                        if (e.key === 'ArrowRight' && idxHora < horasWrf.length - 1) idxHora++;
+                        else if (e.key === 'ArrowLeft' && idxHora > 0) idxHora--;
+                        else return; // Ya estamos en el límite horario
+
+                        let nuevaHora = horasWrf[idxHora];
+                        
+                        // Buscamos el índice en el slider general que coincida con esta nueva hora (ej: 10:00)
+                        let nuevoSliderIndex = tiemposOrdenados.findIndex(t => t.startsWith(nuevaHora + ":"));
+                        if (nuevoSliderIndex !== -1) {
+                            slider.value = nuevoSliderIndex;
+                            actualizarVista(nuevoSliderIndex); // Esto actualiza el fondo (Radar/Satélite)
+                            
+                            let file = wrfPorHora[nuevaHora][productoWrfActivo];
+                            if (file) {
+                                zoomImg.src = URL.createObjectURL(file);
+                                zoomTitle.innerText = file.name;
+                            }
+                        }
+                    } 
+                    // Moverse entre VARIABLES (Arriba/Abajo)
+                    else if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+                        let productos = Object.keys(wrfPorHora[hhActual]).sort();
+                        let prodIdx = productos.indexOf(productoWrfActivo);
+                        
+                        if (e.key === 'ArrowUp') prodIdx = (prodIdx - 1 + productos.length) % productos.length;
+                        else if (e.key === 'ArrowDown') prodIdx = (prodIdx + 1) % productos.length;
+                        
+                        productoWrfActivo = productos[prodIdx];
+                        document.getElementById('wrfSelect').value = productoWrfActivo;
+                        
+                        let file = wrfPorHora[hhActual][productoWrfActivo];
+                        zoomImg.src = URL.createObjectURL(file);
+                        zoomTitle.innerText = file.name;
+                        
+                        renderizarWRF(hhActual); // Refresca la vista de fondo del WRF
                     }
+                } 
+                // LÓGICA PARA RADARES Y SATÉLITES (Solo tiempo min a min)
+                else {
+                    if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+                        if (e.key === 'ArrowRight' && currentVal < slider.max) slider.value = currentVal + 1;
+                        else if (e.key === 'ArrowLeft' && currentVal > 0) slider.value = currentVal - 1;
+                        else return;
 
-                    // 1. Movemos el tiempo global por debajo
-                    actualizarVista(slider.value);
+                        actualizarVista(slider.value);
 
-                    // 2. Buscamos en el HTML actualizado si hay una imagen que coincida con la que estábamos mirando
-                    // Ej. Si estábamos mirando "radar-rma14" (Bolívar), buscamos esa misma categoría en la nueva hora
-                    let nuevaImagenDom = document.querySelector(`img[data-cat="${categoriaZoomActual}"]`);
-                    
-                    if (nuevaImagenDom) {
-                        zoomImg.src = nuevaImagenDom.src;
-                        // NOTA: NO reseteamos scale ni pointX/Y. Esto mantiene el paneo perfecto.
-                    } else {
-                        // Si justo en ese paso de tiempo no hubo barrido de radar o satélite, cerramos el zoom
-                        cerrarZoom();
+                        let nuevaImagenDom = document.querySelector(`img[data-cat="${categoriaZoomActual}"]`);
+                        if (nuevaImagenDom) {
+                            zoomImg.src = nuevaImagenDom.src;
+                            zoomTitle.innerText = nuevaImagenDom.getAttribute('data-filename');
+                        } else {
+                            // Si en este paso de tiempo no hubo imagen (ej: el radar falló ese minuto), cerramos el zoom
+                            cerrarZoom();
+                        }
                     }
                 }
             }
