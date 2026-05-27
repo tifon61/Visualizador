@@ -278,85 +278,218 @@
         });
 
         // --- NAVEGACIÓN MULTI-EJE POR TECLADO ---
-        window.addEventListener('keydown', function(e) {
-            if (zoomModal.style.display === 'flex') {
-                
-                // Prevenir que las flechas muevan la página detrás del zoom
-                if(['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
-                    e.preventDefault();
-                }
+window.addEventListener('keydown', function(e) {
 
-                if (e.key === 'Escape') { cerrarZoom(); return; }
+    if (zoomModal.style.display === 'flex') {
 
-                let slider = document.getElementById('timeSlider');
-                let currentVal = parseInt(slider.value);
-                let hhActual = tiemposOrdenados[currentVal].split(':')[0];
+        if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.key)) {
+            e.preventDefault();
+        }
 
-                // LÓGICA EXCLUSIVA PARA EL WRF
-                if (categoriaZoomActual === 'wrf') {
-                    // Moverse en el TIEMPO (Izquierda/Derecha)
-                    if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
-                        let horasWrf = Object.keys(wrfPorHora).sort();
-                        let idxHora = horasWrf.indexOf(hhActual);
-                        
-                        if (e.key === 'ArrowRight' && idxHora < horasWrf.length - 1) idxHora++;
-                        else if (e.key === 'ArrowLeft' && idxHora > 0) idxHora--;
-                        else return; // Ya estamos en el límite horario
+        if (e.key === 'Escape') {
+            cerrarZoom();
+            return;
+        }
 
-                        let nuevaHora = horasWrf[idxHora];
-                        
-                        // Buscamos el índice en el slider general que coincida con esta nueva hora (ej: 10:00)
-                        let nuevoSliderIndex = tiemposOrdenados.findIndex(t => t.startsWith(nuevaHora + ":"));
-                        if (nuevoSliderIndex !== -1) {
-                            slider.value = nuevoSliderIndex;
-                            actualizarVista(nuevoSliderIndex); // Esto actualiza el fondo (Radar/Satélite)
-                            
-                            let file = wrfPorHora[nuevaHora][productoWrfActivo];
-                            if (file) {
-                                zoomImg.src = URL.createObjectURL(file);
-                                zoomTitle.innerText = file.name;
-                            }
-                        }
-                    } 
-                    // Moverse entre VARIABLES (Arriba/Abajo)
-                    else if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
-                        let productos = Object.keys(wrfPorHora[hhActual]).sort();
-                        let prodIdx = productos.indexOf(productoWrfActivo);
-                        
-                        if (e.key === 'ArrowUp') prodIdx = (prodIdx - 1 + productos.length) % productos.length;
-                        else if (e.key === 'ArrowDown') prodIdx = (prodIdx + 1) % productos.length;
-                        
-                        productoWrfActivo = productos[prodIdx];
-                        document.getElementById('wrfSelect').value = productoWrfActivo;
-                        
-                        let file = wrfPorHora[hhActual][productoWrfActivo];
+        let slider = document.getElementById('timeSlider');
+        let currentVal = parseInt(slider.value);
+
+        let tiempoActual = tiemposOrdenados[currentVal];
+        let hhActual = tiempoActual.split(':')[0];
+
+        // =====================================================
+        // ==================== WRF =============================
+        // =====================================================
+        if (categoriaZoomActual === 'wrf') {
+
+            // CAMBIO DE HORA
+            if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+
+                let horasWrf = Object.keys(wrfPorHora).sort();
+                let idxHora = horasWrf.indexOf(hhActual);
+
+                if (e.key === 'ArrowRight' && idxHora < horasWrf.length - 1) idxHora++;
+                else if (e.key === 'ArrowLeft' && idxHora > 0) idxHora--;
+                else return;
+
+                let nuevaHora = horasWrf[idxHora];
+
+                let nuevoSliderIndex = tiemposOrdenados.findIndex(
+                    t => t.startsWith(nuevaHora + ":")
+                );
+
+                if (nuevoSliderIndex !== -1) {
+
+                    slider.value = nuevoSliderIndex;
+
+                    // GUARDAR ZOOM
+                    let oldScale = scale;
+                    let oldPointX = pointX;
+                    let oldPointY = pointY;
+
+                    actualizarVista(nuevoSliderIndex);
+
+                    let file = wrfPorHora[nuevaHora][productoWrfActivo];
+
+                    if (file) {
                         zoomImg.src = URL.createObjectURL(file);
                         zoomTitle.innerText = file.name;
-                        
-                        renderizarWRF(hhActual); // Refresca la vista de fondo del WRF
-                    }
-                } 
-                // LÓGICA PARA RADARES Y SATÉLITES (Solo tiempo min a min)
-                else {
-                    if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
-                        if (e.key === 'ArrowRight' && currentVal < slider.max) slider.value = currentVal + 1;
-                        else if (e.key === 'ArrowLeft' && currentVal > 0) slider.value = currentVal - 1;
-                        else return;
 
-                        actualizarVista(slider.value);
-
-                        let nuevaImagenDom = document.querySelector(`img[data-cat="${categoriaZoomActual}"]`);
-                        if (nuevaImagenDom) {
-                            zoomImg.src = nuevaImagenDom.src;
-                            zoomTitle.innerText = nuevaImagenDom.getAttribute('data-filename');
-                        } else {
-                            // Si en este paso de tiempo no hubo imagen (ej: el radar falló ese minuto), cerramos el zoom
-                            cerrarZoom();
-                        }
+                        // RESTAURAR ZOOM
+                        scale = oldScale;
+                        pointX = oldPointX;
+                        pointY = oldPointY;
+                        aplicarTransformacion();
                     }
                 }
             }
-        });
+
+            // CAMBIO DE VARIABLE
+            else if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+
+                let productos = Object.keys(wrfPorHora[hhActual]).sort();
+
+                let prodIdx = productos.indexOf(productoWrfActivo);
+
+                if (e.key === 'ArrowUp') {
+                    prodIdx = (prodIdx - 1 + productos.length) % productos.length;
+                } else {
+                    prodIdx = (prodIdx + 1) % productos.length;
+                }
+
+                productoWrfActivo = productos[prodIdx];
+
+                document.getElementById('wrfSelect').value = productoWrfActivo;
+
+                let oldScale = scale;
+                let oldPointX = pointX;
+                let oldPointY = pointY;
+
+                let file = wrfPorHora[hhActual][productoWrfActivo];
+
+                zoomImg.src = URL.createObjectURL(file);
+                zoomTitle.innerText = file.name;
+
+                renderizarWRF(hhActual);
+
+                scale = oldScale;
+                pointX = oldPointX;
+                pointY = oldPointY;
+
+                aplicarTransformacion();
+            }
+        }
+
+        // =====================================================
+        // ========= RADAR / SATELITE / GLM ====================
+        // =====================================================
+        else {
+
+            // CAMBIO TEMPORAL
+            if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+
+                if (e.key === 'ArrowRight' && currentVal < slider.max) {
+                    slider.value = currentVal + 1;
+                }
+                else if (e.key === 'ArrowLeft' && currentVal > 0) {
+                    slider.value = currentVal - 1;
+                }
+                else {
+                    return;
+                }
+
+                // GUARDAR ZOOM
+                let oldScale = scale;
+                let oldPointX = pointX;
+                let oldPointY = pointY;
+
+                actualizarVista(slider.value);
+
+                let nuevaImagenDom = document.querySelector(
+                    `img[data-cat="${categoriaZoomActual}"]`
+                );
+
+                if (nuevaImagenDom) {
+
+                    zoomImg.src = nuevaImagenDom.src;
+                    zoomTitle.innerText =
+                        nuevaImagenDom.getAttribute('data-filename');
+
+                    // RESTAURAR ZOOM
+                    scale = oldScale;
+                    pointX = oldPointX;
+                    pointY = oldPointY;
+
+                    aplicarTransformacion();
+                }
+                else {
+                    cerrarZoom();
+                }
+            }
+
+            // =================================================
+            // CAMBIO ENTRE IMÁGENES DE LA MISMA COLUMNA
+            // =================================================
+            else if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+
+                let categorias = [];
+
+                // RADAR
+                if (categoriaZoomActual.startsWith('radar')) {
+                    categorias = ['radar-rma14', 'radar-rma2'];
+                }
+
+                // SATELITE
+                else if (categoriaZoomActual.startsWith('sat')) {
+                    categorias = ['sat-airmass', 'sat-top'];
+                }
+
+                // GLM
+                else if (categoriaZoomActual === 'glm') {
+                    categorias = ['glm'];
+                }
+
+                if (categorias.length <= 1) return;
+
+                let idx = categorias.indexOf(categoriaZoomActual);
+
+                if (e.key === 'ArrowUp') {
+                    idx = (idx - 1 + categorias.length) % categorias.length;
+                } else {
+                    idx = (idx + 1) % categorias.length;
+                }
+
+                let nuevaCategoria = categorias[idx];
+
+                let nuevaImagenDom = document.querySelector(
+                    `img[data-cat="${nuevaCategoria}"]`
+                );
+
+                if (nuevaImagenDom) {
+
+                    // GUARDAR ZOOM
+                    let oldScale = scale;
+                    let oldPointX = pointX;
+                    let oldPointY = pointY;
+
+                    categoriaZoomActual = nuevaCategoria;
+
+                    zoomImg.src = nuevaImagenDom.src;
+
+                    zoomTitle.innerText =
+                        nuevaImagenDom.getAttribute('data-filename');
+
+                    // RESTAURAR ZOOM
+                    scale = oldScale;
+                    pointX = oldPointX;
+                    pointY = oldPointY;
+
+                    aplicarTransformacion();
+                }
+            }
+        }
+    }
+});
     </script>
 </body>
 </html>
