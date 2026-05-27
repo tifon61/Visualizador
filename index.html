@@ -17,12 +17,12 @@
 <body>
 
     <div class="controls">
-        <h2>🌤️ Visualizador Meteorológico HTML</h2>
-        <p>1. Selecciona la carpeta con tus imágenes PNG (RMA, WRF, GOES, GLM).</p>
+        <h2>🌤️ Visualizador Meteorológico HTML (Con Tolerancia)</h2>
+        <p>Selecciona la carpeta. Las imágenes se agruparán automáticamente en bloques de 15 minutos.</p>
         <input type="file" id="folderInput" webkitdirectory directory multiple>
         
         <div id="sliderContainer" style="display: none; margin-top: 20px;">
-            <p><strong>Tiempo seleccionado: </strong> <span id="timeDisplay"></span></p>
+            <p><strong>Hora agrupada (Bloques de 15m): </strong> <span id="timeDisplay" style="color:#4CAF50; font-weight:bold; font-size:18px;"></span></p>
             <input type="range" id="timeSlider" min="0" max="0" value="0">
         </div>
     </div>
@@ -31,26 +31,47 @@
         </div>
 
     <script>
-        let archivosAgrupados = {}; // Guardará { "1800": [archivo1, archivo2], ... }
+        let archivosAgrupados = {}; 
         let tiemposOrdenados = [];
+
+        // Función para redondear al bloque de 15 minutos más cercano
+        function redondearHora(hh, mm) {
+            let minutosTotales = (parseInt(hh) * 60) + parseInt(mm);
+            let bloque15 = Math.round(minutosTotales / 15) * 15; // Cambia este 15 a 10 o 30 si prefieres otros intervalos
+            
+            let nuevaHora = Math.floor(bloque15 / 60);
+            let nuevosMinutos = bloque15 % 60;
+            
+            // Si se pasa de 23:59, vuelve a 00 (para el final del día)
+            if (nuevaHora >= 24) nuevaHora = 0;
+
+            // Formatear a HH:MM
+            let horaStr = nuevaHora.toString().padStart(2, '0');
+            let minStr = nuevosMinutos.toString().padStart(2, '0');
+            return `${horaStr}:${minStr} UTC`;
+        }
 
         document.getElementById('folderInput').addEventListener('change', function(e) {
             const files = Array.from(e.target.files).filter(f => f.name.endsWith('.png') || f.name.endsWith('.jpg'));
             archivosAgrupados = {};
             
             files.forEach(file => {
-                // Buscamos un patrón de 4 o 6 números seguidos que suele ser la hora en tus archivos
-                // Ejemplo: 180021Z -> extraemos 1800 o 180200
+                // Buscamos patrones de hora
                 const matchHora = file.name.match(/_(\d{4,6})(?:Z|_|\.)/); 
-                // Adaptación simple para el WRF (busca 18UTC_XXX)
-                const matchWrf = file.name.match(/18UTC_(\d{3})/);
+                const matchWrf = file.name.match(/18UTC_(\d{3})/); // Adaptación simple para WRF
 
                 let tiempoClave = null;
                 
-                if (matchWrf) {
-                    tiempoClave = matchWrf[1]; // ej: 016
-                } else if (matchHora) {
-                    tiempoClave = matchHora[1].substring(0, 4); // Tomamos solo HHMM para agrupar
+                if (matchHora) {
+                    let hh = matchHora[1].substring(0, 2);
+                    let mm = matchHora[1].substring(2, 4);
+                    // Aplicamos el redondeo para crear la "ventana de tiempo"
+                    tiempoClave = redondearHora(hh, mm);
+                } else if (matchWrf) {
+                    // Para tu WRF, asumiendo que el nombre no tiene la hora exacta en HHMM, 
+                    // lo agrupamos temporalmente por su timestep o prefijo si no coincide.
+                    // (Si tus cartas WRF tuvieran la hora exacta, usaríamos la misma lógica de arriba).
+                    tiempoClave = `WRF Step ${matchWrf[1]}`; 
                 }
 
                 if (tiempoClave) {
@@ -70,7 +91,7 @@
                 document.getElementById('sliderContainer').style.display = 'block';
                 actualizarVista(0);
             } else {
-                alert("No se encontraron timestamps válidos en los nombres de las imágenes.");
+                alert("No se encontraron timestamps válidos.");
             }
         });
 
@@ -83,18 +104,15 @@
             document.getElementById('timeDisplay').innerText = tiempoActual;
             
             const grid = document.getElementById('imageGrid');
-            grid.innerHTML = ''; // Limpiamos la vista anterior
+            grid.innerHTML = ''; 
 
             const archivosDelTiempo = archivosAgrupados[tiempoActual];
             
             archivosDelTiempo.forEach(file => {
-                // Creamos una URL temporal para mostrar la imagen local
                 const imgUrl = URL.createObjectURL(file);
-                
                 const card = document.createElement('div');
                 card.className = 'card';
                 
-                // Determinamos el prefijo para el título
                 let titulo = "Imagen";
                 if(file.name.includes('WRF')) titulo = "Modelo WRF";
                 else if(file.name.includes('RMA')) titulo = "Radar RMA";
