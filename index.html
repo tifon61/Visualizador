@@ -24,7 +24,6 @@
         
         select.wrf-selector { width: 100%; padding: 8px; margin-bottom: 15px; background-color: #444; color: white; border: 1px solid #555; border-radius: 4px; cursor: pointer; }
 
-        /* LIGHTBOX Y ZOOM */
         #zoomModal {
             display: none; position: fixed; z-index: 9999; top: 0; left: 0;
             width: 100%; height: 100%; background-color: rgba(0,0,0,0.9);
@@ -35,7 +34,6 @@
         
         .close-btn { position: absolute; top: 20px; right: 30px; color: white; font-size: 40px; font-weight: bold; cursor: pointer; z-index: 10000; }
         
-        /* ESTILO PARA EL NOMBRE DEL ARCHIVO EN ZOOM */
         #zoomTitle {
             position: absolute; top: 20px; left: 30px; color: #4CAF50; font-size: 16px; font-weight: bold;
             background: rgba(0,0,0,0.8); padding: 10px 15px; border-radius: 8px; z-index: 10000;
@@ -53,9 +51,7 @@
 
     <div class="controls">
         <h2>🌤️ Dashboard Meteorológico Profesional</h2>
-        <p>Selecciona la carpeta. Al hacer Zoom en WRF:<br> 
-        &rarr; <strong>Flechas Izquierda/Derecha:</strong> Cambia la hora (salta 1 hora)<br>
-        &uarr; <strong>Flechas Arriba/Abajo:</strong> Cambia el producto meteorológico (Ej: CAPE, Viento, etc.)</p>
+        <p>Selecciona la carpeta. Las imágenes se ordenan ahora por <strong>Día y Hora absolutos</strong>.</p>
         <input type="file" id="folderInput" webkitdirectory directory multiple>
         
         <div id="sliderContainer" style="display: none; margin-top: 20px;">
@@ -93,48 +89,100 @@
 
     <script>
         let radarSatPorTiempo = {}; 
-        let wrfPorHora = {};        
+        let wrfPorTiempo = {}; // Ahora indexado por "YYYYMMDD_HH00"
         let tiemposOrdenados = [];
+        let nombresVisuales = {}; // Guarda cómo se ve el texto "Día XX - HH:MM"
         let productoWrfActivo = ""; 
         let categoriaZoomActual = ""; 
 
-        function redondearMinutos(minutos) { return Math.round(minutos / 15) * 15; }
-
         document.getElementById('folderInput').addEventListener('change', function(e) {
             const files = Array.from(e.target.files).filter(f => !f.name.startsWith('.') && (f.name.endsWith('.png') || f.name.endsWith('.jpg')));
-            radarSatPorTiempo = {}; wrfPorHora = {}; let tiemposDisponibles = new Set();
             
-            files.forEach(file => {
-                const matchHora = file.name.match(/_(\d{4,6})(?:Z)?\.(?:png|jpg)/i); 
-                const matchWrf = file.name.match(/_(\d{2})UTC_(\d{3})/i); 
+            radarSatPorTiempo = {}; 
+            wrfPorTiempo = {}; 
+            tiemposOrdenados = [];
+            nombresVisuales = {};
+            let tiemposDisponibles = new Set();
+            
+            // PASO 1: Buscar la fecha más antigua de las observaciones para anclar el modelo
+            let obsDates = [];
+            let wrfOffsets = [];
+            
+            files.forEach(f => {
+                let mObs = f.name.match(/_((?:20)?\d{2})(\d{2})(\d{2})_(\d{2})(\d{2})/);
+                if(mObs) {
+                    let y = mObs[1].length === 2 ? "20" + mObs[1] : mObs[1];
+                    obsDates.push(new Date(parseInt(y), parseInt(mObs[2])-1, parseInt(mObs[3])));
+                }
+                let mWrf = f.name.match(/_(\d{2})UTC_(\d{3})/i);
+                if(mWrf) {
+                    let init = parseInt(mWrf[1], 10);
+                    let lead = parseInt(mWrf[2], 10);
+                    wrfOffsets.push(Math.floor((init + lead) / 24));
+                }
+            });
+            
+            // Fecha base para sincronizar (si no hay satélite/radar, usa hoy)
+            let baseDate = obsDates.length > 0 ? new Date(Math.min(...obsDates)) : new Date();
+            let baseWrfOffset = wrfOffsets.length > 0 ? Math.min(...wrfOffsets) : 0;
 
-                if (matchWrf) {
-                    let initHour = parseInt(matchWrf[1], 10);
-                    let leadTime = parseInt(matchWrf[2], 10);
-                    let validHour = (initHour + leadTime) % 24; 
-                    let hh = validHour.toString().padStart(2, '0');
+            // PASO 2: Generar la fecha absoluta para cada archivo
+            files.forEach(file => {
+                let dt = null;
+                let isWrf = false;
+                
+                let mObs = file.name.match(/_((?:20)?\d{2})(\d{2})(\d{2})_(\d{2})(\d{2})/);
+                let mWrf = file.name.match(/_(\d{2})UTC_(\d{3})/i);
+
+                if (mWrf) {
+                    isWrf = true;
+                    let init = parseInt(mWrf[1], 10);
+                    let lead = parseInt(mWrf[2], 10);
+                    let offset = Math.floor((init + lead) / 24);
+                    let hh = (init + lead) % 24;
+                    
+                    // Calculamos la fecha absoluta del WRF
+                    dt = new Date(baseDate);
+                    dt.setDate(dt.getDate() + (offset - baseWrfOffset));
+                    dt.setHours(hh, 0, 0, 0);
+                    
                     let matchProducto = file.name.match(/4km_(.+?)_NOR_NOR/i);
-                    let nombreProducto = matchProducto ? matchProducto[1] : "Desconocido";
+                    file._wrfProducto = matchProducto ? matchProducto[1] : "Desconocido";
                     
-                    if (!wrfPorHora[hh]) wrfPorHora[hh] = {};
-                    wrfPorHora[hh][nombreProducto] = file;
-                    tiemposDisponibles.add(`${hh}:00`); 
+                } else if (mObs) {
+                    let y = mObs[1].length === 2 ? "20" + mObs[1] : mObs[1];
+                    dt = new Date(parseInt(y), parseInt(mObs[2])-1, parseInt(mObs[3]), parseInt(mObs[4]), parseInt(mObs[5]));
+                    // Redondear minutos a cuartos de hora
+                    let mins = Math.round(dt.getMinutes() / 15) * 15;
+                    dt.setMinutes(mins);
+                    dt.setSeconds(0);
+                }
+
+                if (dt) {
+                    // Generar llave de formato YYYYMMDD_HHMM para que se ordene mágicamente
+                    let yyyy = dt.getFullYear();
+                    let mo = (dt.getMonth()+1).toString().padStart(2,'0');
+                    let dd = dt.getDate().toString().padStart(2,'0');
+                    let hh = dt.getHours().toString().padStart(2,'0');
+                    let mm = dt.getMinutes().toString().padStart(2,'0');
                     
-                } else if (matchHora) {
-                    let hhStr = matchHora[1].substring(0, 2);
-                    let mmStr = matchHora[1].substring(2, 4);
-                    let mins = redondearMinutos(parseInt(mmStr, 10));
-                    let hh = parseInt(hhStr, 10);
-                    if (mins >= 60) { mins = 0; hh = (hh + 1) % 24; }
+                    let tiempoClave = `${yyyy}${mo}${dd}_${hh}${mm}`;
+                    let visual = `Día ${dd} - ${hh}:${mm} UTC`;
                     
-                    let tiempoObs = `${hh.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
-                    if (!radarSatPorTiempo[tiempoObs]) radarSatPorTiempo[tiempoObs] = [];
-                    radarSatPorTiempo[tiempoObs].push(file);
-                    tiemposDisponibles.add(tiempoObs);
+                    nombresVisuales[tiempoClave] = visual;
+                    tiemposDisponibles.add(tiempoClave);
+                    
+                    if (isWrf) {
+                        if (!wrfPorTiempo[tiempoClave]) wrfPorTiempo[tiempoClave] = {};
+                        wrfPorTiempo[tiempoClave][file._wrfProducto] = file;
+                    } else {
+                        if (!radarSatPorTiempo[tiempoClave]) radarSatPorTiempo[tiempoClave] = [];
+                        radarSatPorTiempo[tiempoClave].push(file);
+                    }
                 }
             });
 
-            tiemposOrdenados = Array.from(tiemposDisponibles).sort();
+            tiemposOrdenados = Array.from(tiemposDisponibles).sort(); // Sort numérico cronológico perfecto
             if (tiemposOrdenados.length > 0) {
                 const slider = document.getElementById('timeSlider');
                 slider.max = tiemposOrdenados.length - 1;
@@ -145,17 +193,22 @@
         });
 
         document.getElementById('timeSlider').addEventListener('input', function(e) { actualizarVista(e.target.value); });
+        
         document.getElementById('wrfSelect').addEventListener('change', function(e) {
             productoWrfActivo = e.target.value;
             const sliderIndex = document.getElementById('timeSlider').value;
-            renderizarWRF(tiemposOrdenados[sliderIndex].split(':')[0]);
+            renderizarWRF(tiemposOrdenados[sliderIndex]);
         });
 
-        function renderizarWRF(hhActual) {
+        function renderizarWRF(tiempoClaveActual) {
             const colWrf = document.getElementById('content-wrf');
             const selectWrf = document.getElementById('wrfSelect');
-            if (wrfPorHora[hhActual]) {
-                const productosDisponibles = Object.keys(wrfPorHora[hhActual]).sort();
+            
+            // El WRF persiste toda la hora, buscamos la llave con "_HH00"
+            let wrfClave = tiempoClaveActual.substring(0, 11) + "00"; 
+            
+            if (wrfPorTiempo[wrfClave]) {
+                const productosDisponibles = Object.keys(wrfPorTiempo[wrfClave]).sort();
                 selectWrf.innerHTML = "";
                 productosDisponibles.forEach(prod => {
                     let option = document.createElement('option'); option.value = prod; option.text = "Var: " + prod;
@@ -164,13 +217,12 @@
                 if (!productosDisponibles.includes(productoWrfActivo)) productoWrfActivo = productosDisponibles[0];
                 selectWrf.value = productoWrfActivo; selectWrf.style.display = "block";
 
-                let file = wrfPorHora[hhActual][productoWrfActivo];
+                let file = wrfPorTiempo[wrfClave][productoWrfActivo];
                 const imgUrl = URL.createObjectURL(file);
                 
-                // NOTA: Se envia el file.name a la funcion de zoom
                 colWrf.innerHTML = `
                     <div class="img-container">
-                        <span class="badge">Válido ${hhActual}:00Z</span>
+                        <span class="badge">Válido ${nombresVisuales[wrfClave]}</span>
                         <img src="${imgUrl}" alt="${file.name}" data-cat="wrf" data-filename="${file.name}" onclick="abrirZoom(this.src, 'wrf', '${file.name}')">
                         <div class="info">${file.name}</div>
                     </div>
@@ -201,9 +253,8 @@
         }
 
         function actualizarVista(index) {
-            const tiempoActual = tiemposOrdenados[index]; 
-            document.getElementById('timeDisplay').innerText = tiempoActual + " UTC";
-            const hhActual = tiempoActual.split(':')[0]; 
+            const tiempoClaveActual = tiemposOrdenados[index]; 
+            document.getElementById('timeDisplay').innerText = nombresVisuales[tiempoClaveActual];
 
             const colRadar = document.getElementById('content-radar');
             const colSat = document.getElementById('content-sat');
@@ -213,11 +264,11 @@
             colSat.innerHTML = `<div class="empty-state">Sin datos para esta hora</div>`;
             colGlm.innerHTML = `<div class="empty-state">Sin datos para esta hora</div>`;
 
-            renderizarWRF(hhActual);
+            renderizarWRF(tiempoClaveActual);
 
-            if (radarSatPorTiempo[tiempoActual]) {
+            if (radarSatPorTiempo[tiempoClaveActual]) {
                 let hayRadar = false, haySat = false, hayGlm = false;
-                let archivosOrdenados = radarSatPorTiempo[tiempoActual].sort((a, b) => a.name.localeCompare(b.name));
+                let archivosOrdenados = radarSatPorTiempo[tiempoClaveActual].sort((a, b) => a.name.localeCompare(b.name));
 
                 archivosOrdenados.forEach(file => {
                     let upperName = file.name.toUpperCase();
@@ -239,7 +290,6 @@
             }
         }
 
-        // --- LÓGICA DE VISOR Y PANEO ---
         let scale = 1, panning = false, pointX = 0, pointY = 0, startX = 0, startY = 0;
         const zoomModal = document.getElementById('zoomModal');
         const zoomImg = document.getElementById('zoomImg');
@@ -250,11 +300,10 @@
             zoomModal.style.display = 'flex';
             zoomImg.src = src;
             categoriaZoomActual = categoria;
-            zoomTitle.innerText = filename; // Mostrar el nombre del archivo
+            zoomTitle.innerText = filename; 
             
-            // Textos de ayuda según qué estés viendo
             if(categoria === 'wrf') zoomInst.innerHTML = "&larr; &rarr; Cambiar Hora | &uarr; &darr; Cambiar Producto";
-            else zoomInst.innerHTML = "&larr; &rarr; Cambiar Tiempo de Observación";
+            else zoomInst.innerHTML = "&larr; &rarr; Cambiar Tiempo | &uarr; &darr; Cambiar Imagen misma hora";
 
             scale = 1; pointX = 0; pointY = 0;
             aplicarTransformacion();
@@ -277,219 +326,72 @@
             pointX = e.clientX - startX; pointY = e.clientY - startY; aplicarTransformacion();
         });
 
-        // --- NAVEGACIÓN MULTI-EJE POR TECLADO ---
-window.addEventListener('keydown', function(e) {
+        // NAVEGACIÓN MULTI-EJE ACTUALIZADA AL NUEVO SISTEMA DE FECHAS
+        window.addEventListener('keydown', function(e) {
+            if (zoomModal.style.display === 'flex') {
+                if(['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) e.preventDefault();
+                if (e.key === 'Escape') { cerrarZoom(); return; }
 
-    if (zoomModal.style.display === 'flex') {
+                let slider = document.getElementById('timeSlider');
+                let currentVal = parseInt(slider.value);
+                let tiempoClaveActual = tiemposOrdenados[currentVal];
 
-        if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.key)) {
-            e.preventDefault();
-        }
+                if (categoriaZoomActual === 'wrf') {
+                    let wrfClave = tiempoClaveActual.substring(0, 11) + "00"; // Llave del WRF (termina en 00)
+                    
+                    if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+                        let horasWrf = Object.keys(wrfPorTiempo).sort();
+                        let idxHora = horasWrf.indexOf(wrfClave);
+                        
+                        if (e.key === 'ArrowRight' && idxHora < horasWrf.length - 1) idxHora++;
+                        else if (e.key === 'ArrowLeft' && idxHora > 0) idxHora--;
+                        else return;
 
-        if (e.key === 'Escape') {
-            cerrarZoom();
-            return;
-        }
+                        let nuevaClaveWrf = horasWrf[idxHora];
+                        
+                        // Busca en la línea de tiempo global la hora que coincida con el nuevo salto del modelo
+                        let nuevoSliderIndex = tiemposOrdenados.findIndex(t => t.startsWith(nuevaClaveWrf.substring(0, 11)));
+                        if (nuevoSliderIndex !== -1) {
+                            slider.value = nuevoSliderIndex;
+                            actualizarVista(nuevoSliderIndex);
+                            let file = wrfPorTiempo[nuevaClaveWrf][productoWrfActivo];
+                            if (file) { zoomImg.src = URL.createObjectURL(file); zoomTitle.innerText = file.name; }
+                        }
+                    } 
+                    else if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+                        let productos = Object.keys(wrfPorTiempo[wrfClave]).sort();
+                        let prodIdx = productos.indexOf(productoWrfActivo);
+                        if (e.key === 'ArrowUp') prodIdx = (prodIdx - 1 + productos.length) % productos.length;
+                        else if (e.key === 'ArrowDown') prodIdx = (prodIdx + 1) % productos.length;
+                        
+                        productoWrfActivo = productos[prodIdx];
+                        document.getElementById('wrfSelect').value = productoWrfActivo;
+                        let file = wrfPorTiempo[wrfClave][productoWrfActivo];
+                        zoomImg.src = URL.createObjectURL(file); zoomTitle.innerText = file.name;
+                        renderizarWRF(tiempoClaveActual); 
+                    }
+                } 
+                else {
+                    if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+                        if (e.key === 'ArrowRight' && currentVal < slider.max) slider.value = currentVal + 1;
+                        else if (e.key === 'ArrowLeft' && currentVal > 0) slider.value = currentVal - 1;
+                        else return;
 
-        let slider = document.getElementById('timeSlider');
-        let currentVal = parseInt(slider.value);
-
-        let tiempoActual = tiemposOrdenados[currentVal];
-        let hhActual = tiempoActual.split(':')[0];
-
-        // =====================================================
-        // ==================== WRF =============================
-        // =====================================================
-        if (categoriaZoomActual === 'wrf') {
-
-            // CAMBIO DE HORA
-            if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
-
-                let horasWrf = Object.keys(wrfPorHora).sort();
-                let idxHora = horasWrf.indexOf(hhActual);
-
-                if (e.key === 'ArrowRight' && idxHora < horasWrf.length - 1) idxHora++;
-                else if (e.key === 'ArrowLeft' && idxHora > 0) idxHora--;
-                else return;
-
-                let nuevaHora = horasWrf[idxHora];
-
-                let nuevoSliderIndex = tiemposOrdenados.findIndex(
-                    t => t.startsWith(nuevaHora + ":")
-                );
-
-                if (nuevoSliderIndex !== -1) {
-
-                    slider.value = nuevoSliderIndex;
-
-                    // GUARDAR ZOOM
-                    let oldScale = scale;
-                    let oldPointX = pointX;
-                    let oldPointY = pointY;
-
-                    actualizarVista(nuevoSliderIndex);
-
-                    let file = wrfPorHora[nuevaHora][productoWrfActivo];
-
-                    if (file) {
-                        zoomImg.src = URL.createObjectURL(file);
-                        zoomTitle.innerText = file.name;
-
-                        // RESTAURAR ZOOM
-                        scale = oldScale;
-                        pointX = oldPointX;
-                        pointY = oldPointY;
-                        aplicarTransformacion();
+                        actualizarVista(slider.value);
+                        let nuevaImagenDom = document.querySelector(`img[data-cat="${categoriaZoomActual}"]`);
+                        if (nuevaImagenDom) { zoomImg.src = nuevaImagenDom.src; zoomTitle.innerText = nuevaImagenDom.getAttribute('data-filename'); }
+                    } 
+                    else if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+                        let lista = Array.from(document.querySelectorAll(`img[data-cat="${categoriaZoomActual}"]`));
+                        let actualIdx = lista.findIndex(img => img.src === zoomImg.src);
+                        if (actualIdx !== -1) {
+                            let nextIdx = (e.key === 'ArrowUp') ? (actualIdx - 1 + lista.length) % lista.length : (actualIdx + 1) % lista.length;
+                            zoomImg.src = lista[nextIdx].src; zoomTitle.innerText = lista[nextIdx].getAttribute('data-filename');
+                        }
                     }
                 }
             }
-
-            // CAMBIO DE VARIABLE
-            else if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
-
-                let productos = Object.keys(wrfPorHora[hhActual]).sort();
-
-                let prodIdx = productos.indexOf(productoWrfActivo);
-
-                if (e.key === 'ArrowUp') {
-                    prodIdx = (prodIdx - 1 + productos.length) % productos.length;
-                } else {
-                    prodIdx = (prodIdx + 1) % productos.length;
-                }
-
-                productoWrfActivo = productos[prodIdx];
-
-                document.getElementById('wrfSelect').value = productoWrfActivo;
-
-                let oldScale = scale;
-                let oldPointX = pointX;
-                let oldPointY = pointY;
-
-                let file = wrfPorHora[hhActual][productoWrfActivo];
-
-                zoomImg.src = URL.createObjectURL(file);
-                zoomTitle.innerText = file.name;
-
-                renderizarWRF(hhActual);
-
-                scale = oldScale;
-                pointX = oldPointX;
-                pointY = oldPointY;
-
-                aplicarTransformacion();
-            }
-        }
-
-        // =====================================================
-        // ========= RADAR / SATELITE / GLM ====================
-        // =====================================================
-        else {
-
-            // CAMBIO TEMPORAL
-            if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
-
-                if (e.key === 'ArrowRight' && currentVal < slider.max) {
-                    slider.value = currentVal + 1;
-                }
-                else if (e.key === 'ArrowLeft' && currentVal > 0) {
-                    slider.value = currentVal - 1;
-                }
-                else {
-                    return;
-                }
-
-                // GUARDAR ZOOM
-                let oldScale = scale;
-                let oldPointX = pointX;
-                let oldPointY = pointY;
-
-                actualizarVista(slider.value);
-
-                let nuevaImagenDom = document.querySelector(
-                    `img[data-cat="${categoriaZoomActual}"]`
-                );
-
-                if (nuevaImagenDom) {
-
-                    zoomImg.src = nuevaImagenDom.src;
-                    zoomTitle.innerText =
-                        nuevaImagenDom.getAttribute('data-filename');
-
-                    // RESTAURAR ZOOM
-                    scale = oldScale;
-                    pointX = oldPointX;
-                    pointY = oldPointY;
-
-                    aplicarTransformacion();
-                }
-                else {
-                    cerrarZoom();
-                }
-            }
-
-            // =================================================
-            // CAMBIO ENTRE IMÁGENES DE LA MISMA COLUMNA
-            // =================================================
-            else if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
-
-                let categorias = [];
-
-                // RADAR
-                if (categoriaZoomActual.startsWith('radar')) {
-                    categorias = ['radar-rma14', 'radar-rma2'];
-                }
-
-                // SATELITE
-                else if (categoriaZoomActual.startsWith('sat')) {
-                    categorias = ['sat-airmass', 'sat-top'];
-                }
-
-                // GLM
-                else if (categoriaZoomActual === 'glm') {
-                    categorias = ['glm'];
-                }
-
-                if (categorias.length <= 1) return;
-
-                let idx = categorias.indexOf(categoriaZoomActual);
-
-                if (e.key === 'ArrowUp') {
-                    idx = (idx - 1 + categorias.length) % categorias.length;
-                } else {
-                    idx = (idx + 1) % categorias.length;
-                }
-
-                let nuevaCategoria = categorias[idx];
-
-                let nuevaImagenDom = document.querySelector(
-                    `img[data-cat="${nuevaCategoria}"]`
-                );
-
-                if (nuevaImagenDom) {
-
-                    // GUARDAR ZOOM
-                    let oldScale = scale;
-                    let oldPointX = pointX;
-                    let oldPointY = pointY;
-
-                    categoriaZoomActual = nuevaCategoria;
-
-                    zoomImg.src = nuevaImagenDom.src;
-
-                    zoomTitle.innerText =
-                        nuevaImagenDom.getAttribute('data-filename');
-
-                    // RESTAURAR ZOOM
-                    scale = oldScale;
-                    pointX = oldPointX;
-                    pointY = oldPointY;
-
-                    aplicarTransformacion();
-                }
-            }
-        }
-    }
-});
+        });
     </script>
 </body>
 </html>
