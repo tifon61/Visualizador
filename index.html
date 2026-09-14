@@ -9,20 +9,25 @@
         input[type="range"] { width: 100%; margin-top: 15px; cursor: pointer; }
         h3 { margin-top: 0; font-size: 16px; color: #4CAF50; border-bottom: 1px solid #555; padding-bottom: 10px; display: flex; justify-content: space-between; align-items: center;}
         .info { font-size: 12px; color: #aaa; margin-top: 5px; word-break: break-all;}
-        
-        .dashboard { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; align-items: start; }
-        
+
+        .dashboard { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 15px; align-items: start; }
+
         .panel { background: #333; border-radius: 8px; padding: 15px; min-height: 400px; display: flex; flex-direction: column; }
         .content-area { display: flex; flex-direction: column; gap: 15px; }
         .img-container { background: #222; padding: 10px; border-radius: 6px; position: relative; }
         .img-container img { width: 100%; height: auto; border-radius: 4px; display: block; cursor: zoom-in; }
-        
+
         .badge { background-color: #4CAF50; color: white; padding: 2px 6px; border-radius: 4px; font-size: 11px; }
         .badge-bolivar { background-color: #008CBA; }
         .badge-ezeiza { background-color: #f44336; }
         .empty-state { color: #666; font-style: italic; text-align: center; margin-top: 50px; font-size: 14px; }
-        
+
         select.wrf-selector { width: 100%; padding: 8px; margin-bottom: 15px; background-color: #444; color: white; border: 1px solid #555; border-radius: 4px; cursor: pointer; }
+
+        .gdas-config { display: flex; flex-wrap: wrap; gap: 15px; align-items: flex-end; margin-top: 15px; padding-top: 15px; border-top: 1px solid #444; }
+        .gdas-config label { display: block; font-size: 12px; color: #aaa; margin-bottom: 4px; }
+        .gdas-config input { background-color: #444; color: white; border: 1px solid #555; border-radius: 4px; padding: 6px 8px; }
+        .gdas-config .hint { font-size: 11px; color: #777; max-width: 260px; }
 
         #zoomModal {
             display: none; position: fixed; z-index: 9999; top: 0; left: 0;
@@ -31,15 +36,15 @@
         }
         #zoomImg { max-width: 90vw; max-height: 90vh; cursor: grab; transition: transform 0.05s linear; }
         #zoomImg:active { cursor: grabbing; }
-        
+
         .close-btn { position: absolute; top: 20px; right: 30px; color: white; font-size: 40px; font-weight: bold; cursor: pointer; z-index: 10000; }
-        
+
         #zoomTitle {
             position: absolute; top: 20px; left: 30px; color: #4CAF50; font-size: 16px; font-weight: bold;
             background: rgba(0,0,0,0.8); padding: 10px 15px; border-radius: 8px; z-index: 10000;
             border: 1px solid #4CAF50; pointer-events: none;
         }
-        
+
         .zoom-info {
             position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
             color: #ccc; font-size: 14px; background: rgba(0,0,0,0.7); padding: 8px 20px; border-radius: 20px; pointer-events: none;
@@ -53,7 +58,19 @@
         <h2>🌤️ Dashboard Meteorológico Profesional</h2>
         <p>Selecciona la carpeta. Las imágenes se ordenan ahora por <strong>Día y Hora absolutos</strong>.</p>
         <input type="file" id="folderInput" webkitdirectory directory multiple>
-        
+
+        <div class="gdas-config">
+            <div>
+                <label for="gdasBaseDatetime">GDAS — Frame 01 corresponde a (UTC)</label>
+                <input type="datetime-local" id="gdasBaseDatetime">
+            </div>
+            <div>
+                <label for="gdasStepHoras">Paso entre frames (horas)</label>
+                <input type="number" id="gdasStepHoras" value="6" min="1" step="1" style="width:80px;">
+            </div>
+            <p class="hint">Los productos de fig_GDAS (CORTES, HGT_vort, SUPERFICIE, TITAE850) no traen fecha en el nombre, solo un número de frame — con esto se calcula a qué Día/Hora corresponde cada uno. Si cambiás estos valores después de cargar la carpeta, se recalcula solo.</p>
+        </div>
+
         <div id="sliderContainer" style="display: none; margin-top: 20px;">
             <p><strong>Tiempo General: </strong> <span id="timeDisplay" style="color:#4CAF50; font-weight:bold; font-size:18px;"></span></p>
             <input type="range" id="timeSlider" min="0" max="0" value="0">
@@ -71,12 +88,18 @@
             <div class="content-area" id="content-radar"><div class="empty-state">Esperando selección...</div></div>
         </div>
         <div class="panel" id="panel-sat">
-            <h3>Satélite GOES</h3>
+            <h3>Satélite</h3>
+            <select id="satSelect" class="wrf-selector" style="display: none;"></select>
             <div class="content-area" id="content-sat"><div class="empty-state">Esperando selección...</div></div>
         </div>
         <div class="panel" id="panel-glm">
             <h3>Rayos GLM</h3>
             <div class="content-area" id="content-glm"><div class="empty-state">Esperando selección...</div></div>
+        </div>
+        <div class="panel" id="panel-gdas">
+            <h3>Análisis GDAS</h3>
+            <select id="gdasSelect" class="wrf-selector" style="display: none;"></select>
+            <div class="content-area" id="content-gdas"><div class="empty-state">Esperando selección...</div></div>
         </div>
     </div>
 
@@ -88,125 +111,274 @@
     </div>
 
     <script>
-        let radarSatPorTiempo = {}; 
-        let wrfPorTiempo = {}; // Ahora indexado por "YYYYMMDD_HH00"
+        let radarSatPorTiempo = {};
+        let wrfPorTiempo = {}; // Indexado por "YYYYMMDD_HH00"
+        let satPorTiempo = {}; // Satélite con selector de producto (RAMMB/VIS/WV), igual patrón que WRF
+        let gdasPorTiempo = {}; // Análisis GDAS (CORTES/HGT_vort/SUPERFICIE/TITAE850), igual patrón que WRF
         let tiemposOrdenados = [];
         let nombresVisuales = {}; // Guarda cómo se ve el texto "Día XX - HH:MM"
-        let productoWrfActivo = ""; 
-        let categoriaZoomActual = ""; 
+        let productoWrfActivo = "";
+        let productoSatActivo = "";
+        let productoGdasActivo = "";
+        let categoriaZoomActual = "";
+        let lastFiles = []; // Se guarda para poder recalcular si cambia la config de GDAS sin re-elegir carpeta
+
+        // Etiquetas legibles para los productos de satélite RAMMB (banda cruda si no está en la lista)
+        const ETIQUETAS_RAMMB = {
+            'band_02': 'RAMMB Banda 02 (Visible)',
+            'band_08': 'RAMMB Banda 08 (Vapor Alto)',
+            'band_09': 'RAMMB Banda 09 (Vapor Medio)',
+            'band_10': 'RAMMB Banda 10 (Vapor Bajo)',
+            'band_13': 'RAMMB Banda 13 (IR Limpio)',
+            'natural_color': 'RAMMB Color Natural',
+            'rgb_air_mass': 'RAMMB RGB Masa de Aire'
+        };
+
+        // Etiquetas legibles para los productos de fig_GDAS. La clave interna
+        // combina subcarpeta + variante para que no choquen entre sí (ej. TITAE
+        // aparece tanto en CORTES, como corte vertical, como en TITAE850, como mapa).
+        const ETIQUETAS_GDAS = {
+            'corte_titae_850': 'Corte vertical Titae 850hPa',
+            'corte_wind_850': 'Corte vertical Viento 850hPa',
+            'hgt_200': 'Altura geopotencial y vorticidad 200hPa',
+            'hgt_300': 'Altura geopotencial y vorticidad 300hPa',
+            'hgt_500': 'Altura geopotencial y vorticidad 500hPa',
+            'hgt_850': 'Altura geopotencial y vorticidad 850hPa',
+            'hgt_1000': 'Altura geopotencial y vorticidad 1000hPa',
+            'slp': 'Presión a nivel del mar (SLP)',
+            'slp_zoom': 'Presión a nivel del mar (zoom)',
+            'titae850_mapa': 'Titae 850hPa (mapa)'
+        };
+
+        // Convierte un número de frame de fig_GDAS a la misma clave temporal
+        // "YYYYMMDD_HHMM" que usa el resto de la app, usando la fecha base y el
+        // paso (en horas) configurados arriba. Devuelve null si todavía no se
+        // configuró la fecha base.
+        function gdasFrameToClave(frameNum) {
+            const baseVal = document.getElementById('gdasBaseDatetime').value;
+            if (!baseVal) return null;
+            const stepHoras = parseFloat(document.getElementById('gdasStepHoras').value) || 6;
+            const base = new Date(baseVal);
+            if (isNaN(base.getTime())) return null;
+            const dt = new Date(base.getTime() + (frameNum - 1) * stepHoras * 3600000);
+
+            const yyyy = dt.getFullYear();
+            const mo = (dt.getMonth() + 1).toString().padStart(2, '0');
+            const dd = dt.getDate().toString().padStart(2, '0');
+            const hh = dt.getHours().toString().padStart(2, '0');
+            const mm = dt.getMinutes().toString().padStart(2, '0');
+
+            return {
+                clave: `${yyyy}${mo}${dd}_${hh}${mm}`,
+                visual: `Día ${dd} - ${hh}:${mm} UTC`
+            };
+        }
 
         document.getElementById('folderInput').addEventListener('change', function(e) {
-            const files = Array.from(e.target.files).filter(f => !f.name.startsWith('.') && (f.name.endsWith('.png') || f.name.endsWith('.jpg')));
-            
-            radarSatPorTiempo = {}; 
-            wrfPorTiempo = {}; 
+            lastFiles = Array.from(e.target.files).filter(f => !f.name.startsWith('.') && (f.name.endsWith('.png') || f.name.endsWith('.jpg')));
+            procesarArchivos();
+        });
+
+        // Si se cambia la fecha base o el paso de GDAS después de haber elegido
+        // la carpeta, se recalcula todo sin pedir la carpeta de nuevo.
+        document.getElementById('gdasBaseDatetime').addEventListener('change', function() { if (lastFiles.length) procesarArchivos(); });
+        document.getElementById('gdasStepHoras').addEventListener('change', function() { if (lastFiles.length) procesarArchivos(); });
+
+        function procesarArchivos() {
+            const files = lastFiles;
+
+            radarSatPorTiempo = {};
+            wrfPorTiempo = {};
+            satPorTiempo = {};
+            gdasPorTiempo = {};
             tiemposOrdenados = [];
             nombresVisuales = {};
             let tiemposDisponibles = new Set();
-            
-            // PASO 1: Buscar la fecha más antigua de las observaciones para anclar el modelo
+            let gdasSinFechaBase = 0;
+
+            // PASO 1: Buscar la fecha más antigua de las observaciones (obs "clásicas"
+            // con fecha en el nombre, más RAMMB) para anclar el modelo WRF
             let obsDates = [];
             let wrfOffsets = [];
-            
+
             files.forEach(f => {
                 let mObs = f.name.match(/_((?:20)?\d{2})(\d{2})(\d{2})_(\d{2})(\d{2})/);
-                if(mObs) {
+                let mRammb = f.name.match(/full_disk---.+?-opacity-\d+---(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})/i);
+                let mNefo = f.name.match(/^nefo_((?:20)?\d{2})(\d{2})(\d{2})_(\d{2})\.jpg$/i);
+                if (mRammb) {
+                    obsDates.push(new Date(parseInt(mRammb[1]), parseInt(mRammb[2]) - 1, parseInt(mRammb[3])));
+                } else if (mNefo) {
+                    let y = mNefo[1].length === 2 ? "20" + mNefo[1] : mNefo[1];
+                    obsDates.push(new Date(parseInt(y), parseInt(mNefo[2]) - 1, parseInt(mNefo[3])));
+                } else if (mObs) {
                     let y = mObs[1].length === 2 ? "20" + mObs[1] : mObs[1];
-                    obsDates.push(new Date(parseInt(y), parseInt(mObs[2])-1, parseInt(mObs[3])));
+                    obsDates.push(new Date(parseInt(y), parseInt(mObs[2]) - 1, parseInt(mObs[3])));
                 }
                 let mWrf = f.name.match(/_(\d{2})UTC_(\d{3})/i);
-                if(mWrf) {
+                if (mWrf) {
                     let init = parseInt(mWrf[1], 10);
                     let lead = parseInt(mWrf[2], 10);
                     wrfOffsets.push(Math.floor((init + lead) / 24));
                 }
             });
-            
+
             // Fecha base para sincronizar (si no hay satélite/radar, usa hoy)
             let baseDate = obsDates.length > 0 ? new Date(Math.min(...obsDates)) : new Date();
             let baseWrfOffset = wrfOffsets.length > 0 ? Math.min(...wrfOffsets) : 0;
 
-            // PASO 2: Generar la fecha absoluta para cada archivo
+            // PASO 2: Generar la fecha absoluta para cada archivo y clasificarlo
             files.forEach(file => {
-                let dt = null;
-                let isWrf = false;
-                
-                let mObs = file.name.match(/_((?:20)?\d{2})(\d{2})(\d{2})_(\d{2})(\d{2})/);
-                let mWrf = file.name.match(/_(\d{2})UTC_(\d{3})/i);
+                const name = file.name;
+                const pad = (n) => n.toString().padStart(2, '0');
+
+                let mWrf = name.match(/_(\d{2})UTC_(\d{3})/i);
+                let mRammb = name.match(/full_disk---(.+?)-opacity-\d+---(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})/i);
+                let mCorteTitae = name.match(/^corte_titae(\d{2})_850\.png$/i);
+                let mCorteWind = name.match(/^corte_wind(\d{2})_850\.png$/i);
+                let mHgt = name.match(/^fighgt(\d{3,4})_(\d{2})\.png$/i);
+                let mSlpZoom = name.match(/^zoomSLP(\d{2})\.png$/i);
+                let mSlp = !mSlpZoom && name.match(/^figSLP(\d{2})\.png$/i);
+                let mTitae850 = name.match(/^fig_titae(\d{2})_850\.png$/i);
+                let mNefo = name.match(/^nefo_((?:20)?\d{2})(\d{2})(\d{2})_(\d{2})\.jpg$/i);
+                let mObs = name.match(/_((?:20)?\d{2})(\d{2})(\d{2})_(\d{2})(\d{2})/);
 
                 if (mWrf) {
-                    isWrf = true;
                     let init = parseInt(mWrf[1], 10);
                     let lead = parseInt(mWrf[2], 10);
                     let offset = Math.floor((init + lead) / 24);
                     let hh = (init + lead) % 24;
-                    
-                    // Calculamos la fecha absoluta del WRF
-                    dt = new Date(baseDate);
+
+                    let dt = new Date(baseDate);
                     dt.setDate(dt.getDate() + (offset - baseWrfOffset));
                     dt.setHours(hh, 0, 0, 0);
-                    
-                    let matchProducto = file.name.match(/4km_(.+?)_NOR_NOR/i);
-                    file._wrfProducto = matchProducto ? matchProducto[1] : "Desconocido";
-                    
+
+                    let matchProducto = name.match(/4km_(.+?)_NOR_NOR/i);
+                    let producto = matchProducto ? matchProducto[1] : "Desconocido";
+
+                    let yyyy = dt.getFullYear(), mo = pad(dt.getMonth() + 1), dd = pad(dt.getDate()), h = pad(dt.getHours());
+                    let clave = `${yyyy}${mo}${dd}_${h}00`;
+                    nombresVisuales[clave] = `Día ${dd} - ${h}:00 UTC`;
+                    tiemposDisponibles.add(clave);
+                    if (!wrfPorTiempo[clave]) wrfPorTiempo[clave] = {};
+                    wrfPorTiempo[clave][producto] = file;
+
+                } else if (mRammb) {
+                    let [, productoRaw, yyyy, mo, dd, hh, mm] = mRammb;
+                    let dt = new Date(parseInt(yyyy), parseInt(mo) - 1, parseInt(dd), parseInt(hh), parseInt(mm));
+                    let mins = Math.round(dt.getMinutes() / 15) * 15;
+                    dt.setMinutes(mins, 0, 0);
+
+                    let yyyy2 = dt.getFullYear(), mo2 = pad(dt.getMonth() + 1), dd2 = pad(dt.getDate()), h2 = pad(dt.getHours()), m2 = pad(dt.getMinutes());
+                    let clave = `${yyyy2}${mo2}${dd2}_${h2}${m2}`;
+                    let producto = ETIQUETAS_RAMMB[productoRaw.toLowerCase()] || `RAMMB ${productoRaw}`;
+
+                    nombresVisuales[clave] = `Día ${dd2} - ${h2}:${m2} UTC`;
+                    tiemposDisponibles.add(clave);
+                    if (!satPorTiempo[clave]) satPorTiempo[clave] = {};
+                    satPorTiempo[clave][producto] = file;
+
+                } else if (mCorteTitae || mCorteWind || mHgt || mSlp || mSlpZoom || mTitae850) {
+                    let frame, gdasKey;
+                    if (mCorteTitae) { frame = parseInt(mCorteTitae[1], 10); gdasKey = 'corte_titae_850'; }
+                    else if (mCorteWind) { frame = parseInt(mCorteWind[1], 10); gdasKey = 'corte_wind_850'; }
+                    else if (mHgt) { frame = parseInt(mHgt[2], 10); gdasKey = 'hgt_' + mHgt[1]; }
+                    else if (mSlp) { frame = parseInt(mSlp[1], 10); gdasKey = 'slp'; }
+                    else if (mSlpZoom) { frame = parseInt(mSlpZoom[1], 10); gdasKey = 'slp_zoom'; }
+                    else if (mTitae850) { frame = parseInt(mTitae850[1], 10); gdasKey = 'titae850_mapa'; }
+
+                    let resultado = gdasFrameToClave(frame);
+                    if (!resultado) { gdasSinFechaBase++; return; }
+
+                    let producto = ETIQUETAS_GDAS[gdasKey] || gdasKey;
+                    nombresVisuales[resultado.clave] = resultado.visual;
+                    tiemposDisponibles.add(resultado.clave);
+                    if (!gdasPorTiempo[resultado.clave]) gdasPorTiempo[resultado.clave] = {};
+                    gdasPorTiempo[resultado.clave][producto] = file;
+
+                } else if (mNefo) {
+                    let y = mNefo[1].length === 2 ? "20" + mNefo[1] : mNefo[1];
+                    let dt = new Date(parseInt(y), parseInt(mNefo[2]) - 1, parseInt(mNefo[3]), parseInt(mNefo[4]), 0);
+
+                    let yyyy = dt.getFullYear(), mo = pad(dt.getMonth() + 1), dd = pad(dt.getDate()), hh = pad(dt.getHours());
+                    let clave = `${yyyy}${mo}${dd}_${hh}00`;
+                    nombresVisuales[clave] = `Día ${dd} - ${hh}:00 UTC`;
+                    tiemposDisponibles.add(clave);
+                    if (!satPorTiempo[clave]) satPorTiempo[clave] = {};
+                    satPorTiempo[clave]['Nefoanálisis'] = file;
+
                 } else if (mObs) {
                     let y = mObs[1].length === 2 ? "20" + mObs[1] : mObs[1];
-                    dt = new Date(parseInt(y), parseInt(mObs[2])-1, parseInt(mObs[3]), parseInt(mObs[4]), parseInt(mObs[5]));
-                    // Redondear minutos a cuartos de hora
+                    let dt = new Date(parseInt(y), parseInt(mObs[2]) - 1, parseInt(mObs[3]), parseInt(mObs[4]), parseInt(mObs[5]));
                     let mins = Math.round(dt.getMinutes() / 15) * 15;
-                    dt.setMinutes(mins);
-                    dt.setSeconds(0);
-                }
+                    dt.setMinutes(mins, 0, 0);
 
-                if (dt) {
-                    // Generar llave de formato YYYYMMDD_HHMM para que se ordene mágicamente
-                    let yyyy = dt.getFullYear();
-                    let mo = (dt.getMonth()+1).toString().padStart(2,'0');
-                    let dd = dt.getDate().toString().padStart(2,'0');
-                    let hh = dt.getHours().toString().padStart(2,'0');
-                    let mm = dt.getMinutes().toString().padStart(2,'0');
-                    
-                    let tiempoClave = `${yyyy}${mo}${dd}_${hh}${mm}`;
-                    let visual = `Día ${dd} - ${hh}:${mm} UTC`;
-                    
-                    nombresVisuales[tiempoClave] = visual;
-                    tiemposDisponibles.add(tiempoClave);
-                    
-                    if (isWrf) {
-                        if (!wrfPorTiempo[tiempoClave]) wrfPorTiempo[tiempoClave] = {};
-                        wrfPorTiempo[tiempoClave][file._wrfProducto] = file;
+                    let yyyy = dt.getFullYear(), mo = pad(dt.getMonth() + 1), dd = pad(dt.getDate()), hh = pad(dt.getHours()), mm = pad(dt.getMinutes());
+                    let clave = `${yyyy}${mo}${dd}_${hh}${mm}`;
+                    nombresVisuales[clave] = `Día ${dd} - ${hh}:${mm} UTC`;
+                    tiemposDisponibles.add(clave);
+
+                    let mVis = name.match(/VIS_C0\d_([A-Z]+)_ALTA/i);
+                    let mWv = name.match(/VAP_C0\d_([A-Z]+)_ALTA/i);
+
+                    if (mVis) {
+                        let producto = `GOES Visible (${mVis[1].toUpperCase()})`;
+                        if (!satPorTiempo[clave]) satPorTiempo[clave] = {};
+                        satPorTiempo[clave][producto] = file;
+                    } else if (mWv) {
+                        let producto = `GOES Vapor de Agua (${mWv[1].toUpperCase()})`;
+                        if (!satPorTiempo[clave]) satPorTiempo[clave] = {};
+                        satPorTiempo[clave][producto] = file;
                     } else {
-                        if (!radarSatPorTiempo[tiempoClave]) radarSatPorTiempo[tiempoClave] = [];
-                        radarSatPorTiempo[tiempoClave].push(file);
+                        // Radar RMA, GLM, o satélite "legado" (AIRMASS/TOP) — se muestran
+                        // todos juntos en su panel, sin selector, como ya funcionaba.
+                        if (!radarSatPorTiempo[clave]) radarSatPorTiempo[clave] = [];
+                        radarSatPorTiempo[clave].push(file);
                     }
                 }
             });
 
-            tiemposOrdenados = Array.from(tiemposDisponibles).sort(); // Sort numérico cronológico perfecto
+            tiemposOrdenados = Array.from(tiemposDisponibles).sort();
+
+            if (gdasSinFechaBase > 0) {
+                alert(`Se encontraron ${gdasSinFechaBase} archivo(s) de fig_GDAS pero todavía no configuraste "GDAS — Frame 01 corresponde a" arriba. Configurala y se van a agregar solos, sin tener que volver a elegir la carpeta.`);
+            }
+
             if (tiemposOrdenados.length > 0) {
                 const slider = document.getElementById('timeSlider');
                 slider.max = tiemposOrdenados.length - 1;
                 slider.value = 0;
                 document.getElementById('sliderContainer').style.display = 'block';
                 actualizarVista(0);
-            } else { alert("No se encontraron timestamps válidos."); }
-        });
+            } else if (gdasSinFechaBase === 0) {
+                alert("No se encontraron timestamps válidos.");
+            }
+        }
 
         document.getElementById('timeSlider').addEventListener('input', function(e) { actualizarVista(e.target.value); });
-        
+
         document.getElementById('wrfSelect').addEventListener('change', function(e) {
             productoWrfActivo = e.target.value;
             const sliderIndex = document.getElementById('timeSlider').value;
             renderizarWRF(tiemposOrdenados[sliderIndex]);
         });
+        document.getElementById('satSelect').addEventListener('change', function(e) {
+            productoSatActivo = e.target.value;
+            const sliderIndex = document.getElementById('timeSlider').value;
+            renderizarSat(tiemposOrdenados[sliderIndex]);
+        });
+        document.getElementById('gdasSelect').addEventListener('change', function(e) {
+            productoGdasActivo = e.target.value;
+            const sliderIndex = document.getElementById('timeSlider').value;
+            renderizarGDAS(tiemposOrdenados[sliderIndex]);
+        });
 
         function renderizarWRF(tiempoClaveActual) {
             const colWrf = document.getElementById('content-wrf');
             const selectWrf = document.getElementById('wrfSelect');
-            
+
             // El WRF persiste toda la hora, buscamos la llave con "_HH00"
-            let wrfClave = tiempoClaveActual.substring(0, 11) + "00"; 
-            
+            let wrfClave = tiempoClaveActual.substring(0, 11) + "00";
+
             if (wrfPorTiempo[wrfClave]) {
                 const productosDisponibles = Object.keys(wrfPorTiempo[wrfClave]).sort();
                 selectWrf.innerHTML = "";
@@ -219,7 +391,7 @@
 
                 let file = wrfPorTiempo[wrfClave][productoWrfActivo];
                 const imgUrl = URL.createObjectURL(file);
-                
+
                 colWrf.innerHTML = `
                     <div class="img-container">
                         <span class="badge">Válido ${nombresVisuales[wrfClave]}</span>
@@ -233,6 +405,48 @@
             }
         }
 
+        // renderizarSat y renderizarGDAS: mismo patrón que renderizarWRF (selector
+        // de producto + una imagen), pero sin la persistencia horaria del WRF: cada
+        // uno se busca directo en su propia clave temporal exacta.
+        function renderizarSelectorSimple(tiempoClaveActual, porTiempo, selectId, colId, productoActivo, setProductoActivo) {
+            const col = document.getElementById(colId);
+            const select = document.getElementById(selectId);
+
+            if (porTiempo[tiempoClaveActual]) {
+                const productosDisponibles = Object.keys(porTiempo[tiempoClaveActual]).sort();
+                select.innerHTML = "";
+                productosDisponibles.forEach(prod => {
+                    let option = document.createElement('option'); option.value = prod; option.text = prod;
+                    select.appendChild(option);
+                });
+                if (!productosDisponibles.includes(productoActivo)) productoActivo = productosDisponibles[0];
+                setProductoActivo(productoActivo);
+                select.value = productoActivo; select.style.display = "block";
+
+                let file = porTiempo[tiempoClaveActual][productoActivo];
+                const imgUrl = URL.createObjectURL(file);
+                const cat = selectId === 'satSelect' ? 'sat' : 'gdas';
+
+                col.innerHTML = `
+                    <div class="img-container">
+                        <img src="${imgUrl}" alt="${file.name}" data-cat="${cat}" data-filename="${file.name}" onclick="abrirZoom(this.src, '${cat}', '${file.name}')">
+                        <div class="info">${file.name}</div>
+                    </div>
+                `;
+            } else {
+                select.style.display = "none";
+                col.innerHTML = `<div class="empty-state">Sin datos para esta hora</div>`;
+            }
+        }
+
+        function renderizarSat(tiempoClaveActual) {
+            renderizarSelectorSimple(tiempoClaveActual, satPorTiempo, 'satSelect', 'content-sat', productoSatActivo, (p) => productoSatActivo = p);
+        }
+
+        function renderizarGDAS(tiempoClaveActual) {
+            renderizarSelectorSimple(tiempoClaveActual, gdasPorTiempo, 'gdasSelect', 'content-gdas', productoGdasActivo, (p) => productoGdasActivo = p);
+        }
+
         function crearHTMLObservacion(file, categoria) {
             const imgUrl = URL.createObjectURL(file);
             let badge = "";
@@ -242,7 +456,7 @@
             else if (categoria === 'sat-airmass') badge = `<span class="badge">Airmass</span>`;
             else if (categoria === 'sat-top') badge = `<span class="badge">Tope Nuboso</span>`;
             else if (categoria === 'glm') badge = `<span class="badge">Rayos GLM</span>`;
-            
+
             return `
                 <div class="img-container">
                     ${badge}
@@ -253,21 +467,21 @@
         }
 
         function actualizarVista(index) {
-            const tiempoClaveActual = tiemposOrdenados[index]; 
+            const tiempoClaveActual = tiemposOrdenados[index];
             document.getElementById('timeDisplay').innerText = nombresVisuales[tiempoClaveActual];
 
             const colRadar = document.getElementById('content-radar');
-            const colSat = document.getElementById('content-sat');
             const colGlm = document.getElementById('content-glm');
 
             colRadar.innerHTML = `<div class="empty-state">Sin datos para esta hora</div>`;
-            colSat.innerHTML = `<div class="empty-state">Sin datos para esta hora</div>`;
             colGlm.innerHTML = `<div class="empty-state">Sin datos para esta hora</div>`;
 
             renderizarWRF(tiempoClaveActual);
+            renderizarSat(tiempoClaveActual);
+            renderizarGDAS(tiempoClaveActual);
 
             if (radarSatPorTiempo[tiempoClaveActual]) {
-                let hayRadar = false, haySat = false, hayGlm = false;
+                let hayRadar = false, hayGlm = false;
                 let archivosOrdenados = radarSatPorTiempo[tiempoClaveActual].sort((a, b) => a.name.localeCompare(b.name));
 
                 archivosOrdenados.forEach(file => {
@@ -282,9 +496,15 @@
 
                     if (cat) {
                         let htmlImg = crearHTMLObservacion(file, cat);
-                        if (cat.startsWith('sat')) { if(!haySat) { colSat.innerHTML = ""; haySat = true; } colSat.innerHTML += htmlImg; } 
-                        else if (cat.startsWith('radar')) { if(!hayRadar) { colRadar.innerHTML = ""; hayRadar = true; } colRadar.innerHTML += htmlImg; } 
+                        if (cat.startsWith('radar')) { if(!hayRadar) { colRadar.innerHTML = ""; hayRadar = true; } colRadar.innerHTML += htmlImg; }
                         else if (cat === 'glm') { if(!hayGlm) { colGlm.innerHTML = ""; hayGlm = true; } colGlm.innerHTML += htmlImg; }
+                        else {
+                            // sat-airmass / sat-top "legado": se agregan también al panel de Satélite
+                            // como una imagen suelta sin selector propio.
+                            const colSat = document.getElementById('content-sat');
+                            if (colSat.querySelector('.empty-state')) colSat.innerHTML = "";
+                            colSat.innerHTML += htmlImg;
+                        }
                     }
                 });
             }
@@ -300,9 +520,9 @@
             zoomModal.style.display = 'flex';
             zoomImg.src = src;
             categoriaZoomActual = categoria;
-            zoomTitle.innerText = filename; 
-            
-            if(categoria === 'wrf') zoomInst.innerHTML = "&larr; &rarr; Cambiar Hora | &uarr; &darr; Cambiar Producto";
+            zoomTitle.innerText = filename;
+
+            if (categoria === 'wrf' || categoria === 'sat' || categoria === 'gdas') zoomInst.innerHTML = "&larr; &rarr; Cambiar Hora | &uarr; &darr; Cambiar Producto";
             else zoomInst.innerHTML = "&larr; &rarr; Cambiar Tiempo | &uarr; &darr; Cambiar Imagen misma hora";
 
             scale = 1; pointX = 0; pointY = 0;
@@ -315,7 +535,7 @@
         zoomModal.addEventListener('click', function(e) { if (e.target === zoomModal) cerrarZoom(); });
         zoomModal.addEventListener('wheel', function(e) {
             e.preventDefault();
-            scale = Math.min(Math.max(0.5, scale + (e.deltaY * -0.005)), 8); 
+            scale = Math.min(Math.max(0.5, scale + (e.deltaY * -0.005)), 8);
             aplicarTransformacion();
         });
 
@@ -326,52 +546,66 @@
             pointX = e.clientX - startX; pointY = e.clientY - startY; aplicarTransformacion();
         });
 
-        // NAVEGACIÓN MULTI-EJE ACTUALIZADA AL NUEVO SISTEMA DE FECHAS
+        // Navega tiempo/producto para paneles con selector (WRF persiste toda la
+        // hora; Satélite/GDAS se buscan en su propia clave temporal exacta).
+        function navegarConSelector(porTiempo, selectId, productoActivo, e, wrfEsHora) {
+            let slider = document.getElementById('timeSlider');
+            let currentVal = parseInt(slider.value);
+            let tiempoClaveActual = tiemposOrdenados[currentVal];
+            let clave = wrfEsHora ? (tiempoClaveActual.substring(0, 11) + "00") : tiempoClaveActual;
+
+            if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+                let clavesDisponibles = Object.keys(porTiempo).sort();
+                let idx = clavesDisponibles.indexOf(clave);
+
+                if (e.key === 'ArrowRight' && idx < clavesDisponibles.length - 1) idx++;
+                else if (e.key === 'ArrowLeft' && idx > 0) idx--;
+                else return;
+
+                let nuevaClave = clavesDisponibles[idx];
+                let nuevoSliderIndex = wrfEsHora
+                    ? tiemposOrdenados.findIndex(t => t.startsWith(nuevaClave.substring(0, 11)))
+                    : tiemposOrdenados.indexOf(nuevaClave);
+
+                if (nuevoSliderIndex !== -1) {
+                    slider.value = nuevoSliderIndex;
+                    actualizarVista(nuevoSliderIndex);
+                    // Leer del DOM ya renderizado (no de "productoActivo", que puede haber
+                    // quedado desactualizado si actualizarVista tuvo que cambiar de producto
+                    // porque el que estaba activo no existe en el nuevo horario).
+                    const colId = selectId === 'wrfSelect' ? 'content-wrf' : (selectId === 'satSelect' ? 'content-sat' : 'content-gdas');
+                    const img = document.querySelector(`#${colId} img`);
+                    if (img) { zoomImg.src = img.src; zoomTitle.innerText = img.getAttribute('data-filename'); }
+                }
+            } else if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+                let productos = Object.keys(porTiempo[clave]).sort();
+                let prodIdx = productos.indexOf(productoActivo);
+                if (e.key === 'ArrowUp') prodIdx = (prodIdx - 1 + productos.length) % productos.length;
+                else prodIdx = (prodIdx + 1) % productos.length;
+
+                let nuevoProducto = productos[prodIdx];
+                document.getElementById(selectId).value = nuevoProducto;
+                document.getElementById(selectId).dispatchEvent(new Event('change'));
+                let file = porTiempo[clave][nuevoProducto];
+                zoomImg.src = URL.createObjectURL(file); zoomTitle.innerText = file.name;
+            }
+        }
+
         window.addEventListener('keydown', function(e) {
             if (zoomModal.style.display === 'flex') {
                 if(['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) e.preventDefault();
                 if (e.key === 'Escape') { cerrarZoom(); return; }
 
-                let slider = document.getElementById('timeSlider');
-                let currentVal = parseInt(slider.value);
-                let tiempoClaveActual = tiemposOrdenados[currentVal];
-
                 if (categoriaZoomActual === 'wrf') {
-                    let wrfClave = tiempoClaveActual.substring(0, 11) + "00"; // Llave del WRF (termina en 00)
-                    
-                    if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
-                        let horasWrf = Object.keys(wrfPorTiempo).sort();
-                        let idxHora = horasWrf.indexOf(wrfClave);
-                        
-                        if (e.key === 'ArrowRight' && idxHora < horasWrf.length - 1) idxHora++;
-                        else if (e.key === 'ArrowLeft' && idxHora > 0) idxHora--;
-                        else return;
+                    navegarConSelector(wrfPorTiempo, 'wrfSelect', productoWrfActivo, e, true);
+                } else if (categoriaZoomActual === 'sat') {
+                    navegarConSelector(satPorTiempo, 'satSelect', productoSatActivo, e, false);
+                } else if (categoriaZoomActual === 'gdas') {
+                    navegarConSelector(gdasPorTiempo, 'gdasSelect', productoGdasActivo, e, false);
+                } else {
+                    let slider = document.getElementById('timeSlider');
+                    let currentVal = parseInt(slider.value);
 
-                        let nuevaClaveWrf = horasWrf[idxHora];
-                        
-                        // Busca en la línea de tiempo global la hora que coincida con el nuevo salto del modelo
-                        let nuevoSliderIndex = tiemposOrdenados.findIndex(t => t.startsWith(nuevaClaveWrf.substring(0, 11)));
-                        if (nuevoSliderIndex !== -1) {
-                            slider.value = nuevoSliderIndex;
-                            actualizarVista(nuevoSliderIndex);
-                            let file = wrfPorTiempo[nuevaClaveWrf][productoWrfActivo];
-                            if (file) { zoomImg.src = URL.createObjectURL(file); zoomTitle.innerText = file.name; }
-                        }
-                    } 
-                    else if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
-                        let productos = Object.keys(wrfPorTiempo[wrfClave]).sort();
-                        let prodIdx = productos.indexOf(productoWrfActivo);
-                        if (e.key === 'ArrowUp') prodIdx = (prodIdx - 1 + productos.length) % productos.length;
-                        else if (e.key === 'ArrowDown') prodIdx = (prodIdx + 1) % productos.length;
-                        
-                        productoWrfActivo = productos[prodIdx];
-                        document.getElementById('wrfSelect').value = productoWrfActivo;
-                        let file = wrfPorTiempo[wrfClave][productoWrfActivo];
-                        zoomImg.src = URL.createObjectURL(file); zoomTitle.innerText = file.name;
-                        renderizarWRF(tiempoClaveActual); 
-                    }
-                } 
-                else {
                     if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
                         if (e.key === 'ArrowRight' && currentVal < slider.max) slider.value = currentVal + 1;
                         else if (e.key === 'ArrowLeft' && currentVal > 0) slider.value = currentVal - 1;
@@ -380,7 +614,7 @@
                         actualizarVista(slider.value);
                         let nuevaImagenDom = document.querySelector(`img[data-cat="${categoriaZoomActual}"]`);
                         if (nuevaImagenDom) { zoomImg.src = nuevaImagenDom.src; zoomTitle.innerText = nuevaImagenDom.getAttribute('data-filename'); }
-                    } 
+                    }
                     else if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
                         let lista = Array.from(document.querySelectorAll(`img[data-cat="${categoriaZoomActual}"]`));
                         let actualIdx = lista.findIndex(img => img.src === zoomImg.src);
