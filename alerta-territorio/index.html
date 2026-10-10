@@ -15,10 +15,13 @@
   funciona offline con doble clic.
 
   MODOS DE JUEGO
-    • Desafío completo: 4 escenarios. Cada uno = TRIVIA -> MINIJUEGO
-      (Canvas) -> ENSEÑANZA.
-    • Modo Express: las 3 regiones de la versión 1 (lluvia en La Plata,
-      aluvión en zona árida, viento patagónico) como trivias rápidas.
+    • "Prepará tu Barrio" (principal): 4 emergencias desde el punto de
+      vista del vecino. Cada una = TRIVIA -> MINIJUEGO (Canvas) -> CÁPSULA.
+      La tormenta eléctrica arranca con un celular: invitación a un
+      recital con alerta naranja... y un oso inflable gigante que vuela.
+    • "Centro de Alertas" (experto): Sudestada, Zonda, Helada y Sistema
+      convectivo, desde el punto de vista del meteorólogo.
+    • Modo Express: las 3 regiones de la versión 1 como trivias rápidas.
 
   MAPA DEL CÓDIGO (buscá estos títulos con Ctrl+F)
     CSS  1..12   -> diseño, pantallas, escenas (dioramas), minijuegos.
@@ -160,6 +163,9 @@
   .escena.cielo-calmo    { background: linear-gradient(#3d8ee0, #a9d8ff); }
   .escena.cielo-polvo    { background: linear-gradient(#6b3f1f, #c8955a); }
   .escena.cielo-noche    { background: linear-gradient(#050a1f, #1c2b55); }
+  .escena.cielo-calor    { background: linear-gradient(#ff8a3c, #ffd56b); }
+  .sol-grande { position: absolute; z-index: 1; right: 6%; top: 4%; font-size: 5.5rem; animation: girar 12s linear infinite; filter: drop-shadow(0 0 30px #ffdd55); }
+  @keyframes girar { to { transform: rotate(360deg); } }
   .escena.cielo-tormenta::before {           /* relámpagos */
     content: ""; position: absolute; inset: 0; z-index: 5; pointer-events: none;
     background: #fff; opacity: 0; animation: relampago 5s infinite;
@@ -230,6 +236,8 @@
     border-radius: 0 60% 0 0; transition: left 2.2s cubic-bezier(.5, 0, .3, 1);
   }
   .velo { position: absolute; inset: 0; z-index: 8; opacity: 0; transition: opacity 1.6s .3s; pointer-events: none; }
+  .velo.flash { background: #fff; animation: flashBlanco 1.4s 2; }    /* destello de rayo */
+  @keyframes flashBlanco { 0%, 100% { opacity: 0; } 8% { opacity: 1; } 25% { opacity: .15; } 35% { opacity: .9; } 60% { opacity: 0; } }
   .canal-ok {
     position: absolute; bottom: 2%; left: 0; right: 0; height: 5%; z-index: 7;
     background: linear-gradient(90deg, #3c8ce6, #7cc3ff, #3c8ce6); background-size: 200% 100%; animation: fluir 1s linear infinite;
@@ -360,6 +368,65 @@
   @keyframes confeti { to { transform: translateY(110vh) rotate(720deg); } }
 
   /* ------------------------------------------------------------------
+     10b. CELULAR CON INVITACIÓN + OSO INFLABLE GIGANTE
+     ------------------------------------------------------------------ */
+  .celular-wrap { display: grid; place-items: center; min-height: 76vh; }
+  .celular {
+    width: min(360px, 92vw); height: min(680px, 80vh); padding: 14px; position: relative;
+    background: #0d0d12; border-radius: 46px;
+    box-shadow: 0 0 0 3px #3a3a48, 0 30px 80px rgba(0,0,0,.6);
+    animation: vibrar .45s 2;                       /* ¡bzz bzz! llegó un mensaje */
+  }
+  @keyframes vibrar { 10%, 50%, 90% { transform: translateX(-6px) rotate(-1.5deg); } 30%, 70% { transform: translateX(6px) rotate(1.5deg); } }
+  .pantalla-cel { height: 100%; border-radius: 34px; overflow: hidden; background: linear-gradient(#1b2a4a, #0e1628); display: flex; flex-direction: column; }
+  .notch { width: 120px; height: 26px; background: #0d0d12; border-radius: 0 0 16px 16px; margin: 0 auto; flex-shrink: 0; }
+  .cel-barra { display: flex; justify-content: space-between; padding: 4px 22px; font-size: .85rem; font-weight: 700; }
+  .cel-notif { margin: 10px 12px; padding: 12px; border-radius: 18px; background: #ff8c00; color: #1a0e00; font-weight: 700; font-size: .95rem; animation: bajar .5s both .2s; }
+  @keyframes bajar { from { transform: translateY(-40px); opacity: 0; } }
+  .cel-chat { flex: 1; padding: 6px 14px; display: flex; flex-direction: column; gap: 10px; overflow: hidden; }
+  .cel-contacto { text-align: center; color: var(--texto-suave); font-size: .85rem; font-weight: 700; }
+  .burbuja { max-width: 88%; background: #2a3b5f; padding: 10px 14px; border-radius: 18px 18px 18px 4px; font-size: 1rem; animation: entrar .4s both; }
+  .burbuja:nth-child(2) { animation-delay: .7s; }
+  .burbuja:nth-child(3) { animation-delay: 1.3s; }
+  .cel-botones { display: grid; gap: 10px; padding: 12px; }
+  .cel-botones .btn { width: 100%; min-height: 62px; font-size: 1.15rem; padding: 10px; }
+  .btn.voy   { background: #ff4fa3; color: #fff; box-shadow: 0 6px 0 #a3235f; }
+  .btn.novoy { background: var(--exito); color: #062b1d; box-shadow: 0 6px 0 #138a5c; }
+  .oso-capa {
+    position: fixed; inset: 0; z-index: 60; pointer-events: none; overflow: hidden;
+    background: radial-gradient(circle, rgba(20,25,40,.25), rgba(10,14,25,.8)); animation: aparecer .3s;
+  }
+  @keyframes aparecer { from { opacity: 0; } }
+  .oso {
+    position: absolute; left: 0; top: 0; font-size: clamp(9rem, 28vw, 18rem); line-height: 1;
+    filter: drop-shadow(0 20px 30px rgba(0,0,0,.6));
+    animation: osoVuela 4.2s cubic-bezier(.45, .05, .55, .95) forwards;
+  }
+  .oso::after {                                      /* las sogas cortadas que cuelgan del inflable */
+    content: ""; position: absolute; left: 45%; top: 88%; width: 4px; height: 35vh;
+    background: repeating-linear-gradient(#ddd 0 10px, transparent 10px 15px);
+    transform-origin: top; transform: rotate(14deg);
+  }
+  @keyframes osoVuela {
+    0%   { transform: translate(-30vw, 85vh) rotate(-25deg) scale(.7); }
+    25%  { transform: translate(12vw, 42vh) rotate(15deg) scale(1); }
+    50%  { transform: translate(38vw, 28vh) rotate(-12deg) scale(1.15); }
+    75%  { transform: translate(68vw, 8vh) rotate(20deg) scale(1.05); }
+    100% { transform: translate(115vw, -60vh) rotate(-30deg) scale(.8); }
+  }
+  .rafaga-oso { position: absolute; height: 4px; width: 160px; border-radius: 4px; background: linear-gradient(90deg, transparent, rgba(255,255,255,.8)); animation: soplar .7s linear infinite; }
+  .escombro { position: absolute; left: 0; font-size: 2.6rem; animation: escombro 2.8s linear both; }
+  @keyframes escombro { from { transform: translate(-10vw, 70vh) rotate(0); } to { transform: translate(110vw, -30vh) rotate(720deg); } }
+  .noticia {
+    position: absolute; left: 50%; bottom: 6vh; width: min(680px, 92vw); transform: translateX(-50%);
+    background: #fff; color: #111; border-radius: 16px; padding: 14px 18px; box-shadow: var(--sombra);
+    animation: noticia .5s both 1s;
+  }
+  @keyframes noticia { from { opacity: 0; transform: translate(-50%, 30px); } }
+  .noticia .cintillo { display: inline-block; background: #d90429; color: #fff; font-weight: 900; padding: 3px 10px; border-radius: 6px; margin-bottom: 6px; letter-spacing: 1px; }
+  .noticia strong { display: block; font-size: 1.2rem; line-height: 1.3; }
+
+  /* ------------------------------------------------------------------
      11. RESPONSIVE
      ------------------------------------------------------------------ */
   @media (max-width: 860px) {
@@ -394,25 +461,52 @@
   <section class="pantalla activa" id="p-inicio">
     <div class="inicio">
       <div>
-        <div class="icono-grande">🌦️</div>
-        <h1>Alerta Territorio<span>¿Sobrevivirías a este clima?</span></h1>
+        <div class="icono-grande">🏘️</div>
+        <h1>Alerta Territorio<span>Prepará tu Barrio</span></h1>
         <p class="intro suave">
-          Sos parte del equipo de <strong>alerta temprana</strong>. En cada región de Argentina
-          vas a responder una <strong>trivia</strong> y superar un <strong>minijuego</strong>.
-          Tenés <strong>3 vidas</strong>: cada error cuesta una. ¿Llegás al final?
+          Las emergencias meteorológicas no se enfrentan sólo desde un centro de control:
+          <strong>lo que hacés en tu casa y en tu barrio salva vidas</strong>. En cada situación vas a
+          responder una <strong>trivia</strong> y superar un <strong>minijuego</strong> de 15 segundos.
+          Tenés <strong>3 vidas</strong>: cada error cuesta una.
         </p>
         <div class="mapa-escenarios">
-          <div>🌊 Sudestada</div>
-          <div>🔥 Viento Zonda</div>
-          <div>❄️ Helada</div>
-          <div>⛈️ Tormenta severa</div>
+          <div>🌧️ Lluvias intensas</div>
+          <div>💨 Vientos fuertes</div>
+          <div>🥵 Ola de calor</div>
+          <div>⚡ Tormenta eléctrica</div>
         </div>
         <button class="btn gigante pulso" id="btn-jugar">▶ ¡Jugar!</button>
         <div class="acciones" style="justify-content:center">
-          <button class="btn secundario" id="btn-express">⚡ Modo Express (3 regiones, 1 min)</button>
+          <button class="btn secundario" id="btn-centro">🛰️ Centro de Alertas (modo experto)</button>
+          <button class="btn secundario" id="btn-express">⚡ Modo Express (1 min)</button>
         </div>
         <div class="record" id="record"></div>
       </div>
+    </div>
+  </section>
+
+  <!-- ===================== CELULAR: invitación al recital ===================== -->
+  <section class="pantalla" id="p-celular">
+    <div class="celular-wrap" id="cel-telefono">
+      <div class="celular">
+        <div class="pantalla-cel">
+          <div class="notch"></div>
+          <div class="cel-barra"><span id="cel-hora">20:47</span><span>📶 🔋 63%</span></div>
+          <div class="cel-notif" id="cel-notif"></div>
+          <div class="cel-chat" id="cel-chat"></div>
+          <div class="cel-botones">
+            <button class="btn voy" id="btn-cel-voy">🎉 ¡Voy!</button>
+            <button class="btn novoy" id="btn-cel-novoy">🏠 No voy, hay alerta</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="tarjeta" id="cel-resultado" style="max-width:780px;margin:4vh auto 0;display:none">
+      <div class="veredicto" id="cel-veredicto"></div>
+      <div class="puntos-delta" id="cel-puntos"></div>
+      <p id="cel-texto" style="font-size:1.15rem"></p>
+      <div class="ensenanza"><h3>🧠 Cápsula científica</h3><p id="cel-capsula"></p></div>
+      <div class="acciones"><button class="btn" id="btn-cel-seguir">Continuar a la trivia ➜</button></div>
     </div>
   </section>
 
@@ -503,10 +597,8 @@
       <table class="tabla" id="fin-tabla"></table>
     </div>
     <div class="tarjeta ensenanza" style="margin-top:18px">
-      <h3>🔑 La gran lección: el mismo fenómeno no es el mismo riesgo</h3>
-      <p>El riesgo depende del <strong>fenómeno</strong> (lluvia, viento, frío, tormenta) × la
-        <strong>vulnerabilidad</strong> del territorio (suelo, relieve, urbanización, preparación).
-        Por eso los servicios meteorológicos emiten <strong>alertas por región</strong> y cada lugar necesita su propia respuesta.</p>
+      <h3 id="fin-leccion-titulo"></h3>
+      <p id="fin-leccion-texto"></p>
       <div class="capsulas" id="fin-capsulas"></div>
     </div>
     <div class="acciones" style="justify-content:center">
@@ -676,6 +768,109 @@ const EXPRESS = [
   }
 ];
 
+/* Campaña principal "Prepara tu Barrio": acciones reales de ciudadanos comunes */
+const BARRIO = [
+  {
+    id: "lluvia", nombre: "Lluvias Intensas y Sudestada", lugar: "Tu cuadra, en una ciudad llana", emoji: "🌧️",
+    clima: ["🔴 Alerta roja por tormentas", "🏠 Calle que se inunda rápido", "🍂 Hojas y basura en la vereda"],
+    escena: { cielo: "cielo-tormenta", tipo: "vereda", fenomeno: "lluvia" },
+    titulo: "Alerta roja por tormentas severas",
+    numero: "🔴 ROJA", dato: "Tormentas severas en las próximas horas. Tu calle suele inundarse rápido.",
+    pregunta: "Hay alerta roja por tormentas severas. Tu calle suele inundarse rápido. ¿Qué es lo más importante que debés hacer ANTES de que empiece a llover?",
+    opciones: [
+      { icono: "🛍️", texto: "Sacar la basura a la vereda para que la lluvia lave los tachos.",
+        resultado: "fallo", efecto: "inundacion", titulo: "¡Bolsas en la boca de tormenta!",
+        consecuencia: "La correntada arrastró las bolsas hasta el sumidero, lo tapó y la calle se inundó en minutos." },
+      { icono: "🧹", texto: "Limpiar las canaletas del techo, barrer las hojas y asegurarte de no dejar bolsas de basura cerca de las bocas de tormenta.",
+        resultado: "exito", efecto: "drenaje", titulo: "¡Barrio preparado!",
+        consecuencia: "Canaletas libres y sumideros despejados: el agua corrió por donde debía y la calle sólo tuvo charcos." },
+      { icono: "🕳️", texto: "Abrir las tapas de las cloacas de la calle para que el agua baje más rápido.",
+        resultado: "fallo", efecto: "inundacion-sucia", titulo: "¡Agua cloacal en las casas!",
+        consecuencia: "La cloaca no está hecha para el agua de lluvia: colapsó y el agua contaminada volvió por rejillas e inodoros. Además, una tapa abierta bajo el agua es una trampa mortal." }
+    ],
+    capsula: "¡La basura y las hojas tapan los sumideros! Las cloacas abiertas colapsan y devuelven agua contaminada a las casas.",
+    minijuego: "destapar",
+    leccion: "El desagüe pluvial (sumideros y bocas de tormenta) y la cloaca son redes distintas. Una sola bolsa puede tapar una boca de tormenta. Sacá la basura sólo cuando no hay alerta, limpiá las canaletas antes de la temporada de tormentas y nunca camines por calles inundadas: puede haber tapas abiertas."
+  },
+  {
+    id: "viento", nombre: "Vientos Fuertes y Zonda", lugar: "El patio de tu casa", emoji: "💨",
+    clima: ["⚠️ Aviso a corto plazo", "💨 Ráfagas de más de 80 km/h", "🪴 Patio con objetos sueltos"],
+    escena: { cielo: "cielo-polvo", tipo: "patio", fenomeno: "viento" },
+    titulo: "Aviso a corto plazo: ráfagas destructivas",
+    numero: "80+ km/h", dato: "de ráfagas en los próximos minutos. Estás en el patio de tu casa.",
+    pregunta: "Se emitió un aviso a corto plazo por ráfagas destructivas de más de 80 km/h. Estás en el patio de tu casa. ¿Qué hacés?",
+    opciones: [
+      { icono: "🪟", texto: "Dejar las ventanas abiertas para que el viento circule y no rompa los vidrios por la presión.",
+        resultado: "fallo", efecto: "viento-danio", titulo: "¡Casa revuelta y vidrios rotos!",
+        consecuencia: "Es un mito peligroso: con las ventanas abiertas el viento entra, empuja el techo desde adentro y arrastra objetos." },
+      { icono: "🐕", texto: "Entrar a las mascotas, cerrar todo herméticamente y guardar o atar cualquier objeto suelto del patio.",
+        resultado: "exito", efecto: "patio-ok", titulo: "¡Patio asegurado!",
+        consecuencia: "Mascotas adentro, ventanas cerradas y nada suelto: las ráfagas pasaron sin dejar proyectiles." },
+      { icono: "🪜", texto: "Subir al techo rápido a clavar las chapas que estén flojas.",
+        resultado: "fallo", efecto: "viento-danio", titulo: "¡Nunca al techo con viento!",
+        consecuencia: "Una ráfaga puede tirarte del techo, y una chapa que se suelta corta como una cuchilla. Las reparaciones se hacen ANTES del aviso o cuando el viento ya pasó." }
+    ],
+    capsula: "¡Nunca subas al techo con viento fuerte! Los objetos sueltos en el patio se convierten en proyectiles mortales con ráfagas severas.",
+    minijuego: "patio",
+    leccion: "Con ráfagas de 80 km/h una silla de jardín o una maceta pueden volar decenas de metros, romper vidrios o herir a alguien. Revisá chapas y techos con buen tiempo; ante el aviso, guardá o atá todo lo suelto, entrá a las mascotas y quedate adentro, lejos de las ventanas."
+  },
+  {
+    id: "calor", nombre: "Ola de Calor Extrema", lugar: "La plaza del barrio", emoji: "🥵",
+    clima: ["☀️ 39 °C a la sombra", "🥵 Sensación térmica sofocante", "👴 Vecinos mayores y mascotas"],
+    escena: { cielo: "cielo-calor", tipo: "plaza", fenomeno: "ninguno" },
+    titulo: "Ola de calor en pleno enero",
+    numero: "39 °C", dato: "a la sombra, con sensación térmica sofocante, varios días seguidos.",
+    pregunta: "Es pleno enero, hacen 39 °C a la sombra y la sensación térmica es sofocante. ¿Cuál de estas acciones salva vidas en el barrio?",
+    opciones: [
+      { icono: "🧊", texto: "Bañar a los perros con agua helada y darles hielo de comer.",
+        resultado: "fallo", efecto: "golpe-calor", titulo: "¡Shock térmico!",
+        consecuencia: "El agua helada contrae los vasos sanguíneos de la piel y el cuerpo retiene el calor adentro. Para refrescar a un animal se usa agua fresca, no helada." },
+      { icono: "🥣", texto: "Dejar recipientes con agua fresca a la sombra para los animales y chequear que adultos mayores estén en lugares frescos.",
+        resultado: "exito", efecto: "sombra-ok", titulo: "¡Barrio hidratado!",
+        consecuencia: "Agua fresca a la sombra para los animales y un vecino que pregunta \"¿cómo estás?\": así se previenen los golpes de calor." },
+      { icono: "🏃", texto: "Hacer ejercicio al mediodía para transpirar y regular la temperatura del cuerpo.",
+        resultado: "fallo", efecto: "golpe-calor", titulo: "¡Golpe de calor!",
+        consecuencia: "Al mediodía el cuerpo ya no puede eliminar el calor y el ejercicio lo aumenta. La actividad física se deja para la mañana temprano o la noche." }
+    ],
+    capsula: "El golpe de calor es silencioso pero letal. El agua fresca a la sombra salva tanto a mascotas callejeras como domésticas.",
+    minijuego: "hidratacion",
+    leccion: "Los más vulnerables al calor extremo son bebés, adultos mayores, personas con enfermedades crónicas y animales. Señales de alarma: piel caliente y seca, confusión, mareos o jadeo excesivo en mascotas. Ante esos síntomas: sombra, agua fresca (no helada) y llamar a emergencias."
+  },
+  {
+    id: "rayos", nombre: "Tormenta Eléctrica", lugar: "Un parque abierto", emoji: "⚡",
+    clima: ["⛈️ Nubes de tormenta", "⚡ Rayos cercanos", "🌳 Parque amplio y abierto"],
+    escena: { cielo: "cielo-tormenta", tipo: "parque", fenomeno: "lluvia" },
+    titulo: "¡Rayos cerca del parque!",
+    numero: "⚡ 3 s", dato: "entre el relámpago y el trueno: el rayo cayó a sólo 1 km (el sonido recorre unos 340 m por segundo).",
+    pregunta: "Estás en un descampado o parque y empieza una tormenta eléctrica severa. Caen rayos cerca. ¿Dónde te refugiás?",
+    opciones: [
+      { icono: "🌳", texto: "Debajo del árbol más grande y frondoso que encuentre.",
+        resultado: "fallo", efecto: "rayo", titulo: "¡El rayo cayó en el árbol!",
+        consecuencia: "Los rayos tienden a caer en lo más alto: un árbol aislado es el peor refugio. La descarga puede saltar del tronco a quien está debajo." },
+      { icono: "🚗", texto: "Dentro de un auto cerrado sin tocar las partes metálicas, o si no hay refugio, agacharme abrazando mis rodillas.",
+        resultado: "exito", efecto: "refugio-ok", titulo: "¡A salvo!",
+        consecuencia: "El auto cerrado te protegió: la corriente del rayo viaja por la carrocería metálica y baja a tierra sin atravesarte." },
+      { icono: "🛌", texto: "Me acuesto completamente plano en el piso para estar lo más bajo posible.",
+        resultado: "fallo", efecto: "rayo", titulo: "¡Corriente por el suelo!",
+        consecuencia: "Cuando un rayo cae cerca, la corriente se expande por el suelo. Acostado, tu cuerpo ocupa más superficie y la corriente te atraviesa." }
+    ],
+    capsula: "¡El auto actúa como Jaula de Faraday y te protege! Si estás al aire libre, acostarse aumenta el riesgo: hay que adoptar la \"posición de rayo\" (en cuclillas, tocando el piso sólo con los pies).",
+    minijuego: "cubierto",
+    // Antes de la trivia aparece un celular. Para usarlo en otro escenario, mové este bloque.
+    celular: {
+      notificacion: "🟠 SMN · ALERTA NARANJA por tormentas fuertes: ráfagas de más de 90 km/h, actividad eléctrica y granizo para esta noche.",
+      contacto: "Caro 🎸",
+      mensajes: ["¡Conseguí entradas para el recital de esta noche, al aire libre en el parque! 🎶",
+                 "Hay escenario gigante y un oso inflable ENORME 🧸 ¿Vamos?"],
+      noticia: "Suspenden el recital al aire libre: una ráfaga arrancó el oso inflable gigante del escenario",
+      bien: { titulo: "¡Decisión inteligente!", texto: "Te quedaste en casa. Minutos después, una ráfaga hizo volar el oso inflable y parte del escenario: el público tuvo que evacuar bajo la lluvia y los rayos." },
+      mal:  { titulo: "¡Uf, qué susto!", texto: "Fuiste al recital... y una ráfaga arrancó el oso inflable gigante del escenario. Hubo que evacuar a miles de personas bajo la lluvia y los rayos." },
+      capsula: "Con alerta naranja, los eventos masivos al aire libre son muy riesgosos: escenarios, pantallas, carpas e inflables gigantes ofrecen mucha superficie al viento y pueden volar o derrumbarse. Además, una multitud en un predio abierto no tiene dónde refugiarse de los rayos. Antes de salir, revisá las alertas del Servicio Meteorológico Nacional."
+    },
+    leccion: "Regla 30/30: si entre el relámpago y el trueno pasan menos de 30 segundos, el rayo está a menos de 10 km y ya hay peligro: buscá refugio. Esperá 30 minutos después del último trueno para salir. Un edificio cerrado o un auto con techo metálico son los mejores refugios; la posición en cuclillas es el último recurso."
+  }
+];
+
 /* Configuración general: cambiar acá para ajustar la dificultad */
 const CONFIG = {
   vidas: 3,
@@ -684,15 +879,43 @@ const CONFIG = {
   bonusPorSegundo: 5,          // puntos extra por cada segundo que sobra en la trivia
   maxTrivia: 200,              // para calcular el rango final
   maxMinijuego: 250,
+  puntosCelular: 100,          // premio por NO ir al recital con alerta naranja
+  celularQuitaVida: false,     // ponelo en true para que ir al recital cueste una vida
   inactividadMs: 60000         // modo feria: vuelve al inicio tras 1 min sin uso
 };
 
-const RANGOS = [               // [porcentaje mínimo del puntaje máximo, título]
+const RANGOS_CENTRO = [        // [porcentaje mínimo del puntaje máximo, título]
   [0,   "🌱 Meteorólogo Aficionado"],
   [.3,  "🔭 Observador de Estación"],
   [.5,  "📈 Pronosticador de Guardia"],
   [.7,  "🏛️ Director del Servicio Meteorológico"]
 ];
+const RANGOS_BARRIO = [
+  [0,   "🙂 Vecino Curioso"],
+  [.3,  "🏡 Vecino Preparado"],
+  [.5,  "🦺 Rescatista Barrial"],
+  [.7,  "🏅 Líder de Protección Civil del Barrio"]
+];
+
+const LECCION_CENTRO = {
+  titulo: "🔑 La gran lección: el mismo fenómeno no es el mismo riesgo",
+  texto: "El riesgo depende del <strong>fenómeno</strong> (lluvia, viento, frío, tormenta) × la <strong>vulnerabilidad</strong> del territorio (suelo, relieve, urbanización, preparación). Por eso los servicios meteorológicos emiten <strong>alertas por región</strong> y cada lugar necesita su propia respuesta.",
+  victoria: "¡El territorio está a salvo gracias a tus decisiones!"
+};
+
+/* Cada modo de juego elige su lista de escenarios, sus rangos y su lección final */
+const MODOS = {
+  barrio: {
+    lista: BARRIO, rangos: RANGOS_BARRIO,
+    leccion: {
+      titulo: "🔑 La gran lección: la prevención empieza en tu casa",
+      texto: "Los servicios meteorológicos avisan, pero el impacto final depende de lo que hacemos cada vecino: <strong>sumideros y canaletas limpios</strong>, <strong>objetos sueltos guardados</strong>, <strong>agua fresca y sombra</strong> para quien lo necesita y <strong>saber dónde refugiarse</strong>. Seguí siempre los avisos oficiales del Servicio Meteorológico Nacional y de Defensa Civil de tu municipio.",
+      victoria: "¡Tu barrio está preparado gracias a vos!"
+    }
+  },
+  completo: { lista: ESCENARIOS, rangos: RANGOS_CENTRO, leccion: LECCION_CENTRO },
+  express:  { lista: EXPRESS,    rangos: RANGOS_CENTRO, leccion: LECCION_CENTRO }
+};
 
 /* =====================================================================
    B) ESTADO DEL JUEGO
@@ -701,8 +924,10 @@ let estado = null;
 
 function estadoInicial(modo) {
   return {
-    modo,                                   // "completo" | "express"
-    lista: modo === "express" ? EXPRESS : ESCENARIOS,
+    modo,                                   // "barrio" | "completo" | "express"
+    lista: MODOS[modo].lista,
+    celularVisto: null,                     // id del escenario cuyo celular ya se mostró
+    recital: null,                          // { fue: true/false } si apareció la invitación
     indice: 0,
     vidas: CONFIG.vidas,
     puntaje: 0,
@@ -796,6 +1021,36 @@ function construirEscena(cont, esc) {
       for (let i = 0; i < 6; i++) h += `<div class="objeto" style="left:${4 + i * 16}%;bottom:${18 + (i % 2) * 6}%">🌳</div><div class="objeto" style="left:${9 + i * 16}%;bottom:${30 + (i % 2) * 6}%;font-size:1.1rem">🌸</div>`;
       h += `<div class="objeto" style="left:3%;top:10%;font-size:2rem">🌡️</div>`;
       break;
+    case "vereda":
+      h += `<div class="suelo asfalto"></div>
+        <div class="objeto" style="left:4%;bottom:26%;font-size:5rem">🏠</div>
+        <div class="objeto" style="left:7%;bottom:66%;font-size:1.3rem">🍂🍂🍂</div>
+        <div class="objeto" style="left:42%;bottom:26%;font-size:3.6rem">🌳</div>
+        <div class="objeto" style="left:60%;bottom:12%">🗑️</div>
+        <div class="objeto" style="left:78%;bottom:5%;font-size:1.8rem">🕳️</div>`;
+      break;
+    case "patio":
+      h += `<div class="suelo campo"></div>
+        <div class="objeto" style="left:62%;bottom:24%;font-size:4.6rem">🏠</div>
+        <div class="objeto" style="left:6%;bottom:22%;font-size:3.2rem" data-cae>🌳</div>
+        <div class="objeto" style="left:28%;bottom:12%" data-cae data-guardar>🪴</div>
+        <div class="objeto" style="left:42%;bottom:10%" data-cae data-guardar>🪑</div>
+        <div class="objeto" style="left:52%;bottom:8%" data-guardar>🐕</div>`;
+      break;
+    case "plaza":
+      h += `<div class="sol-grande">☀️</div><div class="suelo estepa"></div>
+        <div class="objeto" style="left:6%;bottom:22%;font-size:3.6rem">🌳</div>
+        <div class="objeto" style="left:36%;bottom:12%">🪑</div><div class="objeto" style="left:37%;bottom:20%" data-jadea>👴</div>
+        <div class="objeto" style="left:62%;bottom:8%" data-jadea>🐶</div><div class="objeto" style="left:80%;bottom:10%" data-jadea>🐱</div>
+        <div class="objeto" style="left:3%;top:8%;font-size:2rem">🌡️</div>`;
+      break;
+    case "parque":
+      h += `<div class="suelo campo"></div>
+        <div class="objeto" style="left:18%;bottom:22%;font-size:4.6rem" data-arbol>🌳</div>
+        <div class="objeto" style="left:50%;bottom:10%;font-size:2.8rem">🚗</div>
+        <div class="objeto" style="right:5%;bottom:24%;font-size:3.2rem">🏠</div>
+        <div class="objeto" style="left:38%;bottom:12%" data-persona>🧍</div>`;
+      break;
     case "tormenta":
       h += `<div class="nube-grande">⛈️</div><div class="suelo campo"></div>
         <div class="objeto" style="left:15%;bottom:12%">🏘️</div><div class="objeto" style="left:45%;bottom:14%">🚗</div>
@@ -869,6 +1124,26 @@ function animarEfecto(cont, efecto, resultado) {
         for (let i = 0; i < 30; i++)
           agregar(`<span class="piedra" style="left:${Math.random() * 100}%;animation-duration:${.7 + Math.random() * .5}s;animation-delay:-${Math.random()}s">🧊</span>`);
         cont.querySelectorAll(".objeto").forEach(o => o.classList.add("temblar")); break;
+      case "inundacion-sucia":
+        agua.style.background = "linear-gradient(rgba(120,90,40,.85), rgba(70,50,20,.95))";
+        agua.classList.add("activa"); agua.style.height = "50%"; break;
+      case "patio-ok":
+        cont.querySelectorAll("[data-guardar]").forEach(o => o.style.opacity = 0);
+        agregar(`<div class="objeto" style="left:70%;bottom:56%;z-index:9">🔒</div>`); break;
+      case "golpe-calor":
+        velo.style.background = "radial-gradient(circle at 50% 70%, rgba(255,40,20,.55), rgba(255,120,0,.25))"; velo.style.opacity = 1;
+        cont.querySelectorAll("[data-jadea]").forEach(o => o.classList.add("temblar"));
+        agregar(`<div class="objeto" style="left:45%;top:15%;z-index:9;font-size:3rem">🥵</div>`); break;
+      case "sombra-ok":
+        agregar(`<div class="objeto" style="left:34%;bottom:30%;z-index:9;font-size:3.2rem">⛱️</div>
+          <div class="objeto" style="left:69%;bottom:6%;z-index:9;font-size:1.5rem">🥣</div><div class="objeto" style="left:87%;bottom:7%;z-index:9;font-size:1.5rem">🥣</div>`); break;
+      case "rayo":
+        velo.classList.add("flash");
+        agregar(`<div class="objeto" style="left:21%;bottom:58%;z-index:9;font-size:3.4rem">⚡</div>`);
+        cont.querySelectorAll("[data-arbol], [data-persona]").forEach(o => o.classList.add("temblar")); break;
+      case "refugio-ok":
+        cont.querySelectorAll("[data-persona]").forEach(o => o.style.opacity = 0);
+        agregar(`<div class="objeto" style="left:56%;bottom:30%;z-index:9">🛡️</div><div class="objeto" style="left:53%;bottom:14%;z-index:9;font-size:1.3rem">🙂</div>`); break;
       case "alerta-ok":
         agregar(`<div class="objeto" style="left:15%;bottom:34%;z-index:9">📢</div><div class="objeto" style="left:45%;bottom:34%;z-index:9">🛡️</div>`); break;
     }
@@ -881,6 +1156,7 @@ function animarEfecto(cont, efecto, resultado) {
    ===================================================================== */
 function iniciarEscenario() {
   const esc = escActual();
+  if (esc.celular && estado.celularVisto !== esc.id) return mostrarCelular(esc);
   estado.respondido = false;
   actualizarHUD();
 
@@ -907,6 +1183,61 @@ function iniciarEscenario() {
   mostrarPantalla("p-trivia");
   sonido("alerta");
   arrancarTimerTrivia();
+}
+
+/* --- Interludio: invitación al recital en el celular --- */
+function mostrarCelular(esc) {
+  const c = esc.celular;
+  estado.celularVisto = esc.id;
+  estado.respondido = false;
+  actualizarHUD();
+  const ahora = new Date();
+  $("cel-hora").textContent = `${ahora.getHours()}:${String(ahora.getMinutes()).padStart(2, "0")}`;
+  $("cel-notif").textContent = c.notificacion;
+  $("cel-chat").innerHTML = `<div class="cel-contacto">${c.contacto}</div>` + c.mensajes.map(m => `<div class="burbuja">${m}</div>`).join("");
+  $("cel-telefono").style.display = "";
+  $("cel-resultado").style.display = "none";
+  mostrarPantalla("p-celular");
+  sonido("notificacion");
+}
+
+function responderCelular(fue) {
+  if (estado.respondido) return;
+  estado.respondido = true;
+  const c = escActual().celular, r = fue ? c.mal : c.bien;
+  estado.recital = { fue };
+
+  // Sea cual sea la respuesta... ¡el oso inflable gigante sale volando!
+  const capa = document.createElement("div");
+  capa.className = "oso-capa";
+  let html = "";
+  for (let i = 0; i < 8; i++) html += `<span class="rafaga-oso" style="top:${8 + i * 11}%;animation-delay:-${(i * .13).toFixed(2)}s"></span>`;
+  html += ["🎤", "🎸", "🪧", "🎈", "🥁"].map((e, i) => `<div class="escombro" style="top:${i * 9}%;animation-delay:${(.2 + i * .35).toFixed(2)}s">${e}</div>`).join("");
+  html += `<div class="oso">🧸</div><div class="noticia"><span class="cintillo">🔴 ÚLTIMO MOMENTO</span><strong>${c.noticia}</strong></div>`;
+  capa.innerHTML = html;
+  document.body.appendChild(capa);
+  sonido("trueno");
+  setTimeout(() => sonido("trueno"), 1800);
+
+  setTimeout(() => {
+    capa.remove();
+    const puntos = fue ? 0 : CONFIG.puntosCelular;
+    if (puntos) sumarPuntos(puntos);
+    if (fue && CONFIG.celularQuitaVida) perderVida();
+    const v = $("cel-veredicto");
+    v.className = "veredicto " + (fue ? "fallo" : "exito");
+    v.textContent = r.titulo;
+    const pd = $("cel-puntos");
+    pd.textContent = fue ? (CONFIG.celularQuitaVida ? "−1 ❤️ vida" : "+0 ⭐") : `+${puntos} ⭐`;
+    pd.style.color = fue ? "var(--fallo)" : "var(--exito)";
+    $("cel-texto").textContent = r.texto;
+    $("cel-capsula").textContent = c.capsula;
+    $("cel-telefono").style.display = "none";
+    $("cel-resultado").style.display = "";
+    $("btn-cel-seguir").textContent = estado.vidas <= 0 ? "Ver resultado final 🏁" : "Continuar a la trivia ➜";
+    ultimaNavegacion = performance.now();
+    sonido(fue ? "fallo" : "exito");
+  }, 4300);
 }
 
 function mezclar(arr) {
@@ -1144,7 +1475,7 @@ function emoji(e, x, y, tam, rot = 0) {
 function texto(t, x, y, tam, color = "#fff", alinear = "center", contorno = false) {
   ctx.font = `800 ${tam}px "Segoe UI", system-ui, sans-serif`;
   ctx.textAlign = alinear; ctx.textBaseline = "middle";
-  if (contorno) { ctx.lineWidth = 4; ctx.strokeStyle = "rgba(0,0,0,.7)"; ctx.strokeText(t, x, y); }
+  if (contorno) { ctx.lineWidth = 4; ctx.lineJoin = "round"; ctx.strokeStyle = "rgba(0,0,0,.7)"; ctx.strokeText(t, x, y); }   // round evita "pinchos" en las letras
   ctx.fillStyle = color;
   ctx.fillText(t, x, y);
 }
@@ -1755,6 +2086,588 @@ const MINIJUEGOS = {
           : `Demasiadas falsas alarmas (${s.falsas}): la gente dejó de creer en tus avisos.`
       };
     }
+  },
+  /* ===================================================================
+     MINIJUEGOS DE LA CAMPAÑA "PREPARA TU BARRIO"
+     =================================================================== */
+
+  /* -------------------------------------------------------------------
+     G5. ¡DESTAPA EL BARRIO! (Lluvias intensas)
+     Tocar las hojas de la canaleta (siguen cayendo del árbol) y arrastrar
+     las bolsas que la correntada lleva hacia la boca de tormenta hasta
+     el contenedor alto.
+     ------------------------------------------------------------------- */
+  destapar: {
+    titulo: "¡Destapa el Barrio!", icono: "🍂", duracion: 15,
+    SUMIDERO: 575,
+    instrucciones: [
+      ["🍂", "TOCÁ las hojas de la canaleta del techo para limpiarla (¡siguen cayendo del árbol!)."],
+      ["🗑️", "ARRASTRÁ las bolsas de basura que flotan hacia la boca de tormenta y metelas en el CONTENEDOR alto."],
+      ["🎯", "Ganás si la canaleta queda limpia y ninguna bolsa tapa la boca de tormenta."]
+    ],
+    crear() {
+      const hojas = [];
+      for (let i = 0; i < 7; i++) hojas.push({ x: 45 + i * 38 + Math.random() * 10 });
+      // Cada bolsa aparece en un momento distinto y flota hacia el sumidero
+      const bolsas = [0, 1.2, 3, 5].map((t0, i) => ({ t0, x: -30, y: 418, v: 58 + i * 3, estado: "espera", fase: i }));
+      return { hojas, caidas: [], proxHoja: 2, bolsas, limpiadas: 0, guardadas: 0, tapones: 0, agua: 0, arr: null, t: 0 };
+    },
+    actualizar(s, dt, t) {
+      const D = MINIJUEGOS.destapar;
+      s.t = t;
+      // Hojas nuevas que el viento arranca del árbol
+      if (t >= s.proxHoja && t < 11) { s.caidas.push({ x0: 380, y0: 190, tx: 40 + Math.random() * 260, p: 0 }); s.proxHoja += 2.2; }
+      s.caidas.forEach(c => c.p += dt / 1.3);
+      s.caidas.filter(c => c.p >= 1).forEach(c => s.hojas.push({ x: c.tx }));
+      s.caidas = s.caidas.filter(c => c.p < 1);
+      // Bolsas arrastradas por la correntada
+      s.bolsas.forEach(b => {
+        if (b.estado === "espera" && t >= b.t0) b.estado = "flota";
+        if (b.estado !== "flota" || (s.arr && s.arr.b === b)) return;
+        b.x += b.v * dt;
+        b.y = 418 + Math.sin(t * 3 + b.fase) * 4;
+        if (b.x >= D.SUMIDERO - 12) {
+          b.estado = "tapon"; b.x = D.SUMIDERO; s.tapones++;
+          flotante("¡Boca de tormenta TAPADA!", D.SUMIDERO, 370, "#ff4d6d", 22); sacudir(); sonido("fallo");
+        }
+      });
+      // El agua de la calle sube si el sumidero está tapado o la canaleta desborda
+      const objetivo = Math.min(1, s.tapones * .45 + (s.hojas.length >= 4 ? .12 : 0));
+      s.agua += (objetivo - s.agua) * Math.min(1, dt * 1.5);
+    },
+    terminado: (s) => s.t > 11 && !s.hojas.length && !s.caidas.length && s.bolsas.every(b => b.estado === "guardada" || b.estado === "tapon"),
+    estado: (s) => `🍂 Hojas en la canaleta: ${s.hojas.length}   ·   🗑️ Al contenedor: ${s.guardadas}/4   ·   🕳️ Boca de tormenta: ${s.tapones ? "¡TAPADA!" : "libre"}`,
+    abajo(s, x, y, id) {
+      const i = s.hojas.findIndex(h => dist(x, y, h.x, 172) < 28);
+      if (i >= 0) {
+        const h = s.hojas.splice(i, 1)[0];
+        s.limpiadas++; chispas(h.x, 172, "#e08a2c", 8); sonido("tic");
+        if (!s.hojas.length) flotante("¡Canaleta limpia!", 170, 140, "#2ee59d");
+        return;
+      }
+      if (s.arr) return;
+      const b = s.bolsas.find(b => b.estado === "flota" && dist(x, y, b.x, b.y) < 42);
+      if (b) { s.arr = { id, b }; sonido("tic"); }
+    },
+    mover(s, x, y, id) { if (s.arr && s.arr.id === id) { s.arr.b.x = x; s.arr.b.y = y; } },
+    arriba(s, x, y, id) {
+      if (!s.arr || s.arr.id !== id) return;
+      const b = s.arr.b; s.arr = null;
+      if (x > 670 && x < 800 && y > 180 && y < 390) {
+        b.estado = "guardada"; s.guardadas++;
+        chispas(737, 230, "#2ee59d", 14); flotante("¡Al contenedor!", 737, 185, "#2ee59d"); sonido("ok");
+      } else {                                  // si la soltás en otro lado, vuelve al agua y sigue flotando
+        b.y = 418; b.x = Math.max(-20, Math.min(MINIJUEGOS.destapar.SUMIDERO - 50, x));
+      }
+    },
+    dibujar(ctx, s, t) {
+      const D = MINIJUEGOS.destapar;
+      let g = ctx.createLinearGradient(0, 0, 0, H);
+      g.addColorStop(0, "#151c2c"); g.addColorStop(1, "#45536b");
+      ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+      // Casa con techo y canaleta
+      ctx.fillStyle = "#d9c7a6"; ctx.fillRect(40, 184, 260, 190);
+      ctx.fillStyle = "#7a3b2e"; ctx.beginPath(); ctx.moveTo(25, 184); ctx.lineTo(170, 95); ctx.lineTo(315, 184); ctx.fill();
+      ctx.fillStyle = "#6b4423"; ctx.fillRect(140, 290, 50, 84);
+      ctx.fillStyle = "#9fd8ff"; ctx.fillRect(65, 230, 50, 40); ctx.fillRect(220, 230, 50, 40);
+      ctx.fillStyle = "#9aa3ad"; ctx.fillRect(18, 168, 304, 16);            // canaleta
+      ctx.fillStyle = "#7d858f"; ctx.fillRect(306, 184, 12, 190);           // caño de bajada
+      texto("CANALETA", 170, 158, 12, "#cfd3da");
+      const tapada = s.hojas.length >= 3;
+      if (tapada) {                                                         // agua desbordando por el borde
+        ctx.fillStyle = "rgba(120,180,255,.55)";
+        for (let k = 0; k < 6; k++) ctx.fillRect(30 + k * 52 + Math.sin(t * 9 + k) * 3, 184, 6, 190);
+        texto("¡Desborda!", 170, 205, 15, "#9fd8ff", "center", true);
+      } else {
+        ctx.fillStyle = "#7cc3ff"; ctx.fillRect(310, 360 + (t * 40) % 14, 6, 10);   // el agua baja por el caño
+      }
+      // Hojas en la canaleta (con aro para indicar que se tocan)
+      s.hojas.forEach(h => {
+        ctx.strokeStyle = `rgba(255,204,51,${.4 + .4 * Math.sin(t * 8 + h.x)})`; ctx.lineWidth = 3;
+        ctx.beginPath(); ctx.arc(h.x, 172, 22, 0, Math.PI * 2); ctx.stroke();
+        emoji("🍂", h.x, 170, 30);
+      });
+      // Árbol que suelta hojas
+      ctx.fillStyle = "#5b3a22"; ctx.fillRect(388, 260, 16, 115);
+      emoji("🌳", 396, 230, 130, Math.sin(t * 2) * .05);
+      s.caidas.forEach(c => {
+        const x = c.x0 + (c.tx - c.x0) * c.p, y = c.y0 + (172 - c.y0) * c.p - Math.sin(c.p * Math.PI) * 50 + Math.sin(c.p * 14) * 6;
+        emoji("🍂", x, y, 24, c.p * 8);
+      });
+      // Vereda y calle
+      ctx.fillStyle = "#9e9e9e"; ctx.fillRect(0, 374, W, 14);
+      ctx.fillStyle = "#3a3f4a"; ctx.fillRect(0, 388, W, 62);
+      ctx.fillStyle = `rgba(60,130,220,${.35 + s.agua * .4})`;
+      const nivel = 438 - s.agua * 70;
+      ctx.beginPath(); ctx.moveTo(0, H);
+      for (let x = 0; x <= W; x += 20) ctx.lineTo(x, nivel + Math.sin(x / 25 + t * 4) * 3);
+      ctx.lineTo(W, H); ctx.fill();
+      ctx.fillStyle = "rgba(200,230,255,.6)";                               // correntada hacia el sumidero
+      for (let k = 0; k < 10; k++) ctx.fillRect((k * 60 + t * 90) % (D.SUMIDERO - 20), 440, 22, 3);
+      // Boca de tormenta
+      ctx.fillStyle = "#111"; ctx.fillRect(D.SUMIDERO - 32, 428, 64, 18);
+      ctx.strokeStyle = "#666"; ctx.lineWidth = 3;
+      for (let k = -24; k <= 24; k += 12) { ctx.beginPath(); ctx.moveTo(D.SUMIDERO + k, 428); ctx.lineTo(D.SUMIDERO + k, 446); ctx.stroke(); }
+      texto("BOCA DE TORMENTA", D.SUMIDERO, 360, 12, s.tapones ? "#ff4d6d" : "#fff", "center", true);
+      if (s.tapones) { ctx.strokeStyle = `rgba(255,77,109,${.6 + .4 * Math.sin(t * 10)})`; ctx.lineWidth = 4; ctx.strokeRect(D.SUMIDERO - 40, 400, 80, 50); }
+      // Contenedor alto
+      const arrastrando = !!s.arr;
+      ctx.fillStyle = "#1b5e20"; ctx.fillRect(684, 202, 107, 14);
+      ctx.fillStyle = "#2e7d32"; ctx.fillRect(690, 216, 95, 140);
+      ctx.fillStyle = "#555"; ctx.fillRect(696, 356, 8, 30); ctx.fillRect(771, 356, 8, 30);
+      texto("CONTENEDOR", 737, 250, 12, "#fff");
+      texto(`🗑️ ${s.guardadas}/4`, 737, 290, 20, "#fff");
+      if (arrastrando) { ctx.strokeStyle = `rgba(46,229,157,${.6 + .4 * Math.sin(t * 10)})`; ctx.lineWidth = 6; ctx.strokeRect(678, 196, 119, 196); }
+      // Bolsas
+      s.bolsas.forEach(b => {
+        if (b.estado === "espera" || b.estado === "guardada") return;
+        const grande = s.arr && s.arr.b === b;
+        emoji("🗑️", b.x, b.y, grande ? 52 : 40, b.estado === "tapon" ? .4 : Math.sin(t * 3 + b.fase) * .15);
+      });
+      // Lluvia
+      ctx.strokeStyle = "rgba(180,210,255,.5)"; ctx.lineWidth = 2; ctx.beginPath();
+      for (let i = 0; i < 70; i++) { const x = (i * 57.3 + t * 70) % W, y = (i * 97.3 + t * 560) % 470 - 20; ctx.moveTo(x, y); ctx.lineTo(x - 4, y + 14); }
+      ctx.stroke();
+      ctx.fillStyle = "rgba(0,0,0,.45)"; rrect(470, 14, 316, 38, 12); ctx.fill();
+      texto("🔴 Alerta roja por tormentas", 628, 33, 17, "#fff");
+    },
+    evaluar(s) {
+      const exito = !s.hojas.length && !s.tapones;
+      return {
+        exito,
+        puntos: s.limpiadas * 6 + s.guardadas * 30 + (exito ? 100 : 0),
+        resumen: exito ? `¡Barrio destapado! Limpiaste ${s.limpiadas} hojas y guardaste ${s.guardadas} bolsas en el contenedor.`
+          : s.tapones ? `${s.tapones} bolsa(s) taparon la boca de tormenta y la calle se inundó.`
+          : `Quedaron ${s.hojas.length} hojas en la canaleta: el agua desborda y cae contra la pared de la casa.`
+      };
+    }
+  },
+
+  /* -------------------------------------------------------------------
+     G6. ¡ASEGURA EL PATIO! (Vientos fuertes)
+     Las ráfagas empujan los objetos hacia la derecha: si salen de la
+     pantalla se vuelven proyectiles. La chapa suelta vuela a los 10 s.
+     ------------------------------------------------------------------- */
+  patio: {
+    titulo: "¡Asegura el Patio!", icono: "🪴", duracion: 15,
+    instrucciones: [
+      ["🪴", "ARRASTRÁ macetas, sillas y herramientas al COBERTIZO antes de que el viento se las lleve."],
+      ["🔨", "TOCÁ 3 veces la chapa suelta del techo para clavarla antes de que salga volando."],
+      ["🎯", "Ganás si guardás los 5 objetos y la chapa queda asegurada."]
+    ],
+    crear() {
+      const objetos = [["🪴", 230, 8], ["🧰", 300, 10], ["🪑", 370, 24], ["🪴", 440, 8], ["🪑", 510, 24]]
+        .map(([e, x, v], i) => ({ e, x, y: 410 + (i % 2) * 14, v, estado: "suelto", giro: 0, fase: i }));
+      const lineas = [];
+      for (let i = 0; i < 45; i++) lineas.push({ x: Math.random() * W, y: Math.random() * 380, l: 30 + Math.random() * 50 });
+      return { objetos, lineas, clavos: 0, chapaVolo: false, chapaT: 0, rafaga: 0, guardados: 0, volados: 0, arr: null, t: 0 };
+    },
+    actualizar(s, dt, t) {
+      s.t = t;
+      s.rafaga = Math.pow(Math.max(0, Math.sin(t * 1.7)), 2) * .8 + .2;        // ráfagas que van y vienen (0.2 a 1)
+      s.lineas.forEach(l => { l.x += (300 + 900 * s.rafaga) * dt; if (l.x > W + 60) { l.x = -60; l.y = Math.random() * 380; } });
+      s.objetos.forEach(o => {
+        if (o.estado !== "suelto" || (s.arr && s.arr.o === o)) return;
+        o.x += o.v * (.3 + 1.6 * s.rafaga) * dt;
+        if (o.e === "🪑") o.giro += s.rafaga * dt * 2;
+        if (o.x > W + 20) {
+          o.estado = "volado"; s.volados++;
+          flotante("💥 ¡Se volvió un proyectil!", 640, 360, "#ff4d6d", 20); sacudir(); sonido("fallo");
+        }
+      });
+      if (!s.chapaVolo && s.clavos < 3 && t >= 10) {
+        s.chapaVolo = true; s.chapaT = t;
+        flotante("¡La chapa salió volando!", 640, 110, "#ff4d6d", 24); sacudir(); sonido("fallo");
+      }
+    },
+    terminado: (s) => s.guardados + s.volados === 5 && (s.clavos >= 3 || s.chapaVolo),
+    estado: (s) => `📦 Guardados: ${s.guardados}/5   ·   🔨 Chapa: ${s.chapaVolo ? "¡VOLÓ!" : s.clavos >= 3 ? "asegurada ✔" : s.clavos + "/3 clavos"}   ·   💨 Ráfaga: ${Math.round(40 + 60 * s.rafaga)} km/h`,
+    abajo(s, x, y, id) {
+      if (!s.chapaVolo && s.clavos < 3 && dist(x, y, 640, 160) < 58) {
+        s.clavos++; chispas(600 + s.clavos * 20, 162, "#d0d4da", 8); flotante(`🔨 ${s.clavos}/3`, 640, 125, "#ffcc33"); sonido("martillo");
+        if (s.clavos === 3) { flotante("¡Chapa asegurada!", 640, 95, "#2ee59d"); sonido("ok"); }
+        return;
+      }
+      if (s.arr) return;
+      const o = s.objetos.find(o => o.estado === "suelto" && dist(x, y, o.x, o.y) < 42);
+      if (o) { s.arr = { id, o }; sonido("tic"); }
+    },
+    mover(s, x, y, id) { if (s.arr && s.arr.id === id) { s.arr.o.x = x; s.arr.o.y = y; } },
+    arriba(s, x, y, id) {
+      if (!s.arr || s.arr.id !== id) return;
+      const o = s.arr.o; s.arr = null;
+      if (x > 10 && x < 195 && y > 200 && y < 395) {
+        o.estado = "guardado"; s.guardados++;
+        chispas(100, 330, "#2ee59d", 12); flotante("¡Guardado!", 100, 225, "#2ee59d"); sonido("ok");
+      } else { o.y = Math.max(400, Math.min(428, y)); }
+    },
+    dibujar(ctx, s, t) {
+      let g = ctx.createLinearGradient(0, 0, 0, 380);
+      g.addColorStop(0, "#4b4f5e"); g.addColorStop(1, "#b49a78");
+      ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+      ctx.fillStyle = "#6b8f3a"; ctx.fillRect(0, 380, W, 70);
+      // Cobertizo (a la izquierda: hay que arrastrar contra el viento)
+      const arr = s.arr && s.arr.o;
+      ctx.fillStyle = "#7b6a58"; ctx.fillRect(20, 240, 160, 140);
+      ctx.fillStyle = "#5a4a3a"; ctx.beginPath(); ctx.moveTo(10, 242); ctx.lineTo(100, 195); ctx.lineTo(190, 242); ctx.fill();
+      ctx.fillStyle = "#2b221a"; ctx.fillRect(65, 285, 70, 95);
+      texto("COBERTIZO", 100, 228, 13, "#fff");
+      s.objetos.filter(o => o.estado === "guardado").forEach((o, i) => emoji(o.e, 80 + (i % 3) * 20, 345 - Math.floor(i / 3) * 24, 20));
+      if (arr) { ctx.strokeStyle = `rgba(46,229,157,${.6 + .4 * Math.sin(t * 10)})`; ctx.lineWidth = 6; ctx.strokeRect(14, 192, 172, 194); }
+      // Árbol sacudido por el viento
+      ctx.fillStyle = "#5b3a22"; ctx.fillRect(452, 300, 14, 80);
+      emoji("🌳", 460, 280, 110, Math.sin(t * 6) * .08 * (.4 + s.rafaga));
+      // Casa con la chapa suelta
+      ctx.fillStyle = "#e6d3b3"; ctx.fillRect(540, 190, 240, 190);
+      ctx.fillStyle = "#8d3b2b"; ctx.beginPath(); ctx.moveTo(525, 192); ctx.lineTo(660, 120); ctx.lineTo(795, 192); ctx.fill();
+      ctx.fillStyle = "#3b5f80"; ctx.fillRect(570, 240, 60, 50); ctx.fillRect(690, 240, 60, 50);
+      ctx.fillStyle = "#6b4423"; ctx.fillRect(635, 300, 46, 80);
+      const dibujarChapa = (x, y, ang, asegurada) => {
+        ctx.save(); ctx.translate(x, y); ctx.rotate(ang);
+        ctx.fillStyle = "#b8bec6"; ctx.fillRect(0, -11, 90, 22);
+        ctx.strokeStyle = "#8a9099"; ctx.lineWidth = 2;
+        for (let k = 8; k < 90; k += 10) { ctx.beginPath(); ctx.moveTo(k, -11); ctx.lineTo(k, 11); ctx.stroke(); }
+        if (asegurada) { ctx.fillStyle = "#333"; [15, 45, 75].forEach(k => { ctx.beginPath(); ctx.arc(k, 0, 3, 0, Math.PI * 2); ctx.fill(); }); }
+        ctx.restore();
+      };
+      if (s.chapaVolo) {
+        const dtv = t - s.chapaT;
+        ctx.fillStyle = "#2a1e18"; ctx.fillRect(600, 150, 80, 16);                      // agujero en el techo
+        dibujarChapa(595 + dtv * 320, 160 - dtv * 110, dtv * 9, false);
+      } else if (s.clavos >= 3) {
+        dibujarChapa(595, 160, 0, true);
+        texto("✔", 690, 140, 24, "#2ee59d", "center", true);
+      } else {
+        const ang = -Math.abs(Math.sin(t * 12)) * .35 * (.4 + s.rafaga) * (1 + s.t / 10);
+        dibujarChapa(595, 160, ang, false);
+        ctx.strokeStyle = `rgba(255,204,51,${.5 + .5 * Math.sin(t * 9)})`; ctx.lineWidth = 4;
+        ctx.beginPath(); ctx.arc(640, 160, 58, 0, Math.PI * 2); ctx.stroke();
+        texto(`¡TOCÁ! ${s.clavos}/3 🔨`, 640, 88, 15, "#ffcc33", "center", true);
+        texto(`vuela en ${Math.max(0, Math.ceil(10 - s.t))} s`, 640, 222, 13, "#ff8da1", "center", true);
+      }
+      // Objetos del patio
+      s.objetos.forEach(o => {
+        if (o.estado !== "suelto") return;
+        emoji(o.e, o.x, o.y, arr === o ? 54 : 44, o.giro);
+      });
+      // Ráfagas visibles
+      ctx.strokeStyle = `rgba(255,255,255,${.25 + .5 * s.rafaga})`; ctx.lineWidth = 3; ctx.beginPath();
+      s.lineas.forEach(l => { ctx.moveTo(l.x, l.y); ctx.lineTo(l.x - l.l * (.5 + s.rafaga), l.y); });
+      ctx.stroke();
+      ctx.fillStyle = "rgba(0,0,0,.45)"; rrect(14, 12, 250, 40, 12); ctx.fill();
+      texto(`💨 Ráfaga: ${Math.round(40 + 60 * s.rafaga)} km/h ➜`, 26, 32, 18, s.rafaga > .7 ? "#ff8da1" : "#fff", "left");
+    },
+    evaluar(s) {
+      const exito = s.guardados === 5 && s.clavos >= 3;
+      return {
+        exito,
+        puntos: s.guardados * 25 + (s.clavos >= 3 ? 50 : 0) + (exito ? 75 : 0),
+        resumen: exito ? "¡Patio asegurado! Todo guardado y la chapa clavada: no quedó ningún proyectil suelto."
+          : `Guardaste ${s.guardados} de 5 objetos` + (s.chapaVolo ? " y la chapa salió volando." : s.clavos >= 3 ? "." : ` y la chapa quedó con ${s.clavos}/3 clavos.`)
+      };
+    }
+  },
+
+  /* -------------------------------------------------------------------
+     G7. ¡BRIGADA DE HIDRATACIÓN! (Ola de calor)
+     Cada víctima tiene un medidor de calor que sube. Agua fresca para
+     los animales, sombrilla para el abuelo. El hielo es una trampa.
+     ------------------------------------------------------------------- */
+  hidratacion: {
+    titulo: "¡Brigada de Hidratación!", icono: "🥣", duracion: 15,
+    instrucciones: [
+      ["🥣", "ARRASTRÁ platos de agua fresca hasta los animales que jadean."],
+      ["⛱️", "ARRASTRÁ la sombrilla hasta el abuelo que está sentado al sol."],
+      ["🧊", "¡Ojo! El hielo NO sirve: un cambio brusco de temperatura puede causar un shock."]
+    ],
+    crear() {
+      const victimas = [
+        { tipo: "animal", e: "🐶", x: 230, y: 395, calor: 35, ritmo: 5.5 },
+        { tipo: "animal", e: "🐱", x: 380, y: 415, calor: 25, ritmo: 6 },
+        { tipo: "animal", e: "🐶", x: 660, y: 400, calor: 40, ritmo: 5 },
+        { tipo: "abuelo", e: "👴", x: 520, y: 292, calor: 30, ritmo: 5 }
+      ].map((v, i) => ({ ...v, atendido: false, colapso: false, fase: i }));
+      const fichas = [
+        { tipo: "agua", e: "🥣", bx: 130 }, { tipo: "agua", e: "🥣", bx: 200 }, { tipo: "agua", e: "🥣", bx: 270 },
+        { tipo: "sombra", e: "⛱️", bx: 355 }, { tipo: "hielo", e: "🧊", bx: 440 }
+      ].map(f => ({ ...f, by: 62, x: f.bx, y: 62, usada: false }));
+      return { victimas, fichas, temp: 33, errores: 0, arr: null };
+    },
+    actualizar(s, dt, t) {
+      s.temp = 33 + 8 * Math.min(1, t / 15);
+      s.victimas.forEach(v => {
+        if (v.atendido) { v.calor = Math.max(0, v.calor - 25 * dt); return; }
+        if (v.colapso) return;
+        v.calor += v.ritmo * dt;
+        if (v.calor >= 100) {
+          v.colapso = true; v.calor = 100;
+          flotante("🥵 ¡Golpe de calor!", v.x, v.y - 60, "#ff4d6d", 20); sacudir(); sonido("fallo");
+        }
+      });
+    },
+    terminado: (s) => s.victimas.every(v => v.atendido || v.colapso),
+    estado(s) {
+      const animales = s.victimas.filter(v => v.tipo === "animal" && v.atendido).length;
+      const abuelo = s.victimas.find(v => v.tipo === "abuelo");
+      return `🥣 Animales hidratados: ${animales}/3   ·   ⛱️ Abuelo: ${abuelo.atendido ? "a la sombra ✔" : abuelo.colapso ? "¡golpe de calor!" : "¡AL SOL!"}   ·   🌡️ ${s.temp.toFixed(1)} °C`;
+    },
+    abajo(s, x, y, id) {
+      if (s.arr) return;
+      const f = s.fichas.find(f => !f.usada && dist(x, y, f.x, f.y) < 38);
+      if (f) { s.arr = { id, f }; sonido("tic"); }
+    },
+    mover(s, x, y, id) { if (s.arr && s.arr.id === id) { s.arr.f.x = x; s.arr.f.y = y; } },
+    arriba(s, x, y, id) {
+      if (!s.arr || s.arr.id !== id) return;
+      const f = s.arr.f; s.arr = null;
+      const v = s.victimas.filter(v => !v.atendido && !v.colapso && dist(x, y, v.x, v.y) < (v.tipo === "abuelo" ? 95 : 75))
+        .sort((a, b) => dist(x, y, a.x, a.y) - dist(x, y, b.x, b.y))[0];
+      const volver = () => { f.x = f.bx; f.y = f.by; };
+      if (!v) return volver();
+      if (f.tipo === "hielo") {
+        s.errores++; flotante("🧊 ¡No! Puede causar shock térmico", v.x, v.y - 60, "#ff4d6d", 18); sonido("error"); sacudir();
+        return volver();
+      }
+      if (f.tipo === "agua" && v.tipo === "animal") {
+        v.atendido = true; f.usada = true; f.x = v.x + 34; f.y = v.y + 14;
+        chispas(v.x, v.y, "#7cc3ff", 14); flotante("💧 ¡Gracias!", v.x, v.y - 55, "#7cc3ff"); sonido("ok");
+      } else if (f.tipo === "sombra" && v.tipo === "abuelo") {
+        v.atendido = true; f.usada = true; f.x = v.x; f.y = v.y - 62;
+        chispas(v.x, v.y, "#2ee59d", 14); flotante("😌 ¡Qué alivio!", v.x, v.y - 110, "#2ee59d"); sonido("ok");
+      } else {
+        flotante(v.tipo === "abuelo" ? "Al abuelo: ¡sombra! ⛱️" : "A los animales: ¡agua! 🥣", v.x, v.y - 60, "#ffcc33", 18); sonido("error");
+        volver();
+      }
+    },
+    dibujar(ctx, s, t) {
+      const calorFrac = (s.temp - 33) / 8;
+      let g = ctx.createLinearGradient(0, 0, 0, 330);
+      g.addColorStop(0, "#ffb347"); g.addColorStop(1, "#ffeab3");
+      ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+      // Sol gigante con rayos que giran
+      ctx.save(); ctx.translate(700, 80); ctx.rotate(t * .5);
+      ctx.fillStyle = "rgba(255,200,40,.55)";
+      for (let k = 0; k < 12; k++) { ctx.rotate(Math.PI / 6); ctx.beginPath(); ctx.moveTo(-10, 60); ctx.lineTo(10, 60); ctx.lineTo(0, 100 + 10 * Math.sin(t * 4 + k)); ctx.fill(); }
+      ctx.restore();
+      emoji("☀️", 700, 80, 110);
+      // Plaza
+      ctx.fillStyle = "#d8c08a"; ctx.fillRect(0, 330, W, 120);
+      ctx.fillStyle = "#9cc45a"; ctx.beginPath(); ctx.ellipse(130, 345, 120, 18, 0, 0, Math.PI * 2); ctx.fill();
+      emoji("🌳", 130, 270, 120);
+      ctx.fillStyle = "rgba(0,0,0,.18)"; ctx.beginPath(); ctx.ellipse(140, 350, 80, 12, 0, 0, Math.PI * 2); ctx.fill();
+      // Banco
+      ctx.fillStyle = "#7a4b2a"; ctx.fillRect(465, 312, 110, 12); ctx.fillRect(472, 324, 8, 22); ctx.fillRect(560, 324, 8, 22);
+      // Aire caliente ondulando
+      ctx.strokeStyle = `rgba(255,255,255,${.12 + .15 * calorFrac})`; ctx.lineWidth = 2;
+      for (let k = 0; k < 6; k++) {
+        ctx.beginPath();
+        for (let x = 0; x <= W; x += 20) ctx.lineTo(x, 240 + k * 25 + Math.sin(x / 40 + t * 3 + k) * 5);
+        ctx.stroke();
+      }
+      // Víctimas con su medidor de calor
+      s.victimas.forEach(v => {
+        if (v.tipo === "abuelo" && v.atendido) { ctx.fillStyle = "rgba(0,0,0,.25)"; ctx.beginPath(); ctx.ellipse(v.x, v.y + 45, 70, 14, 0, 0, Math.PI * 2); ctx.fill(); }
+        const jadeo = !v.atendido && !v.colapso ? Math.abs(Math.sin(t * 10 + v.fase)) * -5 : 0;
+        ctx.globalAlpha = v.colapso ? .5 : 1;
+        emoji(v.e, v.x, v.y + jadeo, 48, v.colapso ? Math.PI / 2 : 0);
+        ctx.globalAlpha = 1;
+        if (!v.atendido && !v.colapso) {
+          emoji("💦", v.x + 26, v.y - 22 + (t * 30 + v.fase * 7) % 12, 14);
+          const c = v.calor / 100;
+          ctx.fillStyle = "rgba(0,0,0,.4)"; rrect(v.x - 32, v.y - 48, 64, 10, 5); ctx.fill();
+          ctx.fillStyle = c < .5 ? "#ffcc33" : c < .8 ? "#ff8a3c" : "#ff2b2b"; rrect(v.x - 32, v.y - 48, 64 * c, 10, 5); ctx.fill();
+        }
+        if (v.atendido) texto("✔", v.x - 28, v.y - 30, 22, "#1a9e5f", "center", true);
+        if (v.colapso) emoji("😵", v.x, v.y - 45, 26);
+      });
+      // Bandeja de recursos
+      ctx.fillStyle = "rgba(0,0,0,.3)"; rrect(90, 22, 400, 80, 16); ctx.fill();
+      texto("ARRASTRÁ ⬇", 290, 30, 12, "#fff");
+      s.fichas.forEach(f => {
+        const arrastrando = s.arr && s.arr.f === f;
+        if (f.usada) { emoji(f.e, f.x, f.y, f.tipo === "sombra" ? 90 : 30); return; }
+        emoji(f.e, f.x, f.y, arrastrando ? 56 : 44);
+        if (f.tipo === "hielo" && !arrastrando) texto("hielo", f.x, f.y + 30, 11, "#fff");
+      });
+      // Termómetro: se pone rojo y titila por encima de 38 °C
+      const rojo = s.temp >= 38;
+      ctx.fillStyle = "#fff"; rrect(22, 120, 30, 240, 15); ctx.fill();
+      const alto = 220 * Math.min(1, (s.temp - 30) / 12);
+      ctx.fillStyle = rojo ? (Math.sin(t * 12) > 0 ? "#ff1a1a" : "#c40000") : "#ff8a3c";
+      rrect(28, 350 - alto, 18, alto, 9); ctx.fill();
+      ctx.beginPath(); ctx.arc(37, 372, 22, 0, Math.PI * 2); ctx.fill();
+      texto(`${s.temp.toFixed(1)} °C`, 40, 100, 20, rojo ? "#d40000" : "#5a2d00", "left");
+      // Velo de calor sobre toda la escena
+      ctx.fillStyle = `rgba(255,60,0,${.18 * calorFrac})`; ctx.fillRect(0, 0, W, H);
+    },
+    evaluar(s) {
+      const salvados = s.victimas.filter(v => v.atendido).length, colapsos = s.victimas.filter(v => v.colapso).length;
+      const exito = colapsos === 0;
+      return {
+        exito,
+        puntos: Math.max(0, salvados * 40 + (exito ? 90 : 0) - s.errores * 20),
+        resumen: (exito ? "¡Brigada exitosa! Los animales tienen agua fresca y el abuelo está a la sombra."
+          : `${colapsos} sufrieron un golpe de calor: cada segundo cuenta.`)
+          + (s.errores ? ` Usaste hielo ${s.errores} vez/veces: recordá que debe ser agua fresca, no helada.` : "")
+      };
+    }
+  },
+
+  /* -------------------------------------------------------------------
+     G8. ¡A CUBIERTO! (Tormenta eléctrica)
+     Arrastrar 2 personas al auto o a la casa; tocar a la que está lejos
+     para que se agache. Rayos a los 4,5 / 9 / 13,5 s. El árbol = error
+     crítico (termina el minijuego).
+     ------------------------------------------------------------------- */
+  cubierto: {
+    titulo: "¡A Cubierto!", icono: "⚡", duracion: 15,
+    RAYOS: [4.5, 9, 13.5],
+    ARBOL: { x: 205, y: 385 },
+    instrucciones: [
+      ["🚗", "ARRASTRÁ a las 2 personas cercanas hasta adentro del AUTO o de la CASA."],
+      ["🧎", "La persona que está LEJOS no llega a tiempo: TOCALA para que adopte la posición de seguridad (en cuclillas)."],
+      ["🌳", "¡NUNCA lleves a nadie debajo del árbol! Los rayos caen en lo más alto."]
+    ],
+    crear() {
+      const personas = [
+        { x: 330, y: 410, lejos: false }, { x: 430, y: 398, lejos: false }, { x: 55, y: 420, lejos: true }
+      ].map((p, i) => ({ ...p, bx: p.x, by: p.y, estado: "expuesta", refugio: null, fase: i }));
+      return { personas, proxRayo: 0, flash: 0, rayo: null, critico: false, alcanzados: 0, arr: null, t: 0 };
+    },
+    descargar(s, tx, ty) {                     // dibuja un rayo hasta (tx, ty) y hace flash
+      const pts = [[tx + (Math.random() - .5) * 120, 0]];
+      for (let k = 1; k < 8; k++) pts.push([tx + (Math.random() - .5) * 60 * (1 - k / 8), ty * k / 8]);
+      pts.push([tx, ty]);
+      s.rayo = { pts, vida: .45 }; s.flash = 1;
+      sonido("trueno"); sacudir();
+    },
+    actualizar(s, dt, t) {
+      const D = MINIJUEGOS.cubierto;
+      s.t = t;
+      s.flash = Math.max(0, s.flash - dt * 2.5);
+      if (s.rayo && (s.rayo.vida -= dt) <= 0) s.rayo = null;
+      if (s.proxRayo < D.RAYOS.length && t >= D.RAYOS[s.proxRayo]) {
+        const primero = s.proxRayo === 0;
+        s.proxRayo++;
+        const expuestas = s.personas.filter(p => p.estado === "expuesta");
+        if (primero || !expuestas.length) {
+          D.descargar(s, D.ARBOL.x, 250);
+          flotante("⚡ ¡Cayó en el árbol!", D.ARBOL.x, 200, "#fff", 22);
+        } else {
+          expuestas.forEach(p => { p.estado = "alcanzada"; s.alcanzados++; });
+          D.descargar(s, expuestas[0].x, expuestas[0].y - 20);
+          flotante("⚡ ¡Quedó expuesta al rayo!", expuestas[0].x, expuestas[0].y - 70, "#ff4d6d", 20);
+        }
+      }
+    },
+    terminado: (s) => s.critico || s.personas.every(p => p.estado === "refugiada" || p.estado === "agachada" || p.estado === "alcanzada") ,
+    estado(s) {
+      const D = MINIJUEGOS.cubierto;
+      const r = s.personas.filter(p => p.estado === "refugiada").length;
+      const lejos = s.personas.find(p => p.lejos);
+      const prox = s.proxRayo < D.RAYOS.length ? Math.max(0, Math.ceil(D.RAYOS[s.proxRayo] - s.t)) + " s" : "—";
+      return `🚗 A cubierto: ${r}/2   ·   🧎 Posición de seguridad: ${lejos.estado === "agachada" ? "sí ✔" : "no"}   ·   ⚡ Próximo rayo: ${prox}`;
+    },
+    abajo(s, x, y, id) {
+      const p = s.personas.find(p => p.estado === "expuesta" && dist(x, y, p.x, p.y - 10) < 44);
+      if (!p) return;
+      if (p.lejos) {
+        p.estado = "agachada"; chispas(p.x, p.y, "#2ee59d", 12); flotante("🧎 ¡Posición de seguridad!", p.x + 90, p.y - 60, "#2ee59d", 18); sonido("ok");
+        return;
+      }
+      if (!s.arr) { s.arr = { id, p }; sonido("tic"); }
+    },
+    mover(s, x, y, id) { if (s.arr && s.arr.id === id) { s.arr.p.x = x; s.arr.p.y = y; } },
+    arriba(s, x, y, id) {
+      const D = MINIJUEGOS.cubierto;
+      if (!s.arr || s.arr.id !== id) return;
+      const p = s.arr.p; s.arr = null;
+      if (dist(x, y, D.ARBOL.x, D.ARBOL.y - 30) < 85) {               // ¡debajo del árbol!
+        s.critico = true; p.estado = "alcanzada"; p.x = D.ARBOL.x + 20; p.y = D.ARBOL.y;
+        D.descargar(s, D.ARBOL.x, 250);
+        flotante("❌ ¡NUNCA bajo un árbol!", D.ARBOL.x, 170, "#ff4d6d", 26);
+        return;
+      }
+      const enAuto = x > 495 && x < 640 && y > 340 && y < 440;
+      const enCasa = x > 680 && x < 795 && y > 240 && y < 390;
+      if (enAuto || enCasa) {
+        p.estado = "refugiada"; p.refugio = enAuto ? "auto" : "casa";
+        chispas(x, y, "#2ee59d", 12); flotante(enAuto ? "🚗 ¡Jaula de Faraday!" : "🏠 ¡A salvo!", x, y - 50, "#2ee59d", 18); sonido("ok");
+      } else { p.y = Math.max(360, Math.min(430, y)); }
+    },
+    dibujar(ctx, s, t) {
+      const D = MINIJUEGOS.cubierto;
+      let g = ctx.createLinearGradient(0, 0, 0, 350);
+      g.addColorStop(0, "#10131d"); g.addColorStop(1, "#3b4458");
+      ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+      // Nubes negras
+      ctx.fillStyle = "#1c2030";
+      for (let k = 0; k < 9; k++) { ctx.beginPath(); ctx.ellipse((k * 110 + t * 12) % 900 - 50, 30 + (k % 3) * 18, 90, 40, 0, 0, Math.PI * 2); ctx.fill(); }
+      if (Math.sin(t * 7.3) > .985) { ctx.fillStyle = "rgba(255,255,255,.12)"; ctx.fillRect(0, 0, W, H); }   // relámpagos lejanos
+      ctx.fillStyle = "#3f6b35"; ctx.fillRect(0, 350, W, 100);
+      // Casa lejana
+      ctx.fillStyle = "#cfc3a8"; ctx.fillRect(690, 260, 100, 120);
+      ctx.fillStyle = "#7a3b2e"; ctx.beginPath(); ctx.moveTo(680, 262); ctx.lineTo(740, 215); ctx.lineTo(800, 262); ctx.fill();
+      ctx.fillStyle = "#2b221a"; ctx.fillRect(725, 320, 32, 60);
+      texto("CASA", 740, 245, 12, "#fff");
+      // Auto
+      emoji("🚗", 568, 398, 100);
+      texto("AUTO", 568, 345, 13, "#fff", "center", true);
+      const refugiados = (r) => s.personas.filter(p => p.estado === "refugiada" && p.refugio === r).length;
+      for (let i = 0; i < refugiados("auto"); i++) emoji("🙂", 548 + i * 26, 385, 18);
+      for (let i = 0; i < refugiados("casa"); i++) emoji("🙂", 732 + i * 18, 340, 16);
+      if (s.arr) {
+        ctx.strokeStyle = `rgba(46,229,157,${.6 + .4 * Math.sin(t * 10)})`; ctx.lineWidth = 5;
+        ctx.strokeRect(495, 340, 145, 100); ctx.strokeRect(680, 240, 115, 150);
+        ctx.setLineDash([8, 6]); ctx.strokeStyle = "#ff4d6d";
+        ctx.beginPath(); ctx.arc(D.ARBOL.x, D.ARBOL.y - 30, 85, 0, Math.PI * 2); ctx.stroke(); ctx.setLineDash([]);
+        texto("¡NO!", D.ARBOL.x, D.ARBOL.y - 120, 22, "#ff4d6d", "center", true);
+      }
+      // Árbol aislado
+      ctx.fillStyle = "#5b3a22"; ctx.fillRect(D.ARBOL.x - 9, 300, 18, 85);
+      emoji("🌳", D.ARBOL.x, 270, 150);
+      // Personas
+      s.personas.forEach(p => {
+        if (p.estado === "refugiada") return;
+        if (p.estado === "agachada") { emoji("🧎", p.x, p.y, 46); return; }
+        if (p.estado === "alcanzada") { ctx.globalAlpha = .5; emoji("🧍", p.x, p.y, 48); ctx.globalAlpha = 1; emoji("⚡", p.x + 20, p.y - 30, 26); return; }
+        const grande = s.arr && s.arr.p === p;
+        if (p.lejos) {
+          ctx.strokeStyle = `rgba(255,204,51,${.5 + .5 * Math.sin(t * 9)})`; ctx.lineWidth = 4;
+          ctx.beginPath(); ctx.arc(p.x, p.y - 10, 38, 0, Math.PI * 2); ctx.stroke();
+          texto("LEJOS: ¡TOCALO!", p.x + 30, p.y - 62, 13, "#ffcc33", "center", true);
+        }
+        emoji("🧍", p.x, p.y, grande ? 58 : 48);
+      });
+      // Rayo y destello blanco
+      if (s.rayo) {
+        ctx.save();
+        ctx.strokeStyle = "#fff"; ctx.lineWidth = 5; ctx.shadowColor = "#bcd8ff"; ctx.shadowBlur = 25;
+        ctx.beginPath(); s.rayo.pts.forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)); ctx.stroke();
+        ctx.restore();
+      }
+      if (s.flash > 0) { ctx.fillStyle = `rgba(255,255,255,${s.flash * .85})`; ctx.fillRect(0, 0, W, H); }
+      // Lluvia
+      ctx.strokeStyle = "rgba(180,210,255,.45)"; ctx.lineWidth = 2; ctx.beginPath();
+      for (let i = 0; i < 60; i++) { const x = (i * 57.3 + t * 70) % W, y = (i * 97.3 + t * 560) % 470 - 20; ctx.moveTo(x, y); ctx.lineTo(x - 4, y + 14); }
+      ctx.stroke();
+      if (s.proxRayo < D.RAYOS.length) {
+        ctx.fillStyle = "rgba(0,0,0,.5)"; rrect(600, 12, 186, 40, 12); ctx.fill();
+        texto(`⚡ Rayo en ${Math.max(0, D.RAYOS[s.proxRayo] - s.t).toFixed(1)} s`, 693, 32, 18, "#ffcc33");
+      }
+    },
+    evaluar(s) {
+      const refugiadas = s.personas.filter(p => p.estado === "refugiada").length;
+      const agachada = s.personas.find(p => p.lejos).estado === "agachada";
+      const exito = !s.critico && !s.alcanzados && refugiadas === 2 && agachada;
+      return {
+        exito,
+        puntos: s.critico ? 0 : refugiadas * 60 + (agachada ? 60 : 0) + (exito ? 70 : 0),
+        resumen: s.critico ? "Llevaste a alguien debajo del árbol: es el lugar más peligroso durante una tormenta eléctrica."
+          : exito ? "¡Todos a salvo! Dos personas a cubierto y la tercera en posición de seguridad."
+          : `${refugiadas} de 2 personas a cubierto` + (agachada ? "" : " y la persona lejana quedó de pie en el descampado") + "."
+      };
+    }
   }
 };
 
@@ -1804,7 +2717,7 @@ function despuesDeResultado() {
 }
 
 function puntajeMaximo() {
-  return estado.lista.reduce((suma, e) => suma + CONFIG.maxTrivia + (e.minijuego ? CONFIG.maxMinijuego : 0), 0);
+  return estado.lista.reduce((suma, e) => suma + CONFIG.maxTrivia + (e.minijuego ? CONFIG.maxMinijuego : 0) + (e.celular ? CONFIG.puntosCelular : 0), 0);
 }
 
 function mostrarFinal() {
@@ -1812,14 +2725,17 @@ function mostrarFinal() {
   const completo = estado.historial.length === estado.lista.length;
   const gano = estado.vidas > 0 && completo;
   const ratio = estado.puntaje / puntajeMaximo();
-  const rango = RANGOS.filter(([min]) => ratio >= min).pop()[1];
+  const modo = MODOS[estado.modo];
+  const rango = modo.rangos.filter(([min]) => ratio >= min).pop()[1];
+  $("fin-leccion-titulo").textContent = modo.leccion.titulo;
+  $("fin-leccion-texto").innerHTML = modo.leccion.texto;
 
   $("fin-icono").textContent = gano ? "🏆" : "💥";
   $("fin-titulo").textContent = gano ? "¡VICTORIA!" : "¡DERROTA!";
   $("fin-titulo").style.color = gano ? "var(--exito)" : "var(--fallo)";
   $("fin-rango").textContent = rango;
   $("fin-subtitulo").textContent = gano
-    ? `Terminaste con ${estado.vidas} ❤️. ¡El territorio está a salvo gracias a tus decisiones!`
+    ? `Terminaste con ${estado.vidas} ❤️. ${modo.leccion.victoria}`
     : "Te quedaste sin vidas, pero lo importante es lo que aprendiste. ¡Repasemos!";
 
   // Animación de conteo del puntaje
@@ -1835,7 +2751,8 @@ function mostrarFinal() {
       <td>${h.esc.emoji} ${h.esc.nombre}</td>
       <td>${icono(h.trivia)} ${h.porTiempo ? "⏰ sin responder" : h.triviaPuntos ? "+" + h.triviaPuntos : "0"}</td>
       <td>${h.esc.minijuego ? (h.mini ? `${h.mini.exito ? "✅" : "❌"} +${h.mini.puntos}` : "— no jugado") : "—"}</td>
-    </tr>`).join("");
+    </tr>`).join("") +
+    (estado.recital ? `<tr><td>📱 Invitación al recital</td><td colspan="2">${estado.recital.fue ? "❌ Fuiste con alerta naranja" : `✅ Te quedaste en casa (+${CONFIG.puntosCelular})`}</td></tr>` : "");
 
   $("fin-capsulas").innerHTML = estado.lista.map(e => `<div><strong>${e.emoji} ${e.nombre}</strong>${e.capsula}</div>`).join("");
 
@@ -1882,6 +2799,21 @@ function tono(frec, dur, tipo = "sine", cuando = 0, vol = .12) {
     osc.start(t); osc.stop(t + dur);
   } catch (e) { /* navegador sin audio: seguimos en silencio */ }
 }
+/* Ruido filtrado: suena como un trueno lejano */
+function ruido(dur, vol = .5) {
+  if (!sonidoActivo) return;
+  try {
+    audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+    const n = Math.floor(audioCtx.sampleRate * dur);
+    const buf = audioCtx.createBuffer(1, n, audioCtx.sampleRate), d = buf.getChannelData(0);
+    for (let i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / n, 2);
+    const src = audioCtx.createBufferSource(), filtro = audioCtx.createBiquadFilter(), gan = audioCtx.createGain();
+    src.buffer = buf; filtro.type = "lowpass"; filtro.frequency.value = 380; gan.gain.value = vol;
+    src.connect(filtro).connect(gan).connect(audioCtx.destination);
+    src.start();
+  } catch (e) { /* sin audio */ }
+}
+
 function sonido(tipo) {
   const s = {
     alerta:   () => { tono(880, .15, "square"); tono(660, .15, "square", .18); tono(880, .15, "square", .36); },
@@ -1892,7 +2824,10 @@ function sonido(tipo) {
     exito:    () => { tono(523, .12); tono(659, .12, "sine", .12); tono(784, .25, "sine", .24); },
     parcial:  () => { tono(523, .15); tono(587, .25, "sine", .15); },
     fallo:    () => { tono(300, .25, "sawtooth"); tono(200, .4, "sawtooth", .25); },
-    victoria: () => [523, 659, 784, 1046].forEach((f, i) => tono(f, .22, "triangle", i * .13))
+    victoria: () => [523, 659, 784, 1046].forEach((f, i) => tono(f, .22, "triangle", i * .13)),
+    martillo: () => { tono(900, .05, "square", 0, .1); tono(500, .06, "square", .05, .08); },
+    trueno:   () => ruido(1.6),
+    notificacion: () => { tono(1320, .09); tono(1760, .14, "sine", .1); tono(1320, .09, "sine", .45); tono(1760, .14, "sine", .55); }
   };
   (s[tipo] || (() => {}))();
 }
@@ -1914,13 +2849,17 @@ function volverAlInicio() {
   if (estado) clearInterval(estado.timer);
   limpiarConfeti();
   M = null;
-  estado = estadoInicial("completo");
+  estado = estadoInicial("barrio");
   actualizarHUD();
   pintarRecord();
   mostrarPantalla("p-inicio");
 }
 
-$("btn-jugar").addEventListener("click", seguro(() => nuevaPartida("completo")));
+$("btn-jugar").addEventListener("click", seguro(() => nuevaPartida("barrio")));
+$("btn-centro").addEventListener("click", seguro(() => nuevaPartida("completo")));
+$("btn-cel-voy").addEventListener("click", seguro(() => responderCelular(true)));
+$("btn-cel-novoy").addEventListener("click", seguro(() => responderCelular(false)));
+$("btn-cel-seguir").addEventListener("click", seguro(() => estado.vidas <= 0 ? mostrarFinal() : iniciarEscenario()));
 $("btn-express").addEventListener("click", seguro(() => nuevaPartida("express")));
 $("btn-cap-seguir").addEventListener("click", seguro(despuesDeCapsula));
 $("btn-ins-listo").addEventListener("click", seguro(arrancarMinijuego));
@@ -1938,6 +2877,8 @@ document.addEventListener("keydown", (e) => {
     const i = { "1": 0, "2": 1, "3": 2, "a": 0, "b": 1, "c": 2 }[e.key.toLowerCase()];
     const b = $("tr-opciones").children[i];
     if (b && !b.disabled) b.click();
+  } else if (pantallaActiva("p-celular")) {
+    if ($("cel-resultado").style.display !== "none" && e.key === "Enter") $("btn-cel-seguir").click();
   } else if (e.key === "Enter") {
     const b = document.querySelector(".pantalla.activa .btn");
     if (b) b.click();
@@ -1956,7 +2897,7 @@ function reiniciarInactividad() {
 ["pointerdown", "keydown"].forEach(ev => document.addEventListener(ev, reiniciarInactividad));
 
 // ¡A jugar!
-estado = estadoInicial("completo");
+estado = estadoInicial("barrio");
 actualizarHUD();
 pintarRecord();
 reiniciarInactividad();
