@@ -812,7 +812,7 @@ const BARRIO = [
     ],
     capsula: "¡Nunca subas al techo con viento fuerte! Los objetos sueltos en el patio se convierten en proyectiles mortales con ráfagas severas.",
     minijuego: "patio",
-    leccion: "Con ráfagas de 80 km/h una silla de jardín o una maceta pueden volar decenas de metros, romper vidrios o herir a alguien. Revisá chapas y techos con buen tiempo; ante el aviso, guardá o atá todo lo suelto, entrá a las mascotas y quedate adentro, lejos de las ventanas."
+    leccion: "Con ráfagas de 80 km/h una silla de jardín o una maceta pueden volar decenas de metros, romper vidrios o herir a alguien. Lo que se puede mover se guarda; lo pesado (sombrillas, toldos, juegos) se cierra y se ata. Las chapas y techos se revisan con buen tiempo: con el aviso vigente NO se sube al techo, aunque veas una chapa floja. Entrá a las mascotas y quedate adentro, lejos de las ventanas."
   },
   {
     id: "calor", nombre: "Ola de Calor Extrema", lugar: "La plaza del barrio", emoji: "🥵",
@@ -2245,27 +2245,68 @@ const MINIJUEGOS = {
 
   /* -------------------------------------------------------------------
      G6. ¡ASEGURA EL PATIO! (Vientos fuertes)
-     Las ráfagas empujan los objetos hacia la derecha: si salen de la
-     pantalla se vuelven proyectiles. La chapa suelta vuela a los 10 s.
+     Cada tarea usa un gesto distinto:
+       🐕 perro asustado que corre -> atraparlo y llevarlo a la puerta
+       ⛱️ sombrilla pesada         -> MANTENER apretado para atarla
+       🪟 ventanas                  -> tocar para cerrar
+       🪴🪑 objetos chicos          -> arrastrar al cobertizo
+       🪜 escalera al techo         -> ¡TRAMPA! Subir con viento = error crítico
+     A los 8 s la chapa floja sale volando sola: por eso no se sube.
      ------------------------------------------------------------------- */
   patio: {
-    titulo: "¡Asegura el Patio!", icono: "🪴", duracion: 15,
+    titulo: "¡Asegura el Patio!", icono: "🐕", duracion: 15,
+    SOMBRILLA: { x: 345, y: 300 },
+    ESCALERA: { x: 512, y: 318 },
+    PUERTA: { x1: 615, x2: 705, y1: 285, y2: 395 },
+    VUELA_CHAPA: 8,
     instrucciones: [
-      ["🪴", "ARRASTRÁ macetas, sillas y herramientas al COBERTIZO antes de que el viento se las lleve."],
-      ["🔨", "TOCÁ 3 veces la chapa suelta del techo para clavarla antes de que salga volando."],
-      ["🎯", "Ganás si guardás los 5 objetos y la chapa queda asegurada."]
+      ["🐕", "¡El perro está asustado y corre! ATRAPALO y llevalo hasta la PUERTA de la casa."],
+      ["⛱️", "La sombrilla es muy pesada para moverla: MANTENÉ APRETADO sobre ella para cerrarla y atarla."],
+      ["🪟", "TOCÁ las 2 ventanas para cerrarlas y ARRASTRÁ la maceta y la silla al COBERTIZO. ¿Y la chapa floja del techo? Acordate de la trivia… 🤔"]
     ],
     crear() {
-      const objetos = [["🪴", 230, 8], ["🧰", 300, 10], ["🪑", 370, 24], ["🪴", 440, 8], ["🪑", 510, 24]]
-        .map(([e, x, v], i) => ({ e, x, y: 410 + (i % 2) * 14, v, estado: "suelto", giro: 0, fase: i }));
+      const objetos = [["🪴", 255, 10], ["🪑", 335, 22]]
+        .map(([e, x, v], i) => ({ e, x, y: 412 + i * 10, v, estado: "suelto", giro: 0 }));
       const lineas = [];
       for (let i = 0; i < 45; i++) lineas.push({ x: Math.random() * W, y: Math.random() * 380, l: 30 + Math.random() * 50 });
-      return { objetos, lineas, clavos: 0, chapaVolo: false, chapaT: 0, rafaga: 0, guardados: 0, volados: 0, arr: null, t: 0 };
+      return {
+        objetos, lineas,
+        perro: { x: 300, y: 405, vx: 140, vy: 40, adentro: false, cambio: 0 },
+        ventanas: [{ x: 588, y: 240, cerrada: false }, { x: 732, y: 240, cerrada: false }],
+        sombrilla: { atada: false, prog: 0, id: null },
+        rafaga: 0, guardados: 0, volados: 0, critico: false, chapaT: null, arr: null, t: 0
+      };
     },
     actualizar(s, dt, t) {
+      const D = MINIJUEGOS.patio;
       s.t = t;
-      s.rafaga = Math.pow(Math.max(0, Math.sin(t * 1.7)), 2) * .8 + .2;        // ráfagas que van y vienen (0.2 a 1)
+      s.rafaga = Math.pow(Math.max(0, Math.sin(t * 1.7)), 2) * .8 + .2;        // ráfagas que van y vienen
       s.lineas.forEach(l => { l.x += (300 + 900 * s.rafaga) * dt; if (l.x > W + 60) { l.x = -60; l.y = Math.random() * 380; } });
+
+      // El perro corre asustado y cambia de dirección de golpe
+      const p = s.perro;
+      if (!p.adentro && !(s.arr && s.arr.tipo === "perro")) {
+        p.cambio -= dt;
+        if (p.cambio <= 0) {
+          const ang = Math.random() * Math.PI * 2, vel = 110 + Math.random() * 70;
+          p.vx = Math.cos(ang) * vel; p.vy = Math.sin(ang) * vel * .4; p.cambio = .6 + Math.random() * .8;
+        }
+        p.x += p.vx * dt; p.y += p.vy * dt;
+        if (p.x < 215 || p.x > 470) { p.vx *= -1; p.x = Math.max(215, Math.min(470, p.x)); }
+        if (p.y < 385 || p.y > 432) { p.vy *= -1; p.y = Math.max(385, Math.min(432, p.y)); }
+      }
+
+      // Mantener apretado sobre la sombrilla: la barra se llena en 1 segundo
+      const so = s.sombrilla;
+      if (so.id !== null && !so.atada) {
+        so.prog += dt;
+        if (so.prog >= 1) {
+          so.atada = true; so.id = null;
+          chispas(D.SOMBRILLA.x, D.SOMBRILLA.y, "#ffcc33", 14); flotante("🪢 ¡Cerrada y atada!", D.SOMBRILLA.x, D.SOMBRILLA.y - 80, "#2ee59d"); sonido("ok");
+        }
+      }
+
+      // Las ráfagas arrastran lo que quedó suelto
       s.objetos.forEach(o => {
         if (o.estado !== "suelto" || (s.arr && s.arr.o === o)) return;
         o.x += o.v * (.3 + 1.6 * s.rafaga) * dt;
@@ -2275,81 +2316,176 @@ const MINIJUEGOS = {
           flotante("💥 ¡Se volvió un proyectil!", 640, 360, "#ff4d6d", 20); sacudir(); sonido("fallo");
         }
       });
-      if (!s.chapaVolo && s.clavos < 3 && t >= 10) {
-        s.chapaVolo = true; s.chapaT = t;
-        flotante("¡La chapa salió volando!", 640, 110, "#ff4d6d", 24); sacudir(); sonido("fallo");
+
+      // La chapa floja se suelta sola: por eso NO se sube al techo
+      if (s.chapaT === null && t >= D.VUELA_CHAPA) {
+        s.chapaT = t;
+        flotante("¡La chapa salió volando!", 640, 110, "#ff4d6d", 24);
+        flotante("Por eso NO se sube al techo 😮", 640, 140, "#ffcc33", 18);
+        sacudir(); sonido("fallo");
       }
     },
-    terminado: (s) => s.guardados + s.volados === 5 && (s.clavos >= 3 || s.chapaVolo),
-    estado: (s) => `📦 Guardados: ${s.guardados}/5   ·   🔨 Chapa: ${s.chapaVolo ? "¡VOLÓ!" : s.clavos >= 3 ? "asegurada ✔" : s.clavos + "/3 clavos"}   ·   💨 Ráfaga: ${Math.round(40 + 60 * s.rafaga)} km/h`,
+    listo(s) {
+      return s.perro.adentro && s.sombrilla.atada && s.ventanas.every(v => v.cerrada) && s.guardados === 2;
+    },
+    terminado(s) {                            // termina antes si ya no queda nada por hacer
+      const resto = s.perro.adentro && s.sombrilla.atada && s.ventanas.every(v => v.cerrada);
+      return s.critico || (resto && s.objetos.every(o => o.estado !== "suelto"));
+    },
+    estado(s) {
+      const v = s.ventanas.filter(v => v.cerrada).length;
+      return `🐕 Perro: ${s.perro.adentro ? "adentro ✔" : "¡suelto!"}   ·   ⛱️ Sombrilla: ${s.sombrilla.atada ? "atada ✔" : "suelta"}   ·   🪟 ${v}/2   ·   📦 ${s.guardados}/2   ·   💨 ${Math.round(40 + 60 * s.rafaga)} km/h`;
+    },
     abajo(s, x, y, id) {
-      if (!s.chapaVolo && s.clavos < 3 && dist(x, y, 640, 160) < 58) {
-        s.clavos++; chispas(600 + s.clavos * 20, 162, "#d0d4da", 8); flotante(`🔨 ${s.clavos}/3`, 640, 125, "#ffcc33"); sonido("martillo");
-        if (s.clavos === 3) { flotante("¡Chapa asegurada!", 640, 95, "#2ee59d"); sonido("ok"); }
+      const D = MINIJUEGOS.patio;
+      // ¡Trampa! Subir al techo con viento
+      if (dist(x, y, D.ESCALERA.x, D.ESCALERA.y) < 42) {
+        s.critico = true;
+        if (s.chapaT === null) s.chapaT = s.t;            // la ráfaga arranca la chapa en ese mismo momento
+        flotante("❌ ¡NUNCA subas al techo con viento!", 400, 200, "#ff4d6d", 26);
+        sacudir(); sonido("fallo");
+        return;
+      }
+      for (const v of s.ventanas) {
+        if (!v.cerrada && Math.abs(x - v.x) < 40 && Math.abs(y - v.y) < 34) {
+          v.cerrada = true; chispas(v.x, v.y, "#ffcc33", 10); flotante("¡Cerrada!", v.x, v.y - 42, "#2ee59d"); sonido("ok");
+          return;
+        }
+      }
+      if (!s.sombrilla.atada && s.sombrilla.id === null && dist(x, y, D.SOMBRILLA.x, D.SOMBRILLA.y) < 55) {
+        s.sombrilla.id = id; s.sombrilla.prog = 0; sonido("tic");
         return;
       }
       if (s.arr) return;
+      const p = s.perro;
+      if (!p.adentro && dist(x, y, p.x, p.y) < 48) { s.arr = { id, tipo: "perro" }; sonido("tic"); return; }
       const o = s.objetos.find(o => o.estado === "suelto" && dist(x, y, o.x, o.y) < 42);
-      if (o) { s.arr = { id, o }; sonido("tic"); }
+      if (o) { s.arr = { id, tipo: "objeto", o }; sonido("tic"); }
     },
-    mover(s, x, y, id) { if (s.arr && s.arr.id === id) { s.arr.o.x = x; s.arr.o.y = y; } },
-    arriba(s, x, y, id) {
+    mover(s, x, y, id) {
+      const D = MINIJUEGOS.patio;
+      // Si el dedo se va de la sombrilla, se corta el atado
+      if (s.sombrilla.id === id && dist(x, y, D.SOMBRILLA.x, D.SOMBRILLA.y) > 85) { s.sombrilla.id = null; s.sombrilla.prog = 0; }
       if (!s.arr || s.arr.id !== id) return;
-      const o = s.arr.o; s.arr = null;
+      const obj = s.arr.tipo === "perro" ? s.perro : s.arr.o;
+      obj.x = x; obj.y = y;
+    },
+    arriba(s, x, y, id) {
+      const D = MINIJUEGOS.patio;
+      if (s.sombrilla.id === id) {
+        if (!s.sombrilla.atada) flotante("¡Mantené apretado!", D.SOMBRILLA.x, D.SOMBRILLA.y - 95, "#ffcc33", 18);
+        s.sombrilla.id = null; s.sombrilla.prog = 0;
+      }
+      if (!s.arr || s.arr.id !== id) return;
+      const a = s.arr; s.arr = null;
+      if (a.tipo === "perro") {
+        const P = D.PUERTA;
+        if (x > P.x1 && x < P.x2 && y > P.y1 && y < P.y2) {
+          s.perro.adentro = true; chispas(660, 340, "#ff7eb6", 14); flotante("❤️ ¡A salvo adentro!", 660, 270, "#ff7eb6"); sonido("ok");
+        } else { s.perro.x = Math.max(215, Math.min(470, x)); s.perro.y = Math.max(385, Math.min(432, y)); }
+        return;
+      }
       if (x > 10 && x < 195 && y > 200 && y < 395) {
-        o.estado = "guardado"; s.guardados++;
+        a.o.estado = "guardado"; s.guardados++;
         chispas(100, 330, "#2ee59d", 12); flotante("¡Guardado!", 100, 225, "#2ee59d"); sonido("ok");
-      } else { o.y = Math.max(400, Math.min(428, y)); }
+      } else { a.o.y = Math.max(400, Math.min(428, y)); }
     },
     dibujar(ctx, s, t) {
+      const D = MINIJUEGOS.patio;
       let g = ctx.createLinearGradient(0, 0, 0, 380);
       g.addColorStop(0, "#4b4f5e"); g.addColorStop(1, "#b49a78");
       ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
       ctx.fillStyle = "#6b8f3a"; ctx.fillRect(0, 380, W, 70);
-      // Cobertizo (a la izquierda: hay que arrastrar contra el viento)
-      const arr = s.arr && s.arr.o;
+      const arrastrando = s.arr ? s.arr.tipo : null;
+
+      // Cobertizo
       ctx.fillStyle = "#7b6a58"; ctx.fillRect(20, 240, 160, 140);
       ctx.fillStyle = "#5a4a3a"; ctx.beginPath(); ctx.moveTo(10, 242); ctx.lineTo(100, 195); ctx.lineTo(190, 242); ctx.fill();
       ctx.fillStyle = "#2b221a"; ctx.fillRect(65, 285, 70, 95);
       texto("COBERTIZO", 100, 228, 13, "#fff");
-      s.objetos.filter(o => o.estado === "guardado").forEach((o, i) => emoji(o.e, 80 + (i % 3) * 20, 345 - Math.floor(i / 3) * 24, 20));
-      if (arr) { ctx.strokeStyle = `rgba(46,229,157,${.6 + .4 * Math.sin(t * 10)})`; ctx.lineWidth = 6; ctx.strokeRect(14, 192, 172, 194); }
-      // Árbol sacudido por el viento
-      ctx.fillStyle = "#5b3a22"; ctx.fillRect(452, 300, 14, 80);
-      emoji("🌳", 460, 280, 110, Math.sin(t * 6) * .08 * (.4 + s.rafaga));
-      // Casa con la chapa suelta
+      s.objetos.filter(o => o.estado === "guardado").forEach((o, i) => emoji(o.e, 85 + i * 30, 350, 22));
+      if (arrastrando === "objeto") { ctx.strokeStyle = `rgba(46,229,157,${.6 + .4 * Math.sin(t * 10)})`; ctx.lineWidth = 6; ctx.strokeRect(14, 192, 172, 194); }
+
+      // Casa
       ctx.fillStyle = "#e6d3b3"; ctx.fillRect(540, 190, 240, 190);
       ctx.fillStyle = "#8d3b2b"; ctx.beginPath(); ctx.moveTo(525, 192); ctx.lineTo(660, 120); ctx.lineTo(795, 192); ctx.fill();
-      ctx.fillStyle = "#3b5f80"; ctx.fillRect(570, 240, 60, 50); ctx.fillRect(690, 240, 60, 50);
-      ctx.fillStyle = "#6b4423"; ctx.fillRect(635, 300, 46, 80);
-      const dibujarChapa = (x, y, ang, asegurada) => {
+      ctx.fillStyle = "#6b4423"; ctx.fillRect(637, 300, 46, 80);
+      ctx.fillStyle = "#ffcc33"; ctx.beginPath(); ctx.arc(675, 342, 4, 0, Math.PI * 2); ctx.fill();
+      if (arrastrando === "perro") {
+        const P = D.PUERTA;
+        ctx.strokeStyle = `rgba(46,229,157,${.6 + .4 * Math.sin(t * 10)})`; ctx.lineWidth = 6; ctx.strokeRect(P.x1, P.y1, P.x2 - P.x1, P.y2 - P.y1);
+        texto("PUERTA", 660, 275, 13, "#2ee59d", "center", true);
+      }
+      if (s.perro.adentro) texto("🐕❤️", 660, 318, 16);
+
+      // Ventanas (tocar para cerrar)
+      s.ventanas.forEach(v => {
+        const x = v.x - 32, y = v.y - 26;
+        if (v.cerrada) {
+          ctx.fillStyle = "#7a4b2a"; ctx.fillRect(x, y, 64, 52);
+          ctx.strokeStyle = "#5b3a22"; ctx.lineWidth = 2;
+          for (let k = 8; k < 52; k += 8) { ctx.beginPath(); ctx.moveTo(x, y + k); ctx.lineTo(x + 64, y + k); ctx.stroke(); }
+          texto("✔", v.x, v.y, 24, "#2ee59d", "center", true);
+        } else {
+          ctx.fillStyle = "#2b3a4f"; ctx.fillRect(x, y, 64, 52);
+          const ancho = 18 + Math.sin(t * 12 + v.x) * 12;              // cortina que flamea
+          ctx.fillStyle = "#f2e6c9"; ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + ancho, y); ctx.lineTo(x + ancho * .6, y + 52); ctx.lineTo(x, y + 52); ctx.fill();
+          ctx.strokeStyle = `rgba(255,204,51,${.55 + .45 * Math.sin(t * 9)})`; ctx.lineWidth = 4; ctx.strokeRect(x - 4, y - 4, 72, 60);
+        }
+        ctx.strokeStyle = "#5b3a22"; ctx.lineWidth = 4; ctx.strokeRect(x, y, 64, 52);
+      });
+
+      // Chapa floja: flamea y a los 8 s sale volando sola
+      const dibujarChapa = (x, y, ang) => {
         ctx.save(); ctx.translate(x, y); ctx.rotate(ang);
         ctx.fillStyle = "#b8bec6"; ctx.fillRect(0, -11, 90, 22);
         ctx.strokeStyle = "#8a9099"; ctx.lineWidth = 2;
         for (let k = 8; k < 90; k += 10) { ctx.beginPath(); ctx.moveTo(k, -11); ctx.lineTo(k, 11); ctx.stroke(); }
-        if (asegurada) { ctx.fillStyle = "#333"; [15, 45, 75].forEach(k => { ctx.beginPath(); ctx.arc(k, 0, 3, 0, Math.PI * 2); ctx.fill(); }); }
         ctx.restore();
       };
-      if (s.chapaVolo) {
-        const dtv = t - s.chapaT;
-        ctx.fillStyle = "#2a1e18"; ctx.fillRect(600, 150, 80, 16);                      // agujero en el techo
-        dibujarChapa(595 + dtv * 320, 160 - dtv * 110, dtv * 9, false);
-      } else if (s.clavos >= 3) {
-        dibujarChapa(595, 160, 0, true);
-        texto("✔", 690, 140, 24, "#2ee59d", "center", true);
+      if (s.chapaT !== null) {
+        const dv = t - s.chapaT;
+        ctx.fillStyle = "#2a1e18"; ctx.fillRect(600, 150, 80, 16);
+        dibujarChapa(595 + dv * 320, 160 - dv * 110, dv * 9);
       } else {
-        const ang = -Math.abs(Math.sin(t * 12)) * .35 * (.4 + s.rafaga) * (1 + s.t / 10);
-        dibujarChapa(595, 160, ang, false);
-        ctx.strokeStyle = `rgba(255,204,51,${.5 + .5 * Math.sin(t * 9)})`; ctx.lineWidth = 4;
-        ctx.beginPath(); ctx.arc(640, 160, 58, 0, Math.PI * 2); ctx.stroke();
-        texto(`¡TOCÁ! ${s.clavos}/3 🔨`, 640, 88, 15, "#ffcc33", "center", true);
-        texto(`vuela en ${Math.max(0, Math.ceil(10 - s.t))} s`, 640, 222, 13, "#ff8da1", "center", true);
+        dibujarChapa(595, 160, -Math.abs(Math.sin(t * 12)) * .35 * (.4 + s.rafaga) * (1 + t / 8));
       }
-      // Objetos del patio
-      s.objetos.forEach(o => {
-        if (o.estado !== "suelto") return;
-        emoji(o.e, o.x, o.y, arr === o ? 54 : 44, o.giro);
-      });
+
+      // Escalera-trampa con su "invitación" tentadora
+      emoji("🪜", D.ESCALERA.x, D.ESCALERA.y, 78, -.12);
+      if (s.chapaT === null) {
+        ctx.fillStyle = "rgba(0,0,0,.55)"; rrect(D.ESCALERA.x - 92, 222, 184, 34, 10); ctx.fill();
+        texto("¿Subo a clavar la chapa? 🔨", D.ESCALERA.x, 239, 13, "#ffdd99");
+      }
+
+      // Sombrilla grande: se inclina con el viento hasta que la atan
+      const so = s.sombrilla, S = D.SOMBRILLA;
+      if (so.atada) {
+        ctx.fillStyle = "#c0392b"; ctx.fillRect(S.x - 6, S.y - 60, 12, 100);   // sombrilla cerrada
+        emoji("🪢", S.x + 18, S.y + 5, 26);
+        texto("✔", S.x - 22, S.y - 50, 22, "#2ee59d", "center", true);
+      } else {
+        emoji("⛱️", S.x, S.y, 92, Math.sin(t * 7) * .12 * (.4 + s.rafaga) + .1 * s.rafaga);
+        ctx.strokeStyle = "rgba(255,255,255,.3)"; ctx.lineWidth = 8;
+        ctx.beginPath(); ctx.arc(S.x, S.y, 52, 0, Math.PI * 2); ctx.stroke();
+        if (so.prog > 0) {
+          ctx.strokeStyle = "#ffcc33"; ctx.lineWidth = 8;
+          ctx.beginPath(); ctx.arc(S.x, S.y, 52, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * Math.min(1, so.prog)); ctx.stroke();
+        }
+        texto("¡MANTENÉ APRETADO!", S.x, S.y - 70, 13, "#ffcc33", "center", true);
+      }
+
+      // Objetos chicos
+      s.objetos.forEach(o => { if (o.estado === "suelto") emoji(o.e, o.x, o.y, s.arr && s.arr.o === o ? 54 : 44, o.giro); });
+
+      // Perro asustado (salta y "tiembla" mientras corre)
+      const p = s.perro;
+      if (!p.adentro) {
+        const agarrado = arrastrando === "perro";
+        emoji("🐕", p.x, p.y - (agarrado ? 0 : Math.abs(Math.sin(t * 14)) * 7), agarrado ? 56 : 46);
+        if (!agarrado) texto("¡guau!", p.x + 26, p.y - 34, 12, "#fff", "center", true);
+      }
+
       // Ráfagas visibles
       ctx.strokeStyle = `rgba(255,255,255,${.25 + .5 * s.rafaga})`; ctx.lineWidth = 3; ctx.beginPath();
       s.lineas.forEach(l => { ctx.moveTo(l.x, l.y); ctx.lineTo(l.x - l.l * (.5 + s.rafaga), l.y); });
@@ -2358,12 +2494,20 @@ const MINIJUEGOS = {
       texto(`💨 Ráfaga: ${Math.round(40 + 60 * s.rafaga)} km/h ➜`, 26, 32, 18, s.rafaga > .7 ? "#ff8da1" : "#fff", "left");
     },
     evaluar(s) {
-      const exito = s.guardados === 5 && s.clavos >= 3;
+      const D = MINIJUEGOS.patio;
+      const ventanas = s.ventanas.filter(v => v.cerrada).length;
+      const exito = !s.critico && D.listo(s);
+      const falta = [];
+      if (!s.perro.adentro) falta.push("el perro quedó afuera");
+      if (!s.sombrilla.atada) falta.push("la sombrilla quedó suelta");
+      if (ventanas < 2) falta.push(`${2 - ventanas} ventana(s) abierta(s)`);
+      if (s.guardados < 2) falta.push(s.volados ? "un objeto salió volando" : "faltó guardar objetos");
       return {
         exito,
-        puntos: s.guardados * 25 + (s.clavos >= 3 ? 50 : 0) + (exito ? 75 : 0),
-        resumen: exito ? "¡Patio asegurado! Todo guardado y la chapa clavada: no quedó ningún proyectil suelto."
-          : `Guardaste ${s.guardados} de 5 objetos` + (s.chapaVolo ? " y la chapa salió volando." : s.clavos >= 3 ? "." : ` y la chapa quedó con ${s.clavos}/3 clavos.`)
+        puntos: s.critico ? 0 : (s.perro.adentro ? 50 : 0) + (s.sombrilla.atada ? 50 : 0) + ventanas * 20 + s.guardados * 25 + (exito ? 60 : 0),
+        resumen: s.critico ? "Subiste a la escalera con ráfagas de 80 km/h: una ráfaga puede tirarte del techo y la chapa suelta corta como una cuchilla. ¡Mirá cómo salió volando!"
+          : exito ? "¡Patio asegurado! Perro adentro, ventanas cerradas, sombrilla atada y nada suelto… y no te subiste al techo."
+          : "Faltó: " + falta.join(", ") + "."
       };
     }
   },
