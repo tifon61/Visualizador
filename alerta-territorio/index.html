@@ -1,0 +1,1075 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Alerta Territorio</title>
+<!--
+  =====================================================================
+  ALERTA TERRITORIO: ¿Sobrevivirías a este clima?
+  Juego educativo para feria de ciencias (meteorología y climatología
+  regional de Argentina).
+
+  Todo está en este único archivo: HTML (estructura), CSS (estilos y
+  animaciones) y JavaScript (lógica del juego). No usa librerías ni
+  internet: se abre con doble clic en cualquier navegador.
+
+  Cómo está organizado el código:
+    1. CSS  -> variables de color, layout, pantallas, escenas animadas.
+    2. HTML -> una <section class="pantalla"> por cada pantalla del juego.
+    3. JS   -> a) DATOS de las regiones (para agregar escenarios nuevos
+                  sólo hay que tocar el objeto REGIONES).
+               b) ESTADO del juego (reputación, fondos, historial).
+               c) FUNCIONES de cada pantalla y de las escenas animadas.
+  =====================================================================
+-->
+<style>
+  /* ------------------------------------------------------------------
+     1. VARIABLES DE DISEÑO
+     Centralizar colores en :root permite cambiar el "look" del juego
+     editando una sola línea.
+     ------------------------------------------------------------------ */
+  :root {
+    --fondo: #0b1426;
+    --fondo-2: #13213d;
+    --tarjeta: #1b2c4f;
+    --borde: #2c4372;
+    --texto: #f2f6ff;
+    --texto-suave: #a9b8d8;
+    --acento: #ffcc33;      /* amarillo "alerta" */
+    --exito: #2ee59d;
+    --parcial: #ffb23e;
+    --fallo: #ff4d6d;
+    --pampa: #3fa9f5;
+    --arida: #f08a3c;
+    --patagonia: #9fd8ff;
+    --radio: 22px;
+    --sombra: 0 12px 30px rgba(0, 0, 0, .35);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { background: var(--fondo); }
+  body { min-height: 100vh; }
+
+  body {
+    font-family: "Segoe UI", system-ui, -apple-system, Roboto, Arial, sans-serif;
+    background: radial-gradient(circle at 20% 0%, #1d3566 0%, var(--fondo) 55%) fixed;
+    color: var(--texto);
+    overflow-x: hidden;
+    /* En pantallas táctiles evitamos selección de texto y zoom por doble toque */
+    -webkit-user-select: none;
+    user-select: none;
+    touch-action: manipulation;
+  }
+
+  /* ------------------------------------------------------------------
+     2. BARRA SUPERIOR (HUD): reputación, fondos y progreso
+     ------------------------------------------------------------------ */
+  .hud {
+    position: sticky; top: 0; z-index: 20;
+    display: flex; gap: 14px; align-items: center; justify-content: space-between;
+    flex-wrap: wrap;
+    padding: 10px 18px;
+    background: rgba(11, 20, 38, .85);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--borde);
+    transition: opacity .3s;
+  }
+  .hud.oculto { opacity: 0; pointer-events: none; }
+  .hud-logo { font-weight: 800; letter-spacing: .5px; font-size: 1.05rem; }
+  .hud-logo span { color: var(--acento); }
+  .hud-datos { display: flex; gap: 18px; align-items: center; flex-wrap: wrap; }
+  .hud-item { display: flex; align-items: center; gap: 8px; font-weight: 700; }
+  .barra {
+    width: 130px; height: 14px; border-radius: 99px;
+    background: #0a1222; border: 1px solid var(--borde); overflow: hidden;
+  }
+  .barra > div {
+    height: 100%; width: 50%;
+    background: linear-gradient(90deg, var(--fallo), var(--acento), var(--exito));
+    background-size: 130px 100%;
+    transition: width .6s cubic-bezier(.2, .8, .2, 1);
+  }
+  .progreso { display: flex; gap: 6px; }
+  .progreso span {
+    width: 30px; height: 30px; border-radius: 50%;
+    display: grid; place-items: center;
+    background: #0a1222; border: 2px solid var(--borde); font-size: .95rem;
+  }
+  .btn-sonido {
+    background: none; border: 1px solid var(--borde); color: var(--texto);
+    border-radius: 12px; padding: 6px 10px; font-size: 1.1rem; cursor: pointer;
+  }
+
+  /* ------------------------------------------------------------------
+     3. SISTEMA DE PANTALLAS
+     Todas las pantallas existen en el HTML; sólo una tiene la clase
+     .activa. Al cambiar, se dispara una animación de entrada.
+     ------------------------------------------------------------------ */
+  main { max-width: 1100px; margin: 0 auto; padding: 22px 18px 40px; }
+
+  .pantalla { display: none; }
+  .pantalla.activa { display: block; animation: entrar .45s cubic-bezier(.2, .8, .2, 1); }
+
+  @keyframes entrar {
+    from { opacity: 0; transform: translateY(24px) scale(.98); }
+    to   { opacity: 1; transform: none; }
+  }
+
+  h1 { font-size: clamp(2rem, 5.5vw, 3.6rem); line-height: 1.05; font-weight: 900; }
+  h2 { font-size: clamp(1.5rem, 3.6vw, 2.3rem); margin-bottom: 10px; }
+  h3 { font-size: 1.25rem; margin-bottom: 8px; }
+  p  { line-height: 1.5; }
+  .suave { color: var(--texto-suave); }
+  .centro { text-align: center; }
+
+  .tarjeta {
+    background: var(--tarjeta);
+    border: 1px solid var(--borde);
+    border-radius: var(--radio);
+    padding: 22px;
+    box-shadow: var(--sombra);
+  }
+
+  /* Botones grandes: mínimo ~60px de alto para dedos en pantalla táctil */
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+    min-height: 62px; padding: 14px 30px;
+    font-size: 1.2rem; font-weight: 800; color: #1a1300;
+    background: var(--acento);
+    border: none; border-radius: 18px; cursor: pointer;
+    box-shadow: 0 6px 0 #b88a00, var(--sombra);
+    transition: transform .12s, box-shadow .12s, filter .2s;
+  }
+  .btn:hover { filter: brightness(1.08); }
+  .btn:active { transform: translateY(5px); box-shadow: 0 1px 0 #b88a00; }
+  .btn.secundario {
+    background: transparent; color: var(--texto);
+    border: 2px solid var(--borde); box-shadow: none;
+  }
+
+  /* ------------------------------------------------------------------
+     4. PANTALLA DE INICIO
+     ------------------------------------------------------------------ */
+  .inicio { min-height: 78vh; display: grid; place-items: center; text-align: center; }
+  .inicio .icono-grande { font-size: 5rem; animation: flotar 3s ease-in-out infinite; }
+  .inicio h1 span { color: var(--acento); display: block; }
+  .inicio p { max-width: 640px; margin: 18px auto 30px; font-size: 1.2rem; }
+  .reglas { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; margin-bottom: 30px; }
+  .reglas div {
+    background: var(--tarjeta); border: 1px solid var(--borde); border-radius: 16px;
+    padding: 12px 16px; font-weight: 600;
+  }
+  @keyframes flotar { 50% { transform: translateY(-10px) rotate(-3deg); } }
+  .pulso { animation: pulso 1.6s ease-in-out infinite; }
+  @keyframes pulso { 50% { transform: scale(1.06); } }
+
+  /* ------------------------------------------------------------------
+     5. SELECCIÓN DE REGIÓN (grid de tarjetas)
+     ------------------------------------------------------------------ */
+  .grid-regiones {
+    display: grid; gap: 18px; margin-top: 20px;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  }
+  .region {
+    position: relative; text-align: left; cursor: pointer;
+    color: var(--texto); font: inherit;
+    border: 2px solid var(--borde); border-radius: var(--radio);
+    padding: 22px; min-height: 250px;
+    background: linear-gradient(160deg, var(--color-region) -60%, var(--tarjeta) 55%);
+    box-shadow: var(--sombra);
+    transition: transform .2s, border-color .2s;
+  }
+  .region:hover:not(:disabled) { transform: translateY(-6px); border-color: var(--color-region); }
+  .region:disabled { cursor: default; opacity: .55; filter: grayscale(.6); }
+  .region .emoji { font-size: 3.2rem; }
+  .region h3 { margin-top: 10px; font-size: 1.45rem; }
+  .region .ciudad { color: var(--color-region); font-weight: 700; margin-bottom: 10px; }
+  .region ul { list-style: none; color: var(--texto-suave); }
+  .region li { margin: 4px 0; }
+  .sello {
+    position: absolute; top: 16px; right: 16px; font-size: 2rem;
+    animation: entrar .4s;
+  }
+
+  /* ------------------------------------------------------------------
+     6. ESCENA ANIMADA (CSS puro + emojis)
+     Es un "diorama" con capas: cielo, terreno, objetos, lluvia/viento
+     y una capa de efecto (agua que sube, aluvión, etc.).
+     ------------------------------------------------------------------ */
+  .escena {
+    position: relative; overflow: hidden;
+    height: 260px; border-radius: var(--radio);
+    border: 1px solid var(--borde);
+    background: linear-gradient(#2b3d5c, #5d7396);
+  }
+  .escena.cielo-tormenta { background: linear-gradient(#141c2b, #3b4a63); }
+  .escena.cielo-frio     { background: linear-gradient(#5b7da3, #c9dcef); }
+  .escena.cielo-calmo    { background: linear-gradient(#3d8ee0, #a9d8ff); }
+
+  /* Relámpago: un destello blanco que aparece de a ratos */
+  .escena.cielo-tormenta::before {
+    content: ""; position: absolute; inset: 0; z-index: 5; pointer-events: none;
+    background: #fff; opacity: 0; animation: relampago 5s infinite;
+  }
+  @keyframes relampago { 0%, 92%, 96%, 100% { opacity: 0; } 93%, 97% { opacity: .55; } }
+
+  .suelo { position: absolute; left: 0; right: 0; bottom: 0; height: 28%; z-index: 2; }
+  .suelo.asfalto { background: #3a3f4a; border-top: 6px solid #2a2e36; }
+  .suelo.arido   { background: linear-gradient(#c9874a, #9c5f2c); }
+  .suelo.estepa  { background: linear-gradient(#b8b48a, #8d8a63); }
+
+  /* Edificios de la ciudad (cajas con "ventanas" hechas con gradientes) */
+  .edificios { position: absolute; bottom: 28%; left: 0; right: 0; height: 60%; display: flex; align-items: flex-end; gap: 6px; padding: 0 12px; z-index: 1; }
+  .edificios div {
+    flex: 1; background:
+      repeating-linear-gradient(90deg, transparent 0 10px, rgba(255, 230, 140, .35) 10px 16px),
+      #26324a;
+    background-blend-mode: normal;
+    border-radius: 4px 4px 0 0;
+  }
+
+  /* Montañas con clip-path (triángulos) */
+  .montana {
+    position: absolute; bottom: 20%; z-index: 1;
+    background: linear-gradient(#8a5a3a, #5e3a22);
+    clip-path: polygon(50% 0, 100% 100%, 0 100%);
+  }
+  .cauce {
+    position: absolute; bottom: 8%; left: 0; right: 0; height: 12%; z-index: 3;
+    background: repeating-linear-gradient(90deg, #a86c3a 0 18px, #b97c45 18px 30px);
+    border-top: 2px dashed #7a4a24;
+  }
+
+  .objeto { position: absolute; z-index: 4; font-size: 2.3rem; transition: transform .8s; }
+
+  /* Gotas de lluvia generadas por JS (ver crearLluvia) */
+  .gota {
+    position: absolute; top: -20px; z-index: 6;
+    width: 2px; height: 18px; background: rgba(190, 220, 255, .8);
+    animation: caer linear infinite;
+  }
+  @keyframes caer { to { transform: translateY(300px); } }
+
+  /* Ráfagas de viento: líneas que cruzan la escena */
+  .rafaga {
+    position: absolute; z-index: 6; height: 3px; width: 120px; border-radius: 3px;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, .9));
+    animation: soplar linear infinite;
+  }
+  @keyframes soplar { from { transform: translateX(-160px); } to { transform: translateX(1200px); } }
+
+  /* Capa de efectos del resultado */
+  .agua {
+    position: absolute; left: 0; right: 0; bottom: 0; height: 0; z-index: 7;
+    background: linear-gradient(rgba(60, 140, 230, .75), rgba(20, 70, 160, .9));
+    transition: height 2.2s ease-in;
+  }
+  .agua.activa::before { /* ondas en la superficie (sólo cuando el agua sube) */
+    content: ""; position: absolute; top: -8px; left: 0; right: 0; height: 16px;
+    background: radial-gradient(circle at 10px -2px, transparent 10px, rgba(60, 140, 230, .75) 11px) repeat-x;
+    background-size: 22px 16px; animation: ola 1.2s linear infinite;
+  }
+  @keyframes ola { to { background-position: 22px 0; } }
+
+  .aluvion {
+    position: absolute; bottom: 0; left: -110%; width: 110%; height: 45%; z-index: 7;
+    background: linear-gradient(90deg, rgba(110, 60, 20, .95), rgba(150, 90, 40, .95) 85%, transparent);
+    border-radius: 0 60% 0 0;
+    transition: left 2.2s cubic-bezier(.5, 0, .3, 1);
+  }
+  .canal-ok {
+    position: absolute; bottom: 2%; left: 0; right: 0; height: 5%; z-index: 7;
+    background: linear-gradient(90deg, #3c8ce6, #7cc3ff, #3c8ce6);
+    background-size: 200% 100%; animation: fluir 1s linear infinite;
+  }
+  @keyframes fluir { to { background-position: -200% 0; } }
+
+  .cayendo { transform: rotate(80deg) translateY(10px) !important; }
+  .temblar { animation: temblar .25s linear 6; }
+  @keyframes temblar { 25% { transform: translateX(-4px) rotate(-6deg); } 75% { transform: translateX(4px) rotate(6deg); } }
+
+  .sello-escena {
+    position: absolute; z-index: 9; inset: 0; display: grid; place-items: center;
+    font-size: 5rem; opacity: 0; transform: scale(2.5);
+    transition: opacity .4s 2s, transform .4s 2s cubic-bezier(.2, 1.6, .5, 1);
+    text-shadow: 0 6px 20px rgba(0, 0, 0, .6);
+  }
+  .sello-escena.ver { opacity: 1; transform: scale(1); }
+
+  /* ------------------------------------------------------------------
+     7. PANTALLA DE EVENTO + DECISIÓN
+     ------------------------------------------------------------------ */
+  .layout-evento { display: grid; gap: 18px; grid-template-columns: 1.1fr 1fr; align-items: start; }
+  .alerta-banner {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: var(--fallo); color: #fff; font-weight: 900; letter-spacing: 1px;
+    padding: 6px 14px; border-radius: 99px; margin-bottom: 10px;
+    animation: parpadeo 1s steps(2) infinite;
+  }
+  @keyframes parpadeo { 50% { filter: brightness(1.4); } }
+  .evento-dato {
+    display: flex; align-items: center; gap: 14px; margin: 14px 0;
+    background: #0f1a30; border-radius: 16px; padding: 12px 16px; border-left: 6px solid var(--acento);
+  }
+  .evento-dato .numero { font-size: 2.2rem; font-weight: 900; color: var(--acento); white-space: nowrap; }
+  .chips { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+  .chip { background: #0f1a30; border: 1px solid var(--borde); border-radius: 99px; padding: 6px 12px; font-size: .95rem; }
+
+  /* Temporizador: barra que se vacía */
+  .timer { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; font-weight: 800; }
+  .timer .barra { flex: 1; width: auto; height: 16px; }
+  .timer .barra > div { width: 100%; background: var(--acento); transition: width 1s linear, background .3s; }
+  .timer.urgente .barra > div { background: var(--fallo); }
+  .timer.urgente { color: var(--fallo); animation: pulso .5s infinite; }
+
+  .opciones { display: grid; gap: 14px; }
+  .opcion {
+    display: grid; grid-template-columns: 56px 1fr auto; gap: 14px; align-items: center;
+    width: 100%; min-height: 84px; padding: 14px 16px; text-align: left;
+    font: inherit; color: var(--texto); cursor: pointer;
+    background: var(--tarjeta); border: 2px solid var(--borde); border-radius: 18px;
+    transition: transform .15s, border-color .15s, background .15s;
+    animation: entrar .4s both;
+  }
+  .opcion:nth-child(2) { animation-delay: .08s; }
+  .opcion:nth-child(3) { animation-delay: .16s; }
+  .opcion:hover:not(:disabled) { transform: translateX(6px); border-color: var(--acento); background: #22375f; }
+  .opcion:disabled { opacity: .45; cursor: not-allowed; }
+  .opcion .letra {
+    width: 56px; height: 56px; border-radius: 14px; display: grid; place-items: center;
+    font-size: 1.8rem; background: #0f1a30;
+  }
+  .opcion .texto { font-size: 1.12rem; font-weight: 700; }
+  .opcion .costo { font-weight: 800; color: var(--acento); white-space: nowrap; }
+  .opcion .costo.gratis { color: var(--texto-suave); }
+  .sin-fondos { display: block; font-size: .85rem; color: var(--fallo); font-weight: 700; }
+
+  /* ------------------------------------------------------------------
+     8. PANTALLA DE RESULTADO
+     ------------------------------------------------------------------ */
+  .veredicto { font-size: clamp(1.8rem, 4.5vw, 2.8rem); font-weight: 900; }
+  .veredicto.exito   { color: var(--exito); }
+  .veredicto.parcial { color: var(--parcial); }
+  .veredicto.fallo   { color: var(--fallo); }
+  .puntos-delta { display: inline-block; font-size: 1.4rem; font-weight: 900; margin: 6px 0 12px; animation: subir 1s both .3s; }
+  @keyframes subir { from { opacity: 0; transform: translateY(14px); } }
+  .ensenanza {
+    margin-top: 16px; padding: 18px; border-radius: 18px;
+    background: linear-gradient(135deg, #1f3a6b, #182c52);
+    border: 2px solid #3d64a8;
+  }
+  .ensenanza h3 { color: var(--acento); }
+  .acciones { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 20px; }
+
+  /* ------------------------------------------------------------------
+     9. PANTALLA FINAL (Victoria / Game Over)
+     ------------------------------------------------------------------ */
+  .final-cabecera { text-align: center; padding: 10px 0 20px; }
+  .final-cabecera .icono-grande { font-size: 5.5rem; animation: flotar 3s ease-in-out infinite; }
+  .tabla-historial { width: 100%; border-collapse: collapse; margin-top: 10px; }
+  .tabla-historial td, .tabla-historial th { padding: 10px 8px; border-bottom: 1px solid var(--borde); text-align: left; }
+  .tabla-historial th { color: var(--texto-suave); font-weight: 600; font-size: .9rem; }
+  .comparacion { display: grid; gap: 14px; grid-template-columns: 1fr auto 1fr; align-items: center; margin-top: 14px; }
+  .comparacion .lado { background: #0f1a30; border-radius: 16px; padding: 14px; text-align: center; }
+  .comparacion .lado .emoji { font-size: 2.4rem; }
+  .comparacion .igual { font-size: 2.2rem; font-weight: 900; color: var(--fallo); }
+
+  /* Confeti para la victoria */
+  .confeti { position: fixed; top: -20px; z-index: 50; width: 10px; height: 16px; pointer-events: none; animation: confeti linear forwards; }
+  @keyframes confeti { to { transform: translateY(110vh) rotate(720deg); } }
+
+  /* ------------------------------------------------------------------
+     10. RESPONSIVE: en pantallas angostas apilamos las columnas
+     ------------------------------------------------------------------ */
+  @media (max-width: 820px) {
+    .layout-evento { grid-template-columns: 1fr; }
+    .escena { height: 210px; }
+    .barra { width: 90px; }
+    .comparacion { grid-template-columns: 1fr; }
+    .comparacion .igual { text-align: center; }
+  }
+
+  /* Respeto a usuarios que prefieren menos movimiento */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ===================== HUD (barra superior) ===================== -->
+<header class="hud oculto" id="hud">
+  <div class="hud-logo">⚠️ Alerta <span>Territorio</span></div>
+  <div class="hud-datos">
+    <div class="hud-item" title="Reputación del equipo de Defensa Civil">
+      ⭐ <div class="barra"><div id="hud-rep"></div></div> <span id="hud-rep-num">50</span>
+    </div>
+    <div class="hud-item" title="Presupuesto disponible">💰 $<span id="hud-fondos">100</span></div>
+    <div class="progreso" id="hud-progreso"></div>
+    <button class="btn-sonido" id="btn-sonido" aria-label="Activar o desactivar sonido">🔊</button>
+  </div>
+</header>
+
+<main>
+  <!-- ===================== PANTALLA 1: INICIO ===================== -->
+  <section class="pantalla activa" id="p-inicio">
+    <div class="inicio">
+      <div>
+        <div class="icono-grande">🌦️</div>
+        <h1>Alerta Territorio<span>¿Sobrevivirías a este clima?</span></h1>
+        <p class="suave">
+          Sos responsable de <strong>Defensa Civil</strong>. El mismo fenómeno
+          meteorológico puede ser inofensivo en un lugar y catastrófico en otro.
+          ¡Tomá la decisión correcta en cada región de Argentina!
+        </p>
+        <div class="reglas">
+          <div>🗺️ 3 regiones</div>
+          <div>⏱️ 20 s por decisión</div>
+          <div>💰 $100 de presupuesto</div>
+          <div>⭐ Cuidá tu reputación</div>
+        </div>
+        <button class="btn pulso" id="btn-empezar">▶ ¡Empezar!</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== PANTALLA 2: SELECCIÓN DE REGIÓN ===================== -->
+  <section class="pantalla" id="p-regiones">
+    <h2>🗺️ Elegí una región para defender</h2>
+    <p class="suave">Cada región tiene su propio clima, relieve y suelo. Eso cambia todo.</p>
+    <div class="grid-regiones" id="grid-regiones"><!-- se completa con JS --></div>
+  </section>
+
+  <!-- ===================== PANTALLA 3: EVENTO + DECISIÓN ===================== -->
+  <section class="pantalla" id="p-evento">
+    <div class="layout-evento">
+      <div>
+        <div class="escena" id="escena-evento"></div>
+        <div class="tarjeta" style="margin-top:16px">
+          <h3 id="ev-region"></h3>
+          <div class="chips" id="ev-clima"></div>
+        </div>
+      </div>
+      <div class="tarjeta">
+        <div class="alerta-banner">🚨 ALERTA METEOROLÓGICA</div>
+        <h2 id="ev-titulo"></h2>
+        <div class="evento-dato">
+          <div class="numero" id="ev-numero"></div>
+          <div id="ev-desc"></div>
+        </div>
+        <div class="timer" id="timer">
+          ⏱️ <div class="barra"><div id="timer-barra"></div></div> <span id="timer-num">20</span>s
+        </div>
+        <div class="opciones" id="ev-opciones"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== PANTALLA 4: RESULTADO ===================== -->
+  <section class="pantalla" id="p-resultado">
+    <div class="layout-evento">
+      <div class="escena" id="escena-resultado"></div>
+      <div class="tarjeta">
+        <div class="veredicto" id="res-veredicto"></div>
+        <div class="puntos-delta" id="res-puntos"></div>
+        <p id="res-texto"></p>
+        <div class="ensenanza">
+          <h3>🧠 ¿Por qué pasó esto?</h3>
+          <p id="res-ensenanza"></p>
+        </div>
+        <div class="acciones">
+          <button class="btn" id="btn-continuar">Continuar ➜</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== PANTALLA 5: FINAL ===================== -->
+  <section class="pantalla" id="p-final">
+    <div class="final-cabecera">
+      <div class="icono-grande" id="fin-icono"></div>
+      <h1 id="fin-titulo"></h1>
+      <p class="suave" id="fin-subtitulo" style="margin-top:10px;font-size:1.15rem"></p>
+    </div>
+    <div class="tarjeta">
+      <h3>📋 Tus decisiones</h3>
+      <table class="tabla-historial" id="fin-tabla"></table>
+    </div>
+    <div class="tarjeta ensenanza" style="margin-top:18px">
+      <h3>🔑 La gran lección: el mismo número no es el mismo riesgo</h3>
+      <div class="comparacion">
+        <div class="lado"><div class="emoji">🏙️</div><strong>60 mm en La Plata</strong>
+          <p class="suave">El asfalto no deja infiltrar: el agua se acumula en las calles si los desagües fallan.</p></div>
+        <div class="igual">≠</div>
+        <div class="lado"><div class="emoji">🏜️</div><strong>60 mm en zona árida</strong>
+          <p class="suave">Suelo seco y pendiente: el agua escurre en minutos y baja como aluvión por los cauces secos.</p></div>
+      </div>
+      <p style="margin-top:14px">
+        Por eso los servicios meteorológicos emiten <strong>alertas por región</strong>: el riesgo
+        depende del <strong>fenómeno</strong> × la <strong>vulnerabilidad</strong> del territorio
+        (suelo, relieve, urbanización, preparación).
+      </p>
+    </div>
+    <div class="acciones" style="justify-content:center">
+      <button class="btn" id="btn-reiniciar">🔄 Jugar otra vez</button>
+    </div>
+  </section>
+</main>
+
+<script>
+/* =====================================================================
+   A) DATOS DEL JUEGO
+   Cada región es un objeto. El juego "lee" estos datos para armar las
+   pantallas, así la lógica no depende del contenido. Para agregar una
+   región nueva (ej. Litoral con crecida del Paraná) sólo hay que sumar
+   otro objeto acá.
+
+   resultado de cada opción: "exito" | "parcial" | "fallo"
+   efecto: qué animación mostrar en la escena del resultado.
+   ===================================================================== */
+const REGIONES = {
+  pampeana: {
+    nombre: "Región Pampeana",
+    ciudad: "La Plata, Buenos Aires",
+    emoji: "🏙️",
+    color: "var(--pampa)",
+    clima: ["🌧️ Clima húmedo", "🏢 Suelo urbano impermeable", "➖ Llanura sin pendiente"],
+    escena: { cielo: "cielo-tormenta", tipo: "ciudad", fenomeno: "lluvia" },
+    evento: {
+      titulo: "Tormenta fuerte sobre la ciudad",
+      numero: "60 mm",
+      desc: "de lluvia en menos de 2 horas. El suelo está cubierto de asfalto y cemento."
+    },
+    opcionPasiva: "A", // qué pasa si se acaba el tiempo sin decidir
+    opciones: [
+      {
+        letra: "A", icono: "🤷", texto: "No hacer nada: es sólo lluvia", costo: 0,
+        resultado: "fallo", efecto: "inundacion",
+        titulo: "¡Calles inundadas!",
+        texto2: "El agua no tuvo por dónde irse. Autos flotando, casas anegadas y barrios aislados."
+      },
+      {
+        letra: "B", icono: "🧹", texto: "Limpiar sumideros y activar canales aliviadores", costo: 35,
+        resultado: "exito", efecto: "drenaje",
+        titulo: "¡Ciudad a salvo!",
+        texto2: "Los desagües limpios y los canales evacuaron el agua a tiempo. Sólo charcos."
+      },
+      {
+        letra: "C", icono: "🏫", texto: "Suspender clases y pedir no circular", costo: 20,
+        resultado: "parcial", efecto: "inundacion-leve",
+        titulo: "Personas a salvo, calles con agua",
+        texto2: "Nadie quedó atrapado, pero los sumideros tapados igual generaron anegamientos."
+      }
+    ],
+    ensenanza: "En la ciudad, el asfalto y el cemento son impermeables: el agua no se infiltra en el suelo como en el campo. Además, en una llanura el agua escurre lento. Todo depende de que los desagües (sumideros) estén limpios y de que los canales funcionen. Prevenir el tapón es más barato que sufrir la inundación."
+  },
+
+  arida: {
+    nombre: "Región Árida (Cuyo / NOA)",
+    ciudad: "Pedemonte de Mendoza",
+    emoji: "🏜️",
+    color: "var(--arida)",
+    clima: ["☀️ Clima seco", "🌵 Escasa vegetación", "⛰️ Pendientes pronunciadas"],
+    escena: { cielo: "cielo-tormenta", tipo: "montana", fenomeno: "lluvia" },
+    evento: {
+      titulo: "Tormenta convectiva de verano",
+      numero: "60 mm",
+      desc: "¡Los MISMOS 60 mm que en La Plata! Pero cae sobre cerros secos con poca vegetación."
+    },
+    opcionPasiva: "B",
+    opciones: [
+      {
+        letra: "A", icono: "🚨", texto: "Evacuar zonas bajas y cauces secos", costo: 35,
+        resultado: "exito", efecto: "aluvion-evitado",
+        titulo: "¡Evacuación a tiempo!",
+        texto2: "Minutos después bajó un aluvión de barro y piedras por el cauce seco... pero ya no había nadie."
+      },
+      {
+        letra: "B", icono: "⏳", texto: "Esperar a que el agua filtre, como en la pampa", costo: 0,
+        resultado: "fallo", efecto: "aluvion",
+        titulo: "¡Aluvión!",
+        texto2: "El agua no se infiltró: bajó de golpe por las pendientes arrastrando barro y rocas sobre las casas."
+      },
+      {
+        letra: "C", icono: "🚜", texto: "Abrir compuertas agrícolas para regar", costo: 25,
+        resultado: "fallo", efecto: "aluvion",
+        titulo: "¡Peor todavía!",
+        texto2: "Las compuertas sumaron más agua a los canales justo cuando bajaba la crecida repentina."
+      }
+    ],
+    ensenanza: "Parece al revés, pero el suelo muy seco y compactado NO absorbe rápido el agua: casi toda escurre por la superficie. Con pendientes fuertes y sin vegetación que frene, el agua se junta en los cauces secos (ríos que casi nunca llevan agua) y baja como aluvión o crecida repentina (en inglés, flash flood). Por eso la clave es alejar a la gente de los cauces."
+  },
+
+  patagonia: {
+    nombre: "Región Patagónica",
+    ciudad: "Comodoro Rivadavia, Chubut",
+    emoji: "🌬️",
+    color: "var(--patagonia)",
+    clima: ["💨 Vientos fuertes constantes", "🥶 Temperaturas bajas", "🛣️ Rutas extensas"],
+    escena: { cielo: "cielo-frio", tipo: "estepa", fenomeno: "viento" },
+    evento: {
+      titulo: "Ingreso de aire polar",
+      numero: "90 km/h",
+      desc: "de ráfagas de viento del sudoeste, con descenso brusco de la temperatura."
+    },
+    opcionPasiva: "C",
+    opciones: [
+      {
+        letra: "A", icono: "🪧", texto: "Asegurar cartelería y restringir tránsito en rutas", costo: 30,
+        resultado: "exito", efecto: "viento-ok",
+        titulo: "¡Daños evitados!",
+        texto2: "Carteles amarrados, camiones detenidos a tiempo y nadie circulando bajo los árboles."
+      },
+      {
+        letra: "B", icono: "🌀", texto: "Dar aviso de tormenta tropical", costo: 15,
+        resultado: "fallo", efecto: "viento-danio",
+        titulo: "¡Alerta equivocada!",
+        texto2: "En la Patagonia no hay tormentas tropicales: la gente se preparó para lluvia y calor, no para ráfagas heladas."
+      },
+      {
+        letra: "C", icono: "😎", texto: "Nada: acá siempre sopla viento", costo: 0,
+        resultado: "fallo", efecto: "viento-danio",
+        titulo: "¡Árboles y carteles caídos!",
+        texto2: "90 km/h no es el viento de todos los días: volcó un camión, cayeron árboles y se cortó la luz."
+      }
+    ],
+    ensenanza: "Aunque en la Patagonia el viento es habitual, las ráfagas extremas (como 90 km/h) superan lo que soportan carteles, árboles, techos livianos y vehículos altos en ruta. Por eso existen las alertas por viento: que algo sea 'normal' en una región no significa que su intensidad máxima no sea peligrosa. ¡Y las tormentas tropicales necesitan océanos cálidos, no aire polar!"
+  }
+};
+
+/* Configuración general: cambiar acá para ajustar la dificultad */
+const CONFIG = {
+  reputacionInicial: 50,
+  fondosIniciales: 100,
+  segundosPorDecision: 20,
+  puntos: { exito: 20, parcial: 10, fallo: -25 },
+  umbralVictoria: 70,        // reputación mínima al final para ganar
+  inactividadMs: 60000       // tras 1 min sin tocar nada, vuelve al inicio (modo feria)
+};
+
+/* =====================================================================
+   B) ESTADO DEL JUEGO
+   Un único objeto con todo lo que cambia durante la partida.
+   ===================================================================== */
+let estado;
+
+function estadoInicial() {
+  return {
+    reputacion: CONFIG.reputacionInicial,
+    fondos: CONFIG.fondosIniciales,
+    completadas: {},       // { pampeana: "exito", ... }
+    historial: [],         // lista de decisiones para la pantalla final
+    regionActual: null,
+    timer: null,
+    segundos: 0,
+    decidido: false
+  };
+}
+
+/* Atajo para buscar elementos por id */
+const $ = (id) => document.getElementById(id);
+
+/* =====================================================================
+   C) NAVEGACIÓN ENTRE PANTALLAS
+   ===================================================================== */
+function mostrarPantalla(id) {
+  document.querySelectorAll(".pantalla").forEach(p => p.classList.remove("activa"));
+  $(id).classList.add("activa");
+  $("hud").classList.toggle("oculto", id === "p-inicio");
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+/* Actualiza la barra superior con los valores del estado */
+function actualizarHUD() {
+  $("hud-rep").style.width = estado.reputacion + "%";
+  $("hud-rep-num").textContent = estado.reputacion;
+  $("hud-fondos").textContent = estado.fondos;
+  $("hud-progreso").innerHTML = Object.keys(REGIONES).map(clave => {
+    const r = estado.completadas[clave];
+    const icono = r ? iconoResultado(r) : REGIONES[clave].emoji;
+    return `<span title="${REGIONES[clave].nombre}" style="opacity:${r ? 1 : .5}">${icono}</span>`;
+  }).join("");
+}
+
+function iconoResultado(r) {
+  return { exito: "✅", parcial: "⚠️", fallo: "❌" }[r];
+}
+
+/* =====================================================================
+   D) PANTALLA DE SELECCIÓN DE REGIÓN
+   ===================================================================== */
+function mostrarRegiones() {
+  const grid = $("grid-regiones");
+  grid.innerHTML = "";
+  for (const [clave, r] of Object.entries(REGIONES)) {
+    const hecha = estado.completadas[clave];
+    const btn = document.createElement("button");
+    btn.className = "region";
+    btn.style.setProperty("--color-region", r.color);
+    btn.disabled = Boolean(hecha);
+    btn.innerHTML = `
+      ${hecha ? `<div class="sello">${iconoResultado(hecha)}</div>` : ""}
+      <div class="emoji">${r.emoji}</div>
+      <h3>${r.nombre}</h3>
+      <div class="ciudad">📍 ${r.ciudad}</div>
+      <ul>${r.clima.map(c => `<li>${c}</li>`).join("")}</ul>`;
+    btn.addEventListener("click", () => iniciarEvento(clave));
+    grid.appendChild(btn);
+  }
+  mostrarPantalla("p-regiones");
+}
+
+/* =====================================================================
+   E) ESCENAS ANIMADAS
+   Construye el "diorama" de cada región con divs y emojis.
+   ===================================================================== */
+function construirEscena(contenedor, region, conFenomeno = true) {
+  const e = region.escena;
+  contenedor.className = "escena " + e.cielo;
+  let html = "";
+
+  if (e.tipo === "ciudad") {
+    html += `<div class="edificios">${[60, 85, 45, 95, 70, 55, 80].map(h => `<div style="height:${h}%"></div>`).join("")}</div>
+             <div class="suelo asfalto"></div>
+             <div class="objeto" style="left:12%;bottom:14%">🚗</div>
+             <div class="objeto" style="left:42%;bottom:12%">🏫</div>
+             <div class="objeto" style="left:72%;bottom:14%">🚌</div>
+             <div class="objeto" style="left:88%;bottom:6%;font-size:1.6rem" title="Sumidero">🕳️</div>`;
+  } else if (e.tipo === "montana") {
+    html += `<div class="montana" style="left:-10%;width:60%;height:75%"></div>
+             <div class="montana" style="left:30%;width:55%;height:90%;filter:brightness(.85)"></div>
+             <div class="montana" style="left:65%;width:50%;height:65%"></div>
+             <div class="suelo arido"></div>
+             <div class="cauce"></div>
+             <div class="objeto" style="left:20%;bottom:9%">🏠</div>
+             <div class="objeto" style="left:50%;bottom:10%">🏠</div>
+             <div class="objeto" style="left:78%;bottom:9%">🌵</div>`;
+  } else if (e.tipo === "estepa") {
+    html += `<div class="suelo estepa"></div>
+             <div class="objeto" style="left:10%;bottom:22%" data-cae>🌲</div>
+             <div class="objeto" style="left:30%;bottom:22%" data-cae>🪧</div>
+             <div class="objeto" style="left:55%;bottom:8%" data-cae>🚛</div>
+             <div class="objeto" style="left:80%;bottom:22%" data-cae>🌲</div>
+             <div class="objeto" style="left:66%;bottom:24%">⚡</div>`;
+  }
+
+  // Capa de fenómeno: lluvia o viento
+  if (conFenomeno) html += e.fenomeno === "lluvia" ? crearLluvia(60) : crearViento(10);
+
+  // Capas de efecto (ocultas hasta el resultado)
+  html += `<div class="agua"></div><div class="aluvion"></div><div class="sello-escena"></div>`;
+  contenedor.innerHTML = html;
+}
+
+/* Genera N gotas con posición, velocidad y retardo aleatorios */
+function crearLluvia(n) {
+  let s = "";
+  for (let i = 0; i < n; i++) {
+    const izq = Math.random() * 100;
+    const dur = 0.5 + Math.random() * 0.5;
+    const ret = Math.random() * 1.5;
+    s += `<span class="gota" style="left:${izq}%;animation-duration:${dur}s;animation-delay:-${ret}s;transform:rotate(12deg)"></span>`;
+  }
+  return s;
+}
+
+/* Genera N líneas de ráfaga a distintas alturas */
+function crearViento(n) {
+  let s = "";
+  for (let i = 0; i < n; i++) {
+    const top = 5 + Math.random() * 70;
+    const dur = 0.6 + Math.random() * 0.8;
+    const ret = Math.random() * 2;
+    s += `<span class="rafaga" style="top:${top}%;animation-duration:${dur}s;animation-delay:-${ret}s"></span>`;
+  }
+  return s;
+}
+
+/* Aplica la animación de resultado sobre la escena ya construida */
+function animarResultado(contenedor, opcion) {
+  const agua = contenedor.querySelector(".agua");
+  const aluvion = contenedor.querySelector(".aluvion");
+  const sello = contenedor.querySelector(".sello-escena");
+  sello.textContent = iconoResultado(opcion.resultado);
+
+  // Pequeño retardo para que el navegador "vea" el estado inicial y anime
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    switch (opcion.efecto) {
+      case "inundacion":      agua.classList.add("activa"); agua.style.height = "55%"; break;
+      case "inundacion-leve": agua.classList.add("activa"); agua.style.height = "24%"; break;
+      case "drenaje":
+        contenedor.insertAdjacentHTML("beforeend", `<div class="canal-ok"></div>`);
+        contenedor.className = "escena cielo-calmo";
+        break;
+      case "aluvion":
+        aluvion.style.left = "0";
+        contenedor.querySelectorAll(".objeto").forEach(o => o.classList.add("temblar"));
+        break;
+      case "aluvion-evitado":
+        aluvion.style.left = "0";
+        // Las casas quedan, pero la gente ya no está: mostramos un punto de encuentro seguro
+        contenedor.insertAdjacentHTML("beforeend", `<div class="objeto" style="right:4%;top:8%;z-index:8">🧑‍🤝‍🧑⛰️</div>`);
+        break;
+      case "viento-danio":
+        contenedor.querySelectorAll("[data-cae]").forEach((o, i) =>
+          setTimeout(() => o.classList.add("cayendo"), 300 + i * 250));
+        break;
+      case "viento-ok":
+        contenedor.insertAdjacentHTML("beforeend", `<div class="objeto" style="left:44%;bottom:8%;z-index:8">🚧</div>`);
+        break;
+    }
+    sello.classList.add("ver");
+  }));
+}
+
+/* =====================================================================
+   F) PANTALLA DE EVENTO Y DECISIÓN (con temporizador)
+   ===================================================================== */
+function iniciarEvento(clave) {
+  const r = REGIONES[clave];
+  estado.regionActual = clave;
+  estado.decidido = false;
+
+  construirEscena($("escena-evento"), r, true);
+  $("ev-region").textContent = `${r.emoji} ${r.nombre} — ${r.ciudad}`;
+  $("ev-clima").innerHTML = r.clima.map(c => `<span class="chip">${c}</span>`).join("");
+  $("ev-titulo").textContent = r.evento.titulo;
+  $("ev-numero").textContent = r.evento.numero;
+  $("ev-desc").textContent = r.evento.desc;
+
+  // Botones de opciones: se deshabilitan si no alcanza el presupuesto
+  const cont = $("ev-opciones");
+  cont.innerHTML = "";
+  r.opciones.forEach(op => {
+    const alcanza = op.costo <= estado.fondos;
+    const b = document.createElement("button");
+    b.className = "opcion";
+    b.disabled = !alcanza;
+    b.innerHTML = `
+      <div class="letra">${op.icono}</div>
+      <div class="texto"><span class="suave">${op.letra})</span> ${op.texto}
+        ${alcanza ? "" : `<span class="sin-fondos">Fondos insuficientes</span>`}</div>
+      <div class="costo ${op.costo === 0 ? "gratis" : ""}">${op.costo === 0 ? "Gratis" : "$" + op.costo}</div>`;
+    b.addEventListener("click", () => decidir(op));
+    cont.appendChild(b);
+  });
+
+  mostrarPantalla("p-evento");
+  sonido("alerta");
+  arrancarTimer();
+}
+
+function arrancarTimer() {
+  clearInterval(estado.timer);
+  estado.segundos = CONFIG.segundosPorDecision;
+  pintarTimer();
+  estado.timer = setInterval(() => {
+    estado.segundos--;
+    pintarTimer();
+    if (estado.segundos <= 5 && estado.segundos > 0) sonido("tic");
+    if (estado.segundos <= 0) {
+      clearInterval(estado.timer);
+      // Si no decide a tiempo, se aplica la opción "pasiva" (no hacer nada)
+      const r = REGIONES[estado.regionActual];
+      const pasiva = r.opciones.find(o => o.letra === r.opcionPasiva);
+      decidir(pasiva, true);
+    }
+  }, 1000);
+}
+
+function pintarTimer() {
+  const pct = (estado.segundos / CONFIG.segundosPorDecision) * 100;
+  $("timer-barra").style.width = pct + "%";
+  $("timer-num").textContent = estado.segundos;
+  $("timer").classList.toggle("urgente", estado.segundos <= 5);
+}
+
+/* =====================================================================
+   G) RESOLVER LA DECISIÓN
+   ===================================================================== */
+function decidir(opcion, porTiempo = false) {
+  if (estado.decidido) return;      // evita doble clic
+  estado.decidido = true;
+  clearInterval(estado.timer);
+
+  const clave = estado.regionActual;
+  const r = REGIONES[clave];
+  const delta = CONFIG.puntos[opcion.resultado];
+
+  // Actualizar estado (reputación limitada entre 0 y 100)
+  estado.fondos -= opcion.costo;
+  estado.reputacion = Math.max(0, Math.min(100, estado.reputacion + delta));
+  estado.completadas[clave] = opcion.resultado;
+  estado.historial.push({ region: r, opcion, porTiempo });
+  actualizarHUD();
+
+  // Pintar pantalla de resultado
+  construirEscena($("escena-resultado"), r, opcion.resultado !== "exito" || r.escena.fenomeno === "viento");
+  const ver = $("res-veredicto");
+  ver.className = "veredicto " + opcion.resultado;
+  ver.textContent = (porTiempo ? "⏰ ¡Se acabó el tiempo! " : "") + opcion.titulo;
+  const pd = $("res-puntos");
+  pd.textContent = `${delta > 0 ? "+" : ""}${delta} ⭐ reputación   ·   −$${opcion.costo}`;
+  pd.style.color = delta > 0 ? "var(--exito)" : "var(--fallo)";
+  $("res-texto").textContent = (porTiempo ? "No decidir también es una decisión. " : "") + opcion.texto2;
+  $("res-ensenanza").textContent = r.ensenanza;
+
+  const terminado = Object.keys(estado.completadas).length === Object.keys(REGIONES).length;
+  const sinReputacion = estado.reputacion <= 0;
+  $("btn-continuar").textContent = (terminado || sinReputacion) ? "Ver resultado final 🏁" : "Siguiente región ➜";
+
+  mostrarPantalla("p-resultado");
+  animarResultado($("escena-resultado"), opcion);
+  sonido(opcion.resultado);
+}
+
+function continuar() {
+  const terminado = Object.keys(estado.completadas).length === Object.keys(REGIONES).length;
+  if (terminado || estado.reputacion <= 0) mostrarFinal();
+  else mostrarRegiones();
+}
+
+/* =====================================================================
+   H) PANTALLA FINAL: Victoria o Game Over (siempre con enseñanza)
+   ===================================================================== */
+function mostrarFinal() {
+  const fallos = estado.historial.filter(h => h.opcion.resultado === "fallo").length;
+  const gano = estado.reputacion >= CONFIG.umbralVictoria && fallos === 0;
+
+  if (gano) {
+    $("fin-icono").textContent = "🏆";
+    $("fin-titulo").textContent = "¡Victoria! Territorio a salvo";
+    $("fin-subtitulo").textContent = `Reputación final: ${estado.reputacion}/100. Entendiste que cada región necesita su propia respuesta.`;
+    lanzarConfeti();
+  } else {
+    $("fin-icono").textContent = estado.reputacion <= 0 ? "💥" : "🌊";
+    $("fin-titulo").textContent = "Game Over";
+    $("fin-subtitulo").textContent = estado.reputacion <= 0
+      ? "Perdiste la confianza de la población. Pero lo importante es lo que aprendiste:"
+      : `Reputación final: ${estado.reputacion}/100. Algunas decisiones costaron caro. Repasemos:`;
+  }
+
+  $("fin-tabla").innerHTML = `
+    <tr><th>Región</th><th>Tu decisión</th><th>Resultado</th></tr>
+    ${estado.historial.map(h => `
+      <tr>
+        <td>${h.region.emoji} ${h.region.nombre}</td>
+        <td>${h.porTiempo ? "⏰ (sin decidir) " : ""}${h.opcion.letra}) ${h.opcion.texto}</td>
+        <td>${iconoResultado(h.opcion.resultado)} ${h.opcion.titulo}</td>
+      </tr>`).join("")}`;
+
+  mostrarPantalla("p-final");
+  sonido(gano ? "victoria" : "fallo");
+}
+
+function lanzarConfeti() {
+  const colores = ["#ffcc33", "#2ee59d", "#3fa9f5", "#ff4d6d", "#f08a3c"];
+  for (let i = 0; i < 80; i++) {
+    const c = document.createElement("div");
+    c.className = "confeti";
+    c.style.left = Math.random() * 100 + "vw";
+    c.style.background = colores[i % colores.length];
+    c.style.animationDuration = 2 + Math.random() * 2 + "s";
+    c.style.animationDelay = Math.random() * 0.8 + "s";
+    document.body.appendChild(c);
+    setTimeout(() => c.remove(), 5000);
+  }
+}
+
+/* =====================================================================
+   I) SONIDO (opcional, generado con la Web Audio API, sin archivos)
+   Un oscilador produce tonos simples: no hace falta descargar nada.
+   ===================================================================== */
+let audioCtx = null;
+let sonidoActivo = true;
+
+function tono(frec, dur, tipo = "sine", cuando = 0) {
+  if (!sonidoActivo) return;
+  try {
+    audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+    const osc = audioCtx.createOscillator();
+    const gan = audioCtx.createGain();
+    osc.type = tipo;
+    osc.frequency.value = frec;
+    const t = audioCtx.currentTime + cuando;
+    gan.gain.setValueAtTime(0.12, t);
+    gan.gain.exponentialRampToValueAtTime(0.001, t + dur);
+    osc.connect(gan).connect(audioCtx.destination);
+    osc.start(t);
+    osc.stop(t + dur);
+  } catch (e) { /* si el navegador no soporta audio, seguimos sin sonido */ }
+}
+
+function sonido(tipo) {
+  const s = {
+    alerta:   () => { tono(880, .15, "square"); tono(660, .15, "square", .18); tono(880, .15, "square", .36); },
+    tic:      () => tono(1200, .05, "square"),
+    exito:    () => { tono(523, .12); tono(659, .12, "sine", .12); tono(784, .25, "sine", .24); },
+    parcial:  () => { tono(523, .15); tono(587, .25, "sine", .15); },
+    fallo:    () => { tono(300, .25, "sawtooth"); tono(200, .4, "sawtooth", .25); },
+    victoria: () => [523, 659, 784, 1046].forEach((f, i) => tono(f, .2, "triangle", i * .13))
+  };
+  (s[tipo] || (() => {}))();
+}
+
+/* =====================================================================
+   J) INICIO / REINICIO Y "MODO FERIA"
+   ===================================================================== */
+function nuevaPartida() {
+  if (estado) clearInterval(estado.timer);
+  estado = estadoInicial();
+  actualizarHUD();
+  mostrarRegiones();
+}
+
+function volverAlInicio() {
+  if (estado) clearInterval(estado.timer);
+  estado = estadoInicial();
+  actualizarHUD();
+  mostrarPantalla("p-inicio");
+}
+
+// Si nadie toca la pantalla durante un rato (y no hay una decisión en curso),
+// el juego vuelve solo a la portada para el próximo visitante del stand.
+let temporizadorInactividad;
+function reiniciarInactividad() {
+  clearTimeout(temporizadorInactividad);
+  temporizadorInactividad = setTimeout(() => {
+    if (!$("p-inicio").classList.contains("activa") && !$("p-evento").classList.contains("activa")) {
+      volverAlInicio();
+    }
+  }, CONFIG.inactividadMs);
+}
+["pointerdown", "keydown"].forEach(ev => document.addEventListener(ev, reiniciarInactividad));
+
+// Atajos de teclado: 1/2/3 o A/B/C para elegir opción, Enter para avanzar
+document.addEventListener("keydown", (e) => {
+  if ($("p-evento").classList.contains("activa")) {
+    const idx = { "1": 0, "2": 1, "3": 2, "a": 0, "b": 1, "c": 2 }[e.key.toLowerCase()];
+    const btn = $("ev-opciones").children[idx];
+    if (btn && !btn.disabled) btn.click();
+  } else if (e.key === "Enter") {
+    if ($("p-inicio").classList.contains("activa")) nuevaPartida();
+    else if ($("p-resultado").classList.contains("activa")) continuar();
+    else if ($("p-final").classList.contains("activa")) nuevaPartida();
+  }
+});
+
+// Conectar botones
+$("btn-empezar").addEventListener("click", nuevaPartida);
+$("btn-continuar").addEventListener("click", continuar);
+$("btn-reiniciar").addEventListener("click", nuevaPartida);
+$("btn-sonido").addEventListener("click", () => {
+  sonidoActivo = !sonidoActivo;
+  $("btn-sonido").textContent = sonidoActivo ? "🔊" : "🔇";
+});
+
+// Arranque
+estado = estadoInicial();
+actualizarHUD();
+reiniciarInactividad();
+</script>
+</body>
+</html>
