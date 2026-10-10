@@ -1,0 +1,2906 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Alerta Territorio</title>
+<!--
+  =====================================================================
+  ALERTA TERRITORIO: ¿Sobrevivirías a este clima?  — Versión 2
+  Juego educativo para feria de ciencias (meteorología y climatología
+  regional de Argentina).
+
+  Un único archivo: HTML (estructura) + CSS (estilos/animaciones) +
+  JavaScript (lógica). Sin librerías, sin imágenes ni audios externos:
+  funciona offline con doble clic.
+
+  MODOS DE JUEGO
+    • "Prepará tu Barrio" (principal): 4 emergencias desde el punto de
+      vista del vecino. Cada una = TRIVIA -> MINIJUEGO (Canvas) -> CÁPSULA.
+      La tormenta eléctrica arranca con un celular: invitación a un
+      recital con alerta naranja... y un oso inflable gigante que vuela.
+    • "Centro de Alertas" (experto): Sudestada, Zonda, Helada y Sistema
+      convectivo, desde el punto de vista del meteorólogo.
+    • Modo Express: las 3 regiones de la versión 1 como trivias rápidas.
+
+  MAPA DEL CÓDIGO (buscá estos títulos con Ctrl+F)
+    CSS  1..12   -> diseño, pantallas, escenas (dioramas), minijuegos.
+    JS   A) DATOS          -> escenarios, trivias y lecciones.
+         B) ESTADO         -> vidas, puntaje, historial.
+         C) NAVEGACIÓN     -> cambio de pantallas y HUD.
+         D) DIORAMAS       -> escenas animadas con CSS + emojis.
+         E) TRIVIA         -> preguntas con temporizador.
+         F) MOTOR CANVAS   -> bucle de juego, partículas, entrada táctil.
+         G) MINIJUEGOS     -> los 4 juegos (un objeto cada uno).
+         H) RESULTADOS     -> resultado de minijuego y pantalla final.
+         I) SONIDO         -> efectos generados con Web Audio.
+         J) ARRANQUE       -> botones, teclado, "modo feria".
+  =====================================================================
+-->
+<style>
+  /* ------------------------------------------------------------------
+     1. VARIABLES DE DISEÑO
+     ------------------------------------------------------------------ */
+  :root {
+    --fondo: #0b1426;
+    --tarjeta: #1b2c4f;
+    --tarjeta-2: #0f1a30;
+    --borde: #2c4372;
+    --texto: #f2f6ff;
+    --texto-suave: #a9b8d8;
+    --acento: #ffcc33;
+    --exito: #2ee59d;
+    --parcial: #ffb23e;
+    --fallo: #ff4d6d;
+    --radio: 22px;
+    --sombra: 0 12px 30px rgba(0, 0, 0, .35);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { background: var(--fondo); }
+  body {
+    min-height: 100vh;
+    font-family: "Segoe UI", system-ui, -apple-system, Roboto, Arial, sans-serif;
+    background: radial-gradient(circle at 20% 0%, #1d3566 0%, var(--fondo) 55%) fixed;
+    color: var(--texto);
+    overflow-x: hidden;
+    -webkit-user-select: none; user-select: none;      /* sin selección de texto al tocar */
+    touch-action: manipulation;                       /* sin zoom por doble toque */
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* ------------------------------------------------------------------
+     2. HUD SUPERIOR: vidas, nivel, puntaje
+     ------------------------------------------------------------------ */
+  .hud {
+    position: sticky; top: 0; z-index: 30;
+    display: flex; gap: 14px; align-items: center; justify-content: space-between; flex-wrap: wrap;
+    padding: 10px 18px;
+    background: rgba(11, 20, 38, .9); backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--borde);
+    transition: opacity .3s;
+  }
+  .hud.oculto { opacity: 0; pointer-events: none; }
+  .hud-logo { font-weight: 800; font-size: 1.05rem; }
+  .hud-logo span { color: var(--acento); }
+  .hud-datos { display: flex; gap: 22px; align-items: center; flex-wrap: wrap; font-weight: 800; font-size: 1.1rem; }
+  .vidas { font-size: 1.5rem; letter-spacing: 2px; }
+  .vidas .perdida { filter: grayscale(1); opacity: .3; }
+  .vidas .latido { display: inline-block; animation: perderVida .8s; }
+  @keyframes perderVida { 30% { transform: scale(1.8) rotate(-15deg); } }
+  .puntaje-num { color: var(--acento); display: inline-block; }
+  .puntaje-num.salta { animation: saltar .5s; }
+  @keyframes saltar { 40% { transform: scale(1.4); color: var(--exito); } }
+  .btn-sonido {
+    background: none; border: 1px solid var(--borde); color: var(--texto);
+    border-radius: 12px; padding: 6px 12px; font-size: 1.2rem; cursor: pointer;
+  }
+
+  /* ------------------------------------------------------------------
+     3. PANTALLAS Y TIPOGRAFÍA
+     ------------------------------------------------------------------ */
+  main { max-width: 1150px; margin: 0 auto; padding: 20px 18px 40px; }
+  .pantalla { display: none; }
+  .pantalla.activa { display: block; animation: entrar .45s cubic-bezier(.2, .8, .2, 1); }
+  @keyframes entrar { from { opacity: 0; transform: translateY(24px) scale(.98); } to { opacity: 1; transform: none; } }
+
+  h1 { font-size: clamp(2.2rem, 6vw, 4rem); line-height: 1.05; font-weight: 900; }
+  h2 { font-size: clamp(1.4rem, 3.2vw, 2.1rem); margin-bottom: 10px; line-height: 1.2; }
+  h3 { font-size: 1.25rem; margin-bottom: 8px; }
+  p  { line-height: 1.5; }
+  .suave { color: var(--texto-suave); }
+
+  .tarjeta {
+    background: var(--tarjeta); border: 1px solid var(--borde);
+    border-radius: var(--radio); padding: 22px; box-shadow: var(--sombra);
+  }
+
+  /* Botones grandes para pantalla táctil (mínimo ~64px de alto) */
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+    min-height: 66px; padding: 14px 34px;
+    font-size: 1.3rem; font-weight: 900; color: #1a1300;
+    background: var(--acento); border: none; border-radius: 18px; cursor: pointer;
+    box-shadow: 0 6px 0 #b88a00, var(--sombra);
+    transition: transform .12s, box-shadow .12s, filter .2s;
+  }
+  .btn:hover { filter: brightness(1.08); }
+  .btn:active { transform: translateY(5px); box-shadow: 0 1px 0 #b88a00; }
+  .btn.secundario { background: transparent; color: var(--texto); border: 2px solid var(--borde); box-shadow: none; }
+  .btn.gigante { min-height: 90px; font-size: 1.8rem; padding: 18px 50px; border-radius: 24px; }
+  .acciones { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 22px; }
+
+  /* ------------------------------------------------------------------
+     4. BIENVENIDA
+     ------------------------------------------------------------------ */
+  .inicio { min-height: 80vh; display: grid; place-items: center; text-align: center; }
+  .icono-grande { font-size: 5rem; animation: flotar 3s ease-in-out infinite; }
+  @keyframes flotar { 50% { transform: translateY(-10px) rotate(-3deg); } }
+  .inicio h1 span { color: var(--acento); display: block; font-size: .55em; margin-top: 6px; }
+  .inicio .intro { max-width: 700px; margin: 18px auto 26px; font-size: 1.2rem; }
+  .mapa-escenarios { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-bottom: 30px; }
+  .mapa-escenarios div {
+    background: var(--tarjeta); border: 1px solid var(--borde); border-radius: 16px;
+    padding: 10px 14px; font-weight: 700; animation: entrar .5s both;
+  }
+  .mapa-escenarios div:nth-child(2) { animation-delay: .1s; }
+  .mapa-escenarios div:nth-child(3) { animation-delay: .2s; }
+  .mapa-escenarios div:nth-child(4) { animation-delay: .3s; }
+  .pulso { animation: pulso 1.6s ease-in-out infinite; }
+  @keyframes pulso { 50% { transform: scale(1.06); } }
+  .record { margin-top: 18px; color: var(--texto-suave); font-weight: 700; }
+
+  /* ------------------------------------------------------------------
+     5. DIORAMAS (escenas CSS + emojis, heredadas de la versión 1)
+     ------------------------------------------------------------------ */
+  .escena {
+    position: relative; overflow: hidden; height: 270px;
+    border-radius: var(--radio); border: 1px solid var(--borde);
+    background: linear-gradient(#2b3d5c, #5d7396);
+  }
+  .escena.cielo-tormenta { background: linear-gradient(#141c2b, #3b4a63); }
+  .escena.cielo-frio     { background: linear-gradient(#5b7da3, #c9dcef); }
+  .escena.cielo-calmo    { background: linear-gradient(#3d8ee0, #a9d8ff); }
+  .escena.cielo-polvo    { background: linear-gradient(#6b3f1f, #c8955a); }
+  .escena.cielo-noche    { background: linear-gradient(#050a1f, #1c2b55); }
+  .escena.cielo-calor    { background: linear-gradient(#ff8a3c, #ffd56b); }
+  .sol-grande { position: absolute; z-index: 1; right: 6%; top: 4%; font-size: 5.5rem; animation: girar 12s linear infinite; filter: drop-shadow(0 0 30px #ffdd55); }
+  @keyframes girar { to { transform: rotate(360deg); } }
+  .escena.cielo-tormenta::before {           /* relámpagos */
+    content: ""; position: absolute; inset: 0; z-index: 5; pointer-events: none;
+    background: #fff; opacity: 0; animation: relampago 5s infinite;
+  }
+  @keyframes relampago { 0%, 92%, 96%, 100% { opacity: 0; } 93%, 97% { opacity: .55; } }
+
+  .estrellas {
+    position: absolute; inset: 0 0 40% 0; z-index: 0;
+    background-image:
+      radial-gradient(2px 2px at 10% 20%, #fff, transparent), radial-gradient(2px 2px at 30% 60%, #fff, transparent),
+      radial-gradient(1px 1px at 50% 30%, #fff, transparent), radial-gradient(2px 2px at 70% 15%, #fff, transparent),
+      radial-gradient(1px 1px at 85% 50%, #fff, transparent), radial-gradient(1px 1px at 20% 80%, #fff, transparent),
+      radial-gradient(2px 2px at 60% 75%, #fff, transparent), radial-gradient(1px 1px at 92% 25%, #fff, transparent);
+    animation: titilar 3s ease-in-out infinite;
+  }
+  @keyframes titilar { 50% { opacity: .5; } }
+
+  .suelo { position: absolute; left: 0; right: 0; bottom: 0; height: 28%; z-index: 2; }
+  .suelo.asfalto { background: #3a3f4a; border-top: 6px solid #2a2e36; }
+  .suelo.arido   { background: linear-gradient(#c9874a, #9c5f2c); }
+  .suelo.estepa  { background: linear-gradient(#b8b48a, #8d8a63); }
+  .suelo.campo   { background: linear-gradient(#2f5a2a, #1f3d1c); }
+
+  .edificios { position: absolute; bottom: 28%; left: 0; right: 0; height: 60%; display: flex; align-items: flex-end; gap: 6px; padding: 0 12px; z-index: 1; }
+  .edificios div {
+    flex: 1; border-radius: 4px 4px 0 0;
+    background: repeating-linear-gradient(90deg, transparent 0 10px, rgba(255, 230, 140, .35) 10px 16px), #26324a;
+  }
+  .montana { position: absolute; bottom: 20%; z-index: 1; background: linear-gradient(#8a5a3a, #5e3a22); clip-path: polygon(50% 0, 100% 100%, 0 100%); }
+  .cauce {
+    position: absolute; bottom: 8%; left: 0; right: 0; height: 12%; z-index: 3;
+    background: repeating-linear-gradient(90deg, #a86c3a 0 18px, #b97c45 18px 30px); border-top: 2px dashed #7a4a24;
+  }
+  .rio { position: absolute; right: 0; bottom: 0; width: 41%; height: 50%; z-index: 3; background: linear-gradient(#4f7f9e, #2a4f70); }
+  .rio::before {
+    content: ""; position: absolute; top: -10px; left: 0; right: 0; height: 20px;
+    background: radial-gradient(circle at 12px 20px, #4f7f9e 11px, transparent 12px) repeat-x;
+    background-size: 24px 20px; animation: ola 1s linear infinite;
+  }
+  .muro { position: absolute; left: 56%; width: 3%; bottom: 0; height: 58%; z-index: 4; background: repeating-linear-gradient(#9aa0aa 0 12px, #7d838d 12px 14px); }
+
+  .objeto { position: absolute; z-index: 4; font-size: 2.3rem; transition: transform .8s; }
+  .nube-grande { position: absolute; z-index: 1; font-size: 7rem; left: 50%; top: -6%; transform: translateX(-50%); filter: drop-shadow(0 0 20px rgba(0,0,0,.6)); }
+
+  .gota { position: absolute; top: -20px; z-index: 6; width: 2px; height: 18px; background: rgba(190, 220, 255, .8); animation: caer linear infinite; }
+  @keyframes caer { to { transform: translateY(320px); } }
+  .piedra { position: absolute; top: -30px; z-index: 9; font-size: 1.2rem; animation: caer linear infinite; }
+
+  .rafaga {
+    position: absolute; z-index: 6; height: 3px; width: 120px; border-radius: 3px;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, .9));
+    animation: soplar linear infinite;
+  }
+  .rafaga.polvo { height: 5px; background: linear-gradient(90deg, transparent, rgba(235, 190, 130, .9)); }
+  @keyframes soplar { from { transform: translateX(-160px); } to { transform: translateX(1200px); } }
+
+  /* Capas de efecto del resultado */
+  .agua { position: absolute; left: 0; right: 0; bottom: 0; height: 0; z-index: 7; background: linear-gradient(rgba(60, 140, 230, .75), rgba(20, 70, 160, .9)); transition: height 2.2s ease-in; }
+  .agua.activa::before {
+    content: ""; position: absolute; top: -8px; left: 0; right: 0; height: 16px;
+    background: radial-gradient(circle at 10px -2px, transparent 10px, rgba(60, 140, 230, .75) 11px) repeat-x;
+    background-size: 22px 16px; animation: ola 1.2s linear infinite;
+  }
+  @keyframes ola { to { background-position: 22px 0; } }
+  .aluvion {
+    position: absolute; bottom: 0; left: -110%; width: 110%; height: 45%; z-index: 7;
+    background: linear-gradient(90deg, rgba(110, 60, 20, .95), rgba(150, 90, 40, .95) 85%, transparent);
+    border-radius: 0 60% 0 0; transition: left 2.2s cubic-bezier(.5, 0, .3, 1);
+  }
+  .velo { position: absolute; inset: 0; z-index: 8; opacity: 0; transition: opacity 1.6s .3s; pointer-events: none; }
+  .velo.flash { background: #fff; animation: flashBlanco 1.4s 2; }    /* destello de rayo */
+  @keyframes flashBlanco { 0%, 100% { opacity: 0; } 8% { opacity: 1; } 25% { opacity: .15; } 35% { opacity: .9; } 60% { opacity: 0; } }
+  .canal-ok {
+    position: absolute; bottom: 2%; left: 0; right: 0; height: 5%; z-index: 7;
+    background: linear-gradient(90deg, #3c8ce6, #7cc3ff, #3c8ce6); background-size: 200% 100%; animation: fluir 1s linear infinite;
+  }
+  @keyframes fluir { to { background-position: -200% 0; } }
+  .cayendo { transform: rotate(80deg) translateY(10px) !important; }
+  .temblar { animation: temblar .25s linear 6; }
+  @keyframes temblar { 25% { transform: translateX(-4px) rotate(-6deg); } 75% { transform: translateX(4px) rotate(6deg); } }
+  .sello-escena {
+    position: absolute; z-index: 10; inset: 0; display: grid; place-items: center;
+    font-size: 5rem; opacity: 0; transform: scale(2.5);
+    transition: opacity .4s 1.8s, transform .4s 1.8s cubic-bezier(.2, 1.6, .5, 1);
+    text-shadow: 0 6px 20px rgba(0, 0, 0, .6);
+  }
+  .sello-escena.ver { opacity: 1; transform: scale(1); }
+
+  /* ------------------------------------------------------------------
+     6. TRIVIA
+     ------------------------------------------------------------------ */
+  .layout-2col { display: grid; gap: 18px; grid-template-columns: 1fr 1.1fr; align-items: start; }
+  .etiqueta-nivel { display: inline-block; font-weight: 900; color: var(--acento); margin-bottom: 6px; letter-spacing: .5px; }
+  .alerta-banner {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: var(--fallo); color: #fff; font-weight: 900; letter-spacing: 1px;
+    padding: 6px 14px; border-radius: 99px; margin-bottom: 10px; animation: parpadeo 1s steps(2) infinite;
+  }
+  @keyframes parpadeo { 50% { filter: brightness(1.4); } }
+  .evento-dato {
+    display: flex; align-items: center; gap: 14px; margin: 12px 0;
+    background: var(--tarjeta-2); border-radius: 16px; padding: 12px 16px; border-left: 6px solid var(--acento);
+  }
+  .evento-dato .numero { font-size: 1.9rem; font-weight: 900; color: var(--acento); white-space: nowrap; }
+  .pregunta { font-size: 1.15rem; font-weight: 600; margin-bottom: 14px; }
+  .chips { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+  .chip { background: var(--tarjeta-2); border: 1px solid var(--borde); border-radius: 99px; padding: 6px 12px; font-size: .95rem; }
+
+  .timer { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; font-weight: 800; }
+  .barra { flex: 1; height: 16px; border-radius: 99px; background: #0a1222; border: 1px solid var(--borde); overflow: hidden; }
+  .barra > div { height: 100%; width: 100%; background: var(--acento); transition: width .25s linear, background .3s; }
+  .timer.urgente .barra > div { background: var(--fallo); }
+  .timer.urgente { color: var(--fallo); animation: pulso .5s infinite; }
+
+  .opciones { display: grid; gap: 12px; }
+  .opcion {
+    display: grid; grid-template-columns: 58px 1fr; gap: 14px; align-items: center;
+    width: 100%; min-height: 88px; padding: 12px 16px; text-align: left;
+    font: inherit; font-size: 1.05rem; font-weight: 700; color: var(--texto); cursor: pointer;
+    background: var(--tarjeta); border: 2px solid var(--borde); border-radius: 18px;
+    transition: transform .15s, border-color .15s, background .15s;
+    animation: entrar .4s both;
+  }
+  .opcion:nth-child(2) { animation-delay: .08s; }
+  .opcion:nth-child(3) { animation-delay: .16s; }
+  .opcion:hover:not(:disabled) { transform: translateX(6px); border-color: var(--acento); background: #22375f; }
+  .opcion:disabled { cursor: default; }
+  .opcion .letra { width: 58px; height: 58px; border-radius: 14px; display: grid; place-items: center; font-size: 1.8rem; background: var(--tarjeta-2); }
+  .opcion.correcta { border-color: var(--exito); background: #154a3a; }
+  .opcion.incorrecta { border-color: var(--fallo); background: #4a1a26; animation: temblar .25s linear 2; }
+
+  /* ------------------------------------------------------------------
+     7. CÁPSULA / RESULTADO
+     ------------------------------------------------------------------ */
+  .veredicto { font-size: clamp(1.8rem, 4.5vw, 2.8rem); font-weight: 900; line-height: 1.1; }
+  .veredicto.exito { color: var(--exito); }
+  .veredicto.parcial { color: var(--parcial); }
+  .veredicto.fallo { color: var(--fallo); }
+  .puntos-delta { display: inline-block; font-size: 1.35rem; font-weight: 900; margin: 8px 0 10px; animation: subir 1s both .3s; }
+  @keyframes subir { from { opacity: 0; transform: translateY(14px); } }
+  .ensenanza {
+    margin-top: 14px; padding: 18px; border-radius: 18px;
+    background: linear-gradient(135deg, #1f3a6b, #182c52); border: 2px solid #3d64a8;
+  }
+  .ensenanza h3 { color: var(--acento); }
+
+  /* ------------------------------------------------------------------
+     8. INSTRUCCIONES DEL MINIJUEGO
+     ------------------------------------------------------------------ */
+  .instrucciones { max-width: 760px; margin: 4vh auto 0; text-align: center; }
+  .instrucciones .icono-grande { font-size: 4.5rem; }
+  .pasos { display: grid; gap: 12px; margin: 22px 0 26px; text-align: left; }
+  .paso { display: flex; gap: 16px; align-items: center; background: var(--tarjeta-2); border-radius: 16px; padding: 14px 18px; font-size: 1.15rem; font-weight: 600; animation: entrar .4s both; }
+  .paso:nth-child(2) { animation-delay: .1s; }
+  .paso:nth-child(3) { animation-delay: .2s; }
+  .paso .ic { font-size: 2.2rem; }
+
+  /* ------------------------------------------------------------------
+     9. MINIJUEGO (Canvas)
+     ------------------------------------------------------------------ */
+  .mj-cabecera { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; margin-bottom: 10px; }
+  .mj-cabecera h2 { margin: 0; font-size: 1.5rem; }
+  .mj-cabecera .timer { flex: 1; min-width: 220px; margin: 0; }
+  .mj-estado { font-weight: 800; font-size: 1.1rem; margin-bottom: 10px; min-height: 1.5em; }
+  .lienzo-wrap {
+    position: relative; margin: 0 auto;
+    width: min(100%, calc((100vh - 210px) * 16 / 9)); aspect-ratio: 16 / 9;
+    border-radius: var(--radio); overflow: hidden; border: 2px solid var(--borde); box-shadow: var(--sombra);
+  }
+  #lienzo { display: block; width: 100%; height: 100%; touch-action: none; cursor: pointer; }
+  .sacudir { animation: sacudir .35s; }
+  @keyframes sacudir { 20% { transform: translate(-8px, 3px); } 40% { transform: translate(7px, -4px); } 60% { transform: translate(-5px, 2px); } 80% { transform: translate(4px, -2px); } }
+  .overlay { position: absolute; inset: 0; display: grid; place-items: center; pointer-events: none; }
+  .cuenta { font-size: 9rem; font-weight: 900; color: #fff; text-shadow: 0 8px 30px rgba(0,0,0,.7); }
+  .cuenta.anim { animation: cuenta .9s both; }
+  @keyframes cuenta { from { transform: scale(2.2); opacity: 0; } 30% { transform: scale(1); opacity: 1; } to { transform: scale(.8); opacity: 0; } }
+  .banner {
+    font-size: clamp(2.6rem, 9vw, 6rem); font-weight: 900; letter-spacing: 2px;
+    padding: 10px 40px; border-radius: 26px; transform: rotate(-4deg);
+    box-shadow: 0 20px 60px rgba(0,0,0,.6); animation: banner .6s cubic-bezier(.2, 1.6, .5, 1) both;
+  }
+  .banner.victoria { background: var(--exito); color: #062b1d; }
+  .banner.derrota  { background: var(--fallo); color: #fff; }
+  @keyframes banner { from { transform: scale(3) rotate(-4deg); opacity: 0; } }
+
+  /* ------------------------------------------------------------------
+     10. PANTALLA FINAL
+     ------------------------------------------------------------------ */
+  .final-cabecera { text-align: center; padding: 6px 0 18px; }
+  .final-cabecera .icono-grande { font-size: 5.5rem; }
+  .puntaje-final { font-size: clamp(3rem, 10vw, 5.5rem); font-weight: 900; color: var(--acento); line-height: 1; margin-top: 10px; }
+  .rango { display: inline-block; margin-top: 12px; padding: 10px 22px; border-radius: 99px; background: var(--tarjeta); border: 2px solid var(--acento); font-size: 1.3rem; font-weight: 900; }
+  .tabla { width: 100%; border-collapse: collapse; margin-top: 8px; }
+  .tabla td, .tabla th { padding: 10px 8px; border-bottom: 1px solid var(--borde); text-align: left; vertical-align: top; }
+  .tabla th { color: var(--texto-suave); font-weight: 600; font-size: .9rem; }
+  .capsulas { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); margin-top: 10px; }
+  .capsulas div { background: var(--tarjeta-2); border-radius: 14px; padding: 12px; font-size: .97rem; }
+  .capsulas strong { display: block; margin-bottom: 4px; }
+  .confeti { position: fixed; top: -20px; z-index: 50; width: 10px; height: 16px; pointer-events: none; animation: confeti linear forwards; }
+  @keyframes confeti { to { transform: translateY(110vh) rotate(720deg); } }
+
+  /* ------------------------------------------------------------------
+     10b. CELULAR CON INVITACIÓN + OSO INFLABLE GIGANTE
+     ------------------------------------------------------------------ */
+  .celular-wrap { display: grid; place-items: center; min-height: 76vh; }
+  .celular {
+    width: min(360px, 92vw); height: min(680px, 80vh); padding: 14px; position: relative;
+    background: #0d0d12; border-radius: 46px;
+    box-shadow: 0 0 0 3px #3a3a48, 0 30px 80px rgba(0,0,0,.6);
+    animation: vibrar .45s 2;                       /* ¡bzz bzz! llegó un mensaje */
+  }
+  @keyframes vibrar { 10%, 50%, 90% { transform: translateX(-6px) rotate(-1.5deg); } 30%, 70% { transform: translateX(6px) rotate(1.5deg); } }
+  .pantalla-cel { height: 100%; border-radius: 34px; overflow: hidden; background: linear-gradient(#1b2a4a, #0e1628); display: flex; flex-direction: column; }
+  .notch { width: 120px; height: 26px; background: #0d0d12; border-radius: 0 0 16px 16px; margin: 0 auto; flex-shrink: 0; }
+  .cel-barra { display: flex; justify-content: space-between; padding: 4px 22px; font-size: .85rem; font-weight: 700; }
+  .cel-notif { margin: 10px 12px; padding: 12px; border-radius: 18px; background: #ff8c00; color: #1a0e00; font-weight: 700; font-size: .95rem; animation: bajar .5s both .2s; }
+  @keyframes bajar { from { transform: translateY(-40px); opacity: 0; } }
+  .cel-chat { flex: 1; padding: 6px 14px; display: flex; flex-direction: column; gap: 10px; overflow: hidden; }
+  .cel-contacto { text-align: center; color: var(--texto-suave); font-size: .85rem; font-weight: 700; }
+  .burbuja { max-width: 88%; background: #2a3b5f; padding: 10px 14px; border-radius: 18px 18px 18px 4px; font-size: 1rem; animation: entrar .4s both; }
+  .burbuja:nth-child(2) { animation-delay: .7s; }
+  .burbuja:nth-child(3) { animation-delay: 1.3s; }
+  .cel-botones { display: grid; gap: 10px; padding: 12px; }
+  .cel-botones .btn { width: 100%; min-height: 62px; font-size: 1.15rem; padding: 10px; }
+  .btn.voy   { background: #ff4fa3; color: #fff; box-shadow: 0 6px 0 #a3235f; }
+  .btn.novoy { background: var(--exito); color: #062b1d; box-shadow: 0 6px 0 #138a5c; }
+  .oso-capa {
+    position: fixed; inset: 0; z-index: 60; pointer-events: none; overflow: hidden;
+    background: radial-gradient(circle, rgba(20,25,40,.25), rgba(10,14,25,.8)); animation: aparecer .3s;
+  }
+  @keyframes aparecer { from { opacity: 0; } }
+  .oso {
+    position: absolute; left: 0; top: 0; font-size: clamp(9rem, 28vw, 18rem); line-height: 1;
+    filter: drop-shadow(0 20px 30px rgba(0,0,0,.6));
+    animation: osoVuela 4.2s cubic-bezier(.45, .05, .55, .95) forwards;
+  }
+  .oso::after {                                      /* las sogas cortadas que cuelgan del inflable */
+    content: ""; position: absolute; left: 45%; top: 88%; width: 4px; height: 35vh;
+    background: repeating-linear-gradient(#ddd 0 10px, transparent 10px 15px);
+    transform-origin: top; transform: rotate(14deg);
+  }
+  @keyframes osoVuela {
+    0%   { transform: translate(-30vw, 85vh) rotate(-25deg) scale(.7); }
+    25%  { transform: translate(12vw, 42vh) rotate(15deg) scale(1); }
+    50%  { transform: translate(38vw, 28vh) rotate(-12deg) scale(1.15); }
+    75%  { transform: translate(68vw, 8vh) rotate(20deg) scale(1.05); }
+    100% { transform: translate(115vw, -60vh) rotate(-30deg) scale(.8); }
+  }
+  .rafaga-oso { position: absolute; height: 4px; width: 160px; border-radius: 4px; background: linear-gradient(90deg, transparent, rgba(255,255,255,.8)); animation: soplar .7s linear infinite; }
+  .escombro { position: absolute; left: 0; font-size: 2.6rem; animation: escombro 2.8s linear both; }
+  @keyframes escombro { from { transform: translate(-10vw, 70vh) rotate(0); } to { transform: translate(110vw, -30vh) rotate(720deg); } }
+  .noticia {
+    position: absolute; left: 50%; bottom: 6vh; width: min(680px, 92vw); transform: translateX(-50%);
+    background: #fff; color: #111; border-radius: 16px; padding: 14px 18px; box-shadow: var(--sombra);
+    animation: noticia .5s both 1s;
+  }
+  @keyframes noticia { from { opacity: 0; transform: translate(-50%, 30px); } }
+  .noticia .cintillo { display: inline-block; background: #d90429; color: #fff; font-weight: 900; padding: 3px 10px; border-radius: 6px; margin-bottom: 6px; letter-spacing: 1px; }
+  .noticia strong { display: block; font-size: 1.2rem; line-height: 1.3; }
+
+  /* ------------------------------------------------------------------
+     11. RESPONSIVE
+     ------------------------------------------------------------------ */
+  @media (max-width: 860px) {
+    .layout-2col { grid-template-columns: 1fr; }
+    .escena { height: 200px; }
+    .lienzo-wrap { width: 100%; }
+  }
+
+  /* ------------------------------------------------------------------
+     12. ACCESIBILIDAD: menos movimiento si el sistema lo pide
+     ------------------------------------------------------------------ */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ===================== HUD ===================== -->
+<header class="hud oculto" id="hud">
+  <div class="hud-logo">⚠️ Alerta <span>Territorio</span></div>
+  <div class="hud-datos">
+    <div class="vidas" id="hud-vidas" title="Vidas / reputación"></div>
+    <div>🗺️ Nivel <span id="hud-nivel">1/4</span></div>
+    <div>⭐ <span class="puntaje-num" id="hud-puntaje">0</span></div>
+    <button class="btn-sonido" id="btn-sonido" aria-label="Activar o desactivar sonido">🔊</button>
+  </div>
+</header>
+
+<main>
+  <!-- ===================== BIENVENIDA ===================== -->
+  <section class="pantalla activa" id="p-inicio">
+    <div class="inicio">
+      <div>
+        <div class="icono-grande">🏘️</div>
+        <h1>Alerta Territorio<span>Prepará tu Barrio</span></h1>
+        <p class="intro suave">
+          Las emergencias meteorológicas no se enfrentan sólo desde un centro de control:
+          <strong>lo que hacés en tu casa y en tu barrio salva vidas</strong>. En cada situación vas a
+          responder una <strong>trivia</strong> y superar un <strong>minijuego</strong> de 15 segundos.
+          Tenés <strong>3 vidas</strong>: cada error cuesta una.
+        </p>
+        <div class="mapa-escenarios">
+          <div>🌧️ Lluvias intensas</div>
+          <div>💨 Vientos fuertes</div>
+          <div>🥵 Ola de calor</div>
+          <div>⚡ Tormenta eléctrica</div>
+        </div>
+        <button class="btn gigante pulso" id="btn-jugar">▶ ¡Jugar!</button>
+        <div class="acciones" style="justify-content:center">
+          <button class="btn secundario" id="btn-centro">🛰️ Centro de Alertas (modo experto)</button>
+          <button class="btn secundario" id="btn-express">⚡ Modo Express (1 min)</button>
+        </div>
+        <div class="record" id="record"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== CELULAR: invitación al recital ===================== -->
+  <section class="pantalla" id="p-celular">
+    <div class="celular-wrap" id="cel-telefono">
+      <div class="celular">
+        <div class="pantalla-cel">
+          <div class="notch"></div>
+          <div class="cel-barra"><span id="cel-hora">20:47</span><span>📶 🔋 63%</span></div>
+          <div class="cel-notif" id="cel-notif"></div>
+          <div class="cel-chat" id="cel-chat"></div>
+          <div class="cel-botones">
+            <button class="btn voy" id="btn-cel-voy">🎉 ¡Voy!</button>
+            <button class="btn novoy" id="btn-cel-novoy">🏠 No voy, hay alerta</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="tarjeta" id="cel-resultado" style="max-width:780px;margin:4vh auto 0;display:none">
+      <div class="veredicto" id="cel-veredicto"></div>
+      <div class="puntos-delta" id="cel-puntos"></div>
+      <p id="cel-texto" style="font-size:1.15rem"></p>
+      <div class="ensenanza"><h3>🧠 Cápsula científica</h3><p id="cel-capsula"></p></div>
+      <div class="acciones"><button class="btn" id="btn-cel-seguir">Continuar a la trivia ➜</button></div>
+    </div>
+  </section>
+
+  <!-- ===================== TRIVIA ===================== -->
+  <section class="pantalla" id="p-trivia">
+    <div class="layout-2col">
+      <div>
+        <div class="escena" id="escena-trivia"></div>
+        <div class="tarjeta" style="margin-top:16px">
+          <h3 id="tr-region"></h3>
+          <div class="chips" id="tr-clima"></div>
+        </div>
+      </div>
+      <div class="tarjeta">
+        <div class="etiqueta-nivel" id="tr-fase"></div><br>
+        <div class="alerta-banner">🚨 ALERTA METEOROLÓGICA</div>
+        <h2 id="tr-titulo"></h2>
+        <div class="evento-dato"><div class="numero" id="tr-numero"></div><div id="tr-dato"></div></div>
+        <p class="pregunta" id="tr-pregunta"></p>
+        <div class="timer" id="tr-timer">⏱️ <div class="barra"><div id="tr-timer-barra"></div></div> <span id="tr-timer-num">20</span>s</div>
+        <div class="opciones" id="tr-opciones"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== CÁPSULA (feedback de trivia) ===================== -->
+  <section class="pantalla" id="p-capsula">
+    <div class="layout-2col">
+      <div class="escena" id="escena-capsula"></div>
+      <div class="tarjeta">
+        <div class="veredicto" id="cap-veredicto"></div>
+        <div class="puntos-delta" id="cap-puntos"></div>
+        <p id="cap-consecuencia"></p>
+        <div class="ensenanza"><h3>🧠 Cápsula científica</h3><p id="cap-texto"></p></div>
+        <div class="acciones"><button class="btn" id="btn-cap-seguir">Continuar ➜</button></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== INSTRUCCIONES DE MINIJUEGO ===================== -->
+  <section class="pantalla" id="p-instrucciones">
+    <div class="instrucciones tarjeta">
+      <div class="etiqueta-nivel" id="ins-fase"></div>
+      <div class="icono-grande" id="ins-icono"></div>
+      <h2 id="ins-titulo"></h2>
+      <div class="pasos" id="ins-pasos"></div>
+      <button class="btn gigante pulso" id="btn-ins-listo">¡Listo! ▶</button>
+    </div>
+  </section>
+
+  <!-- ===================== MINIJUEGO ===================== -->
+  <section class="pantalla" id="p-minijuego">
+    <div class="mj-cabecera">
+      <h2 id="mj-titulo"></h2>
+      <div class="timer" id="mj-timer">⏱️ <div class="barra"><div id="mj-timer-barra"></div></div> <span id="mj-timer-num">15</span>s</div>
+    </div>
+    <div class="mj-estado" id="mj-estado"></div>
+    <div class="lienzo-wrap" id="lienzo-wrap">
+      <canvas id="lienzo"></canvas>
+      <div class="overlay"><div class="cuenta" id="mj-cuenta"></div></div>
+      <div class="overlay" id="mj-banner-wrap"></div>
+    </div>
+  </section>
+
+  <!-- ===================== RESULTADO DEL MINIJUEGO ===================== -->
+  <section class="pantalla" id="p-resultado">
+    <div class="tarjeta" style="max-width:820px;margin:3vh auto 0">
+      <div class="veredicto" id="res-veredicto"></div>
+      <div class="puntos-delta" id="res-puntos"></div>
+      <p id="res-resumen" style="font-size:1.15rem"></p>
+      <div class="ensenanza"><h3>🔬 Dato para llevarte</h3><p id="res-leccion"></p></div>
+      <div class="acciones"><button class="btn" id="btn-res-seguir">Siguiente escenario ➜</button></div>
+    </div>
+  </section>
+
+  <!-- ===================== FINAL ===================== -->
+  <section class="pantalla" id="p-final">
+    <div class="final-cabecera">
+      <div class="icono-grande" id="fin-icono"></div>
+      <h1 id="fin-titulo"></h1>
+      <div class="puntaje-final" id="fin-puntaje">0</div>
+      <div class="suave">puntos</div>
+      <div class="rango" id="fin-rango"></div>
+      <p class="suave" id="fin-subtitulo" style="margin-top:12px;font-size:1.1rem"></p>
+    </div>
+    <div class="tarjeta">
+      <h3>📋 Tu recorrido</h3>
+      <table class="tabla" id="fin-tabla"></table>
+    </div>
+    <div class="tarjeta ensenanza" style="margin-top:18px">
+      <h3 id="fin-leccion-titulo"></h3>
+      <p id="fin-leccion-texto"></p>
+      <div class="capsulas" id="fin-capsulas"></div>
+    </div>
+    <div class="acciones" style="justify-content:center">
+      <button class="btn gigante" id="btn-fin-otra">🔄 Volver a jugar</button>
+      <button class="btn secundario" id="btn-fin-inicio">🏠 Inicio</button>
+    </div>
+  </section>
+</main>
+
+<script>
+"use strict";
+/* =====================================================================
+   A) DATOS
+   Cada escenario es un objeto. La lógica del juego lee estos datos, así
+   que para agregar o corregir contenido NO hace falta tocar funciones.
+
+   resultado de cada opción: "exito" | "parcial" | "fallo"
+   efecto: animación del diorama en la cápsula (ver sección D).
+   minijuego: clave dentro de MINIJUEGOS (sección G), o null.
+   ===================================================================== */
+const ESCENARIOS = [
+  {
+    id: "sudestada", nombre: "La Sudestada", lugar: "Buenos Aires / Río de la Plata", emoji: "🌊",
+    clima: ["💨 Viento persistente del sudeste", "🌊 Río crecido", "🏙️ Ciudad costera y llana"],
+    escena: { cielo: "cielo-tormenta", tipo: "costa", fenomeno: "lluvia" },
+    titulo: "Sudestada + lluvia torrencial",
+    numero: "+3 m", dato: "subió el Río de la Plata empujado por el viento, mientras llueve fuerte sobre la ciudad.",
+    pregunta: "¡Atención! El Río de la Plata creció 3 metros por el viento y, al mismo tiempo, está lloviendo torrencialmente sobre la ciudad. ¿Cuál es tu orden inmediata para evitar que se inunde?",
+    opciones: [
+      { icono: "🚪", texto: "Abrir al máximo todas las compuertas de los canales pluviales para que el agua de lluvia desagote rápido hacia el río.",
+        resultado: "fallo", efecto: "inundacion", titulo: "¡El río entró a la ciudad!",
+        consecuencia: "Con el río más alto que los desagües, el agua no salió: ¡entró por los conductos!" },
+      { icono: "⚙️", texto: "Cerrar las compuertas costeras y encender estaciones de bombeo para expulsar el agua de lluvia por la fuerza.",
+        resultado: "exito", efecto: "drenaje", titulo: "¡Orden correcta!",
+        consecuencia: "Compuertas cerradas al río y bombas sacando la lluvia: la ciudad se mantiene seca." },
+      { icono: "🏃", texto: "Evacuar la ciudad porque se acerca un tsunami impulsado por el viento.",
+        resultado: "fallo", efecto: "inundacion", titulo: "¡No era un tsunami!",
+        consecuencia: "Los tsunamis los provocan terremotos, no el viento. Mientras tanto nadie operó las compuertas y la ciudad se inundó." }
+    ],
+    capsula: "¡Si abrís las compuertas con el río alto, el agua entra a la ciudad! En una sudestada, los desagües naturales se bloquean (taponamiento) y hay que bombear el agua de lluvia hacia afuera.",
+    minijuego: "compuertas",
+    leccion: "Las ciudades del Río de la Plata tienen compuertas y estaciones de bombeo en la desembocadura de sus arroyos. Cuando la sudestada eleva el río, la lluvia ya no puede salir por gravedad: la única salida es bombearla por encima del nivel del río."
+  },
+  {
+    id: "zonda", nombre: "El Viento Zonda", lugar: "Cuyo / Precordillera", emoji: "🔥",
+    clima: ["⛰️ Al pie de la Cordillera", "🏜️ Clima seco", "🌡️ Viento cálido de montaña"],
+    escena: { cielo: "cielo-polvo", tipo: "zonda", fenomeno: "polvo" },
+    titulo: "¡Viento Zonda!",
+    numero: "80 km/h", dato: "de ráfagas · 35 °C · humedad 5 % · cielo marrón por el polvo.",
+    pregunta: "Ráfagas de 80 km/h bajan de la montaña. El aire quema (35 °C), la humedad cayó al 5 % y el cielo está marrón por el polvo. ¿Qué prevención ordenás?",
+    opciones: [
+      { icono: "🪟", texto: "Abrir todas las puertas y ventanas para ventilar las casas y aprovechar el viento para refrescar.",
+        resultado: "fallo", efecto: "polvo", titulo: "¡Casa llena de tierra!",
+        consecuencia: "El viento no refresca: es caliente y seco. Entró polvo y calor extremo a todas las casas." },
+      { icono: "🏠", texto: "Encerrarse, sellar ventanas con trapos húmedos y suspender toda actividad al aire libre por riesgo extremo de incendios y caída de árboles.",
+        resultado: "exito", efecto: "sellado", titulo: "¡Prevención correcta!",
+        consecuencia: "Casas selladas, actividades suspendidas: nadie quedó expuesto a ramas caídas ni a focos de incendio." },
+      { icono: "⚡", texto: "Preparar pararrayos, porque el Zonda siempre termina en una tormenta eléctrica severa e inmediata.",
+        resultado: "fallo", efecto: "polvo", titulo: "¡Peligro equivocado!",
+        consecuencia: "El Zonda es un viento SECO: no trae tormenta inmediata. Mientras tanto, cayeron árboles y el polvo entró a las casas." }
+    ],
+    capsula: "El Zonda se calienta y se seca al bajar la montaña (calentamiento adiabático: el aire se comprime al descender y sube su temperatura). Abrir las ventanas mete tierra y calor extremo a tu casa.",
+    minijuego: "casa",
+    leccion: "Durante el Zonda la humedad puede caer por debajo del 10 %: la vegetación seca y los combustibles se encienden con una chispa y el viento propaga el fuego. Guardar combustibles y ramas, y proteger a personas y mascotas del polvo, reduce el riesgo."
+  },
+  {
+    id: "helada", nombre: "Helada Radiativa", lugar: "Alto Valle / Mendoza", emoji: "❄️",
+    clima: ["🌌 Noche despejada", "🍃 Sin viento", "🌸 Frutales en flor"],
+    escena: { cielo: "cielo-noche", tipo: "frutales", fenomeno: "ninguno" },
+    titulo: "Helada en plena floración",
+    numero: "−2 °C", dato: "a ras del suelo, en una noche de primavera despejada y sin viento.",
+    pregunta: "Noche de primavera despejada y sin una gota de viento. Los termómetros a ras del suelo marcan −2 °C y los frutales están en flor. ¿Cómo salvás la cosecha antes de que amanezca?",
+    opciones: [
+      { icono: "🧣", texto: "Cubrir la base de los troncos de los árboles con mantas térmicas gruesas.",
+        resultado: "fallo", efecto: "escarcha", titulo: "¡Se congelaron las flores!",
+        consecuencia: "Las flores están arriba, en las ramas: las mantas en el tronco no las protegieron del aire helado." },
+      { icono: "🌀", texto: "Encender grandes ventiladores (hélices) en el campo para mezclar el aire o activar riego por aspersión sobre las plantas.",
+        resultado: "exito", efecto: "calor", titulo: "¡Cosecha salvada!",
+        consecuencia: "Las hélices trajeron aire más tibio de arriba y el riego mantuvo las flores cerca de 0 °C." },
+      { icono: "🧪", texto: "Rociar los árboles con anticongelante químico para motores.",
+        resultado: "fallo", efecto: "escarcha", titulo: "¡Peor que la helada!",
+        consecuencia: "El anticongelante es tóxico: quemó las flores, contaminó el suelo y la fruta no se puede vender." }
+    ],
+    capsula: "En noches calmas y despejadas el suelo pierde calor por radiación y el aire frío se estanca pegado al suelo (inversión térmica). Las hélices mezclan ese aire con el aire más cálido de arriba, y el riego libera calor latente al congelarse, salvando los brotes.",
+    minijuego: "helada",
+    leccion: "En una inversión térmica, el aire a 10–15 m de altura puede estar varios grados más cálido que a ras del suelo: los ventiladores antiheladas aprovechan esa diferencia. El riego funciona porque el agua, al congelarse, libera calor y mantiene la flor cerca de 0 °C."
+  },
+  {
+    id: "convectivo", nombre: "Sistema Convectivo", lugar: "Litoral / Mesopotamia", emoji: "⛈️",
+    clima: ["🌡️ Calor y mucha humedad", "☁️ Nubes de gran desarrollo", "🌾 Zona agrícola y ríos"],
+    escena: { cielo: "cielo-tormenta", tipo: "tormenta", fenomeno: "lluvia" },
+    titulo: "Tormentas severas en el radar",
+    numero: "> 15 km", dato: "de altura en los topes de las nubes, con ecos rojos intensos en el radar.",
+    pregunta: "El radar meteorológico muestra manchas rojas e intensas acercándose a gran velocidad. Los topes de las nubes superan los 15 km de altura. ¿Qué peligro inminente le comunicás a Defensa Civil?",
+    opciones: [
+      { icono: "🌦️", texto: "Una llovizna suave pero persistente que durará varios días y causará la crecida lenta de los ríos.",
+        resultado: "fallo", efecto: "granizo", titulo: "¡Granizo sin aviso!",
+        consecuencia: "Los ecos rojos no son llovizna: el granizo y las ráfagas sorprendieron a la gente en la calle." },
+      { icono: "🧊", texto: "Posible caída de granizo grande, ráfagas de viento destructivas (corrientes descendentes) y actividad eléctrica severa en los próximos minutos.",
+        resultado: "exito", efecto: "alerta-ok", titulo: "¡Alerta precisa!",
+        consecuencia: "La población se resguardó a tiempo: autos bajo techo y nadie a la intemperie cuando cayó el granizo." },
+      { icono: "🌀", texto: "La formación inminente de un huracán categoría 3 sobre el río Paraná.",
+        resultado: "fallo", efecto: "granizo", titulo: "¡No hay huracanes en el Paraná!",
+        consecuencia: "Los huracanes se forman sobre océanos tropicales cálidos. La alerta equivocada confundió a todos y el granizo los encontró desprevenidos." }
+    ],
+    capsula: "Los colores rojos en el radar y las nubes tan altas indican tormentas severas con fuertes corrientes de aire (convección profunda), lo que significa ráfagas violentas y granizo de forma repentina.",
+    minijuego: "radar",
+    leccion: "El radar mide la reflectividad (dBZ): cuánta señal rebota en gotas y granizo. Ecos de más de 50 dBZ suelen indicar granizo. Alertar a tiempo salva vidas, pero alertar por todo genera 'fatiga de alertas': la gente deja de creer en los avisos."
+  }
+];
+
+/* Modo Express: las 3 regiones de la versión 1, ahora como trivias */
+const EXPRESS = [
+  {
+    id: "pampeana", nombre: "Región Pampeana", lugar: "La Plata, Buenos Aires", emoji: "🏙️",
+    clima: ["🌧️ Clima húmedo", "🏢 Suelo urbano impermeable", "➖ Llanura sin pendiente"],
+    escena: { cielo: "cielo-tormenta", tipo: "ciudad", fenomeno: "lluvia" },
+    titulo: "Tormenta fuerte sobre la ciudad",
+    numero: "60 mm", dato: "de lluvia en menos de 2 horas sobre asfalto y cemento.",
+    pregunta: "Caen 60 mm en menos de 2 horas sobre la ciudad. ¿Qué hacés?",
+    opciones: [
+      { icono: "🤷", texto: "No hacer nada: es sólo lluvia.", resultado: "fallo", efecto: "inundacion", titulo: "¡Calles inundadas!",
+        consecuencia: "El agua no tuvo por dónde irse. Autos flotando, casas anegadas y barrios aislados." },
+      { icono: "🧹", texto: "Limpiar sumideros y activar canales aliviadores.", resultado: "exito", efecto: "drenaje", titulo: "¡Ciudad a salvo!",
+        consecuencia: "Los desagües limpios y los canales evacuaron el agua a tiempo. Sólo charcos." },
+      { icono: "🏫", texto: "Suspender clases y pedir no circular.", resultado: "parcial", efecto: "inundacion-leve", titulo: "Personas a salvo, calles con agua",
+        consecuencia: "Nadie quedó atrapado, pero los sumideros tapados igual generaron anegamientos." }
+    ],
+    capsula: "En la ciudad, el asfalto y el cemento son impermeables: el agua no se infiltra como en el campo, y en una llanura escurre lento. Todo depende de que los sumideros estén limpios y los canales funcionen.",
+    minijuego: null
+  },
+  {
+    id: "arida", nombre: "Región Árida", lugar: "Pedemonte de Mendoza", emoji: "🏜️",
+    clima: ["☀️ Clima seco", "🌵 Escasa vegetación", "⛰️ Pendientes pronunciadas"],
+    escena: { cielo: "cielo-tormenta", tipo: "montana", fenomeno: "lluvia" },
+    titulo: "Tormenta convectiva de verano",
+    numero: "60 mm", dato: "¡Los MISMOS 60 mm que en La Plata! Pero sobre cerros secos.",
+    pregunta: "Caen los mismos 60 mm, pero sobre cerros secos y con pendiente. ¿Qué hacés?",
+    opciones: [
+      { icono: "🚨", texto: "Evacuar zonas bajas y cauces secos.", resultado: "exito", efecto: "aluvion-evitado", titulo: "¡Evacuación a tiempo!",
+        consecuencia: "Minutos después bajó un aluvión por el cauce seco... pero ya no había nadie." },
+      { icono: "⏳", texto: "Esperar a que el agua filtre, como en la pampa.", resultado: "fallo", efecto: "aluvion", titulo: "¡Aluvión!",
+        consecuencia: "El agua no se infiltró: bajó de golpe por las pendientes arrastrando barro y rocas." },
+      { icono: "🚜", texto: "Abrir compuertas agrícolas para regar.", resultado: "fallo", efecto: "aluvion", titulo: "¡Peor todavía!",
+        consecuencia: "Las compuertas sumaron más agua a los canales justo cuando bajaba la crecida repentina." }
+    ],
+    capsula: "El suelo muy seco y compactado NO absorbe rápido el agua. Con pendientes fuertes y sin vegetación, el agua se junta en los cauces secos y baja como aluvión (crecida repentina o flash flood).",
+    minijuego: null
+  },
+  {
+    id: "patagonia", nombre: "Región Patagónica", lugar: "Comodoro Rivadavia, Chubut", emoji: "🌬️",
+    clima: ["💨 Vientos fuertes constantes", "🥶 Temperaturas bajas", "🛣️ Rutas extensas"],
+    escena: { cielo: "cielo-frio", tipo: "estepa", fenomeno: "viento" },
+    titulo: "Ingreso de aire polar",
+    numero: "90 km/h", dato: "de ráfagas del sudoeste, con descenso brusco de la temperatura.",
+    pregunta: "Entran ráfagas de 90 km/h con aire polar. ¿Qué hacés?",
+    opciones: [
+      { icono: "🪧", texto: "Asegurar cartelería y restringir tránsito en rutas.", resultado: "exito", efecto: "viento-ok", titulo: "¡Daños evitados!",
+        consecuencia: "Carteles amarrados, camiones detenidos a tiempo y nadie circulando bajo los árboles." },
+      { icono: "🌀", texto: "Dar aviso de tormenta tropical.", resultado: "fallo", efecto: "viento-danio", titulo: "¡Alerta equivocada!",
+        consecuencia: "En la Patagonia no hay tormentas tropicales: la gente no se preparó para ráfagas heladas." },
+      { icono: "😎", texto: "Nada: acá siempre sopla viento.", resultado: "fallo", efecto: "viento-danio", titulo: "¡Árboles y carteles caídos!",
+        consecuencia: "90 km/h no es el viento de todos los días: volcó un camión y cayeron árboles." }
+    ],
+    capsula: "Aunque el viento sea habitual, las ráfagas extremas superan lo que soportan carteles, árboles y vehículos altos. Que algo sea 'normal' en una región no significa que su intensidad máxima no sea peligrosa.",
+    minijuego: null
+  }
+];
+
+/* Campaña principal "Prepara tu Barrio": acciones reales de ciudadanos comunes */
+const BARRIO = [
+  {
+    id: "lluvia", nombre: "Lluvias Intensas y Sudestada", lugar: "Tu cuadra, en una ciudad llana", emoji: "🌧️",
+    clima: ["🔴 Alerta roja por tormentas", "🏠 Calle que se inunda rápido", "🍂 Hojas y basura en la vereda"],
+    escena: { cielo: "cielo-tormenta", tipo: "vereda", fenomeno: "lluvia" },
+    titulo: "Alerta roja por tormentas severas",
+    numero: "🔴 ROJA", dato: "Tormentas severas en las próximas horas. Tu calle suele inundarse rápido.",
+    pregunta: "Hay alerta roja por tormentas severas. Tu calle suele inundarse rápido. ¿Qué es lo más importante que debés hacer ANTES de que empiece a llover?",
+    opciones: [
+      { icono: "🛍️", texto: "Sacar la basura a la vereda para que la lluvia lave los tachos.",
+        resultado: "fallo", efecto: "inundacion", titulo: "¡Bolsas en la boca de tormenta!",
+        consecuencia: "La correntada arrastró las bolsas hasta el sumidero, lo tapó y la calle se inundó en minutos." },
+      { icono: "🧹", texto: "Limpiar las canaletas del techo, barrer las hojas y asegurarte de no dejar bolsas de basura cerca de las bocas de tormenta.",
+        resultado: "exito", efecto: "drenaje", titulo: "¡Barrio preparado!",
+        consecuencia: "Canaletas libres y sumideros despejados: el agua corrió por donde debía y la calle sólo tuvo charcos." },
+      { icono: "🕳️", texto: "Abrir las tapas de las cloacas de la calle para que el agua baje más rápido.",
+        resultado: "fallo", efecto: "inundacion-sucia", titulo: "¡Agua cloacal en las casas!",
+        consecuencia: "La cloaca no está hecha para el agua de lluvia: colapsó y el agua contaminada volvió por rejillas e inodoros. Además, una tapa abierta bajo el agua es una trampa mortal." }
+    ],
+    capsula: "¡La basura y las hojas tapan los sumideros! Las cloacas abiertas colapsan y devuelven agua contaminada a las casas.",
+    minijuego: "destapar",
+    leccion: "El desagüe pluvial (sumideros y bocas de tormenta) y la cloaca son redes distintas. Una sola bolsa puede tapar una boca de tormenta. Sacá la basura sólo cuando no hay alerta, limpiá las canaletas antes de la temporada de tormentas y nunca camines por calles inundadas: puede haber tapas abiertas."
+  },
+  {
+    id: "viento", nombre: "Vientos Fuertes y Zonda", lugar: "El patio de tu casa", emoji: "💨",
+    clima: ["⚠️ Aviso a corto plazo", "💨 Ráfagas de más de 80 km/h", "🪴 Patio con objetos sueltos"],
+    escena: { cielo: "cielo-polvo", tipo: "patio", fenomeno: "viento" },
+    titulo: "Aviso a corto plazo: ráfagas destructivas",
+    numero: "80+ km/h", dato: "de ráfagas en los próximos minutos. Estás en el patio de tu casa.",
+    pregunta: "Se emitió un aviso a corto plazo por ráfagas destructivas de más de 80 km/h. Estás en el patio de tu casa. ¿Qué hacés?",
+    opciones: [
+      { icono: "🪟", texto: "Dejar las ventanas abiertas para que el viento circule y no rompa los vidrios por la presión.",
+        resultado: "fallo", efecto: "viento-danio", titulo: "¡Casa revuelta y vidrios rotos!",
+        consecuencia: "Es un mito peligroso: con las ventanas abiertas el viento entra, empuja el techo desde adentro y arrastra objetos." },
+      { icono: "🐕", texto: "Entrar a las mascotas, cerrar todo herméticamente y guardar o atar cualquier objeto suelto del patio.",
+        resultado: "exito", efecto: "patio-ok", titulo: "¡Patio asegurado!",
+        consecuencia: "Mascotas adentro, ventanas cerradas y nada suelto: las ráfagas pasaron sin dejar proyectiles." },
+      { icono: "🪜", texto: "Subir al techo rápido a clavar las chapas que estén flojas.",
+        resultado: "fallo", efecto: "viento-danio", titulo: "¡Nunca al techo con viento!",
+        consecuencia: "Una ráfaga puede tirarte del techo, y una chapa que se suelta corta como una cuchilla. Las reparaciones se hacen ANTES del aviso o cuando el viento ya pasó." }
+    ],
+    capsula: "¡Nunca subas al techo con viento fuerte! Los objetos sueltos en el patio se convierten en proyectiles mortales con ráfagas severas.",
+    minijuego: "patio",
+    leccion: "Con ráfagas de 80 km/h una silla de jardín o una maceta pueden volar decenas de metros, romper vidrios o herir a alguien. Revisá chapas y techos con buen tiempo; ante el aviso, guardá o atá todo lo suelto, entrá a las mascotas y quedate adentro, lejos de las ventanas."
+  },
+  {
+    id: "calor", nombre: "Ola de Calor Extrema", lugar: "La plaza del barrio", emoji: "🥵",
+    clima: ["☀️ 39 °C a la sombra", "🥵 Sensación térmica sofocante", "👴 Vecinos mayores y mascotas"],
+    escena: { cielo: "cielo-calor", tipo: "plaza", fenomeno: "ninguno" },
+    titulo: "Ola de calor en pleno enero",
+    numero: "39 °C", dato: "a la sombra, con sensación térmica sofocante, varios días seguidos.",
+    pregunta: "Es pleno enero, hacen 39 °C a la sombra y la sensación térmica es sofocante. ¿Cuál de estas acciones salva vidas en el barrio?",
+    opciones: [
+      { icono: "🧊", texto: "Bañar a los perros con agua helada y darles hielo de comer.",
+        resultado: "fallo", efecto: "golpe-calor", titulo: "¡Shock térmico!",
+        consecuencia: "El agua helada contrae los vasos sanguíneos de la piel y el cuerpo retiene el calor adentro. Para refrescar a un animal se usa agua fresca, no helada." },
+      { icono: "🥣", texto: "Dejar recipientes con agua fresca a la sombra para los animales y chequear que adultos mayores estén en lugares frescos.",
+        resultado: "exito", efecto: "sombra-ok", titulo: "¡Barrio hidratado!",
+        consecuencia: "Agua fresca a la sombra para los animales y un vecino que pregunta \"¿cómo estás?\": así se previenen los golpes de calor." },
+      { icono: "🏃", texto: "Hacer ejercicio al mediodía para transpirar y regular la temperatura del cuerpo.",
+        resultado: "fallo", efecto: "golpe-calor", titulo: "¡Golpe de calor!",
+        consecuencia: "Al mediodía el cuerpo ya no puede eliminar el calor y el ejercicio lo aumenta. La actividad física se deja para la mañana temprano o la noche." }
+    ],
+    capsula: "El golpe de calor es silencioso pero letal. El agua fresca a la sombra salva tanto a mascotas callejeras como domésticas.",
+    minijuego: "hidratacion",
+    leccion: "Los más vulnerables al calor extremo son bebés, adultos mayores, personas con enfermedades crónicas y animales. Señales de alarma: piel caliente y seca, confusión, mareos o jadeo excesivo en mascotas. Ante esos síntomas: sombra, agua fresca (no helada) y llamar a emergencias."
+  },
+  {
+    id: "rayos", nombre: "Tormenta Eléctrica", lugar: "Un parque abierto", emoji: "⚡",
+    clima: ["⛈️ Nubes de tormenta", "⚡ Rayos cercanos", "🌳 Parque amplio y abierto"],
+    escena: { cielo: "cielo-tormenta", tipo: "parque", fenomeno: "lluvia" },
+    titulo: "¡Rayos cerca del parque!",
+    numero: "⚡ 3 s", dato: "entre el relámpago y el trueno: el rayo cayó a sólo 1 km (el sonido recorre unos 340 m por segundo).",
+    pregunta: "Estás en un descampado o parque y empieza una tormenta eléctrica severa. Caen rayos cerca. ¿Dónde te refugiás?",
+    opciones: [
+      { icono: "🌳", texto: "Debajo del árbol más grande y frondoso que encuentre.",
+        resultado: "fallo", efecto: "rayo", titulo: "¡El rayo cayó en el árbol!",
+        consecuencia: "Los rayos tienden a caer en lo más alto: un árbol aislado es el peor refugio. La descarga puede saltar del tronco a quien está debajo." },
+      { icono: "🚗", texto: "Dentro de un auto cerrado sin tocar las partes metálicas, o si no hay refugio, agacharme abrazando mis rodillas.",
+        resultado: "exito", efecto: "refugio-ok", titulo: "¡A salvo!",
+        consecuencia: "El auto cerrado te protegió: la corriente del rayo viaja por la carrocería metálica y baja a tierra sin atravesarte." },
+      { icono: "🛌", texto: "Me acuesto completamente plano en el piso para estar lo más bajo posible.",
+        resultado: "fallo", efecto: "rayo", titulo: "¡Corriente por el suelo!",
+        consecuencia: "Cuando un rayo cae cerca, la corriente se expande por el suelo. Acostado, tu cuerpo ocupa más superficie y la corriente te atraviesa." }
+    ],
+    capsula: "¡El auto actúa como Jaula de Faraday y te protege! Si estás al aire libre, acostarse aumenta el riesgo: hay que adoptar la \"posición de rayo\" (en cuclillas, tocando el piso sólo con los pies).",
+    minijuego: "cubierto",
+    // Antes de la trivia aparece un celular. Para usarlo en otro escenario, mové este bloque.
+    celular: {
+      notificacion: "🟠 SMN · ALERTA NARANJA por tormentas fuertes: ráfagas de más de 90 km/h, actividad eléctrica y granizo para esta noche.",
+      contacto: "Caro 🎸",
+      mensajes: ["¡Conseguí entradas para el recital de esta noche, al aire libre en el parque! 🎶",
+                 "Hay escenario gigante y un oso inflable ENORME 🧸 ¿Vamos?"],
+      noticia: "Suspenden el recital al aire libre: una ráfaga arrancó el oso inflable gigante del escenario",
+      bien: { titulo: "¡Decisión inteligente!", texto: "Te quedaste en casa. Minutos después, una ráfaga hizo volar el oso inflable y parte del escenario: el público tuvo que evacuar bajo la lluvia y los rayos." },
+      mal:  { titulo: "¡Uf, qué susto!", texto: "Fuiste al recital... y una ráfaga arrancó el oso inflable gigante del escenario. Hubo que evacuar a miles de personas bajo la lluvia y los rayos." },
+      capsula: "Con alerta naranja, los eventos masivos al aire libre son muy riesgosos: escenarios, pantallas, carpas e inflables gigantes ofrecen mucha superficie al viento y pueden volar o derrumbarse. Además, una multitud en un predio abierto no tiene dónde refugiarse de los rayos. Antes de salir, revisá las alertas del Servicio Meteorológico Nacional."
+    },
+    leccion: "Regla 30/30: si entre el relámpago y el trueno pasan menos de 30 segundos, el rayo está a menos de 10 km y ya hay peligro: buscá refugio. Esperá 30 minutos después del último trueno para salir. Un edificio cerrado o un auto con techo metálico son los mejores refugios; la posición en cuclillas es el último recurso."
+  }
+];
+
+/* Configuración general: cambiar acá para ajustar la dificultad */
+const CONFIG = {
+  vidas: 3,
+  segundosTrivia: 20,
+  puntosTrivia: { exito: 100, parcial: 50, fallo: 0 },
+  bonusPorSegundo: 5,          // puntos extra por cada segundo que sobra en la trivia
+  maxTrivia: 200,              // para calcular el rango final
+  maxMinijuego: 250,
+  puntosCelular: 100,          // premio por NO ir al recital con alerta naranja
+  celularQuitaVida: false,     // ponelo en true para que ir al recital cueste una vida
+  inactividadMs: 60000         // modo feria: vuelve al inicio tras 1 min sin uso
+};
+
+const RANGOS_CENTRO = [        // [porcentaje mínimo del puntaje máximo, título]
+  [0,   "🌱 Meteorólogo Aficionado"],
+  [.3,  "🔭 Observador de Estación"],
+  [.5,  "📈 Pronosticador de Guardia"],
+  [.7,  "🏛️ Director del Servicio Meteorológico"]
+];
+const RANGOS_BARRIO = [
+  [0,   "🙂 Vecino Curioso"],
+  [.3,  "🏡 Vecino Preparado"],
+  [.5,  "🦺 Rescatista Barrial"],
+  [.7,  "🏅 Líder de Protección Civil del Barrio"]
+];
+
+const LECCION_CENTRO = {
+  titulo: "🔑 La gran lección: el mismo fenómeno no es el mismo riesgo",
+  texto: "El riesgo depende del <strong>fenómeno</strong> (lluvia, viento, frío, tormenta) × la <strong>vulnerabilidad</strong> del territorio (suelo, relieve, urbanización, preparación). Por eso los servicios meteorológicos emiten <strong>alertas por región</strong> y cada lugar necesita su propia respuesta.",
+  victoria: "¡El territorio está a salvo gracias a tus decisiones!"
+};
+
+/* Cada modo de juego elige su lista de escenarios, sus rangos y su lección final */
+const MODOS = {
+  barrio: {
+    lista: BARRIO, rangos: RANGOS_BARRIO,
+    leccion: {
+      titulo: "🔑 La gran lección: la prevención empieza en tu casa",
+      texto: "Los servicios meteorológicos avisan, pero el impacto final depende de lo que hacemos cada vecino: <strong>sumideros y canaletas limpios</strong>, <strong>objetos sueltos guardados</strong>, <strong>agua fresca y sombra</strong> para quien lo necesita y <strong>saber dónde refugiarse</strong>. Seguí siempre los avisos oficiales del Servicio Meteorológico Nacional y de Defensa Civil de tu municipio.",
+      victoria: "¡Tu barrio está preparado gracias a vos!"
+    }
+  },
+  completo: { lista: ESCENARIOS, rangos: RANGOS_CENTRO, leccion: LECCION_CENTRO },
+  express:  { lista: EXPRESS,    rangos: RANGOS_CENTRO, leccion: LECCION_CENTRO }
+};
+
+/* =====================================================================
+   B) ESTADO DEL JUEGO
+   ===================================================================== */
+let estado = null;
+
+function estadoInicial(modo) {
+  return {
+    modo,                                   // "barrio" | "completo" | "express"
+    lista: MODOS[modo].lista,
+    celularVisto: null,                     // id del escenario cuyo celular ya se mostró
+    recital: null,                          // { fue: true/false } si apareció la invitación
+    indice: 0,
+    vidas: CONFIG.vidas,
+    puntaje: 0,
+    historial: [],                          // un registro por escenario jugado
+    timer: null, segundos: 0, respondido: false
+  };
+}
+const escActual = () => estado.lista[estado.indice];
+const $ = (id) => document.getElementById(id);
+
+/* =====================================================================
+   C) NAVEGACIÓN Y HUD
+   ===================================================================== */
+let ultimaNavegacion = -Infinity;   // evita que un doble toque "atraviese" a la pantalla siguiente
+
+function mostrarPantalla(id) {
+  ultimaNavegacion = performance.now();
+  document.querySelectorAll(".pantalla").forEach(p => p.classList.remove("activa"));
+  $(id).classList.add("activa");
+  $("hud").classList.toggle("oculto", id === "p-inicio");
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+const pantallaActiva = (id) => $(id).classList.contains("activa");
+
+/* Envuelve un manejador de clic para ignorar toques demasiado rápidos tras cambiar de pantalla */
+function seguro(fn) {
+  return (...args) => { if (performance.now() - ultimaNavegacion > 350) fn(...args); };
+}
+
+function actualizarHUD(perdioVida = false) {
+  let corazones = "";
+  for (let i = 0; i < CONFIG.vidas; i++) {
+    const viva = i < estado.vidas;
+    const recienPerdida = perdioVida && i === estado.vidas;
+    corazones += `<span class="${viva ? "" : "perdida"} ${recienPerdida ? "latido" : ""}">❤️</span>`;
+  }
+  $("hud-vidas").innerHTML = corazones;
+  $("hud-nivel").textContent = `${Math.min(estado.indice + 1, estado.lista.length)}/${estado.lista.length}`;
+  $("hud-puntaje").textContent = estado.puntaje;
+}
+
+function sumarPuntos(n) {
+  estado.puntaje += n;
+  const el = $("hud-puntaje");
+  el.classList.remove("salta"); void el.offsetWidth; el.classList.add("salta"); // reinicia la animación
+}
+
+function perderVida() {
+  estado.vidas = Math.max(0, estado.vidas - 1);
+  actualizarHUD(true);
+}
+
+const icono = (r) => ({ exito: "✅", parcial: "⚠️", fallo: "❌" }[r]);
+
+/* =====================================================================
+   D) DIORAMAS (escenas CSS con emojis)
+   construirEscena arma el paisaje; animarEfecto aplica el resultado.
+   ===================================================================== */
+function construirEscena(cont, esc) {
+  const e = esc.escena;
+  cont.className = "escena " + e.cielo;
+  let h = "";
+  switch (e.tipo) {
+    case "ciudad":
+      h += edificios("0") + `<div class="suelo asfalto"></div>
+        <div class="objeto" style="left:12%;bottom:14%">🚗</div><div class="objeto" style="left:42%;bottom:12%">🏫</div>
+        <div class="objeto" style="left:72%;bottom:14%">🚌</div>`;
+      break;
+    case "costa":
+      h += edificios("45%") + `<div class="suelo asfalto" style="right:41%"></div><div class="muro"></div><div class="rio"></div>
+        <div class="objeto" style="left:10%;bottom:12%">🚗</div><div class="objeto" style="left:32%;bottom:12%">🏠</div>
+        <div class="objeto" style="right:12%;bottom:38%;z-index:5">🌊</div><div class="objeto" style="right:4%;top:8%">💨</div>`;
+      break;
+    case "montana":
+      h += montanas() + `<div class="suelo arido"></div><div class="cauce"></div>
+        <div class="objeto" style="left:20%;bottom:9%">🏠</div><div class="objeto" style="left:50%;bottom:10%">🏠</div>
+        <div class="objeto" style="left:78%;bottom:9%">🌵</div>`;
+      break;
+    case "zonda":
+      h += montanas() + `<div class="suelo arido"></div>
+        <div class="objeto" style="left:40%;bottom:12%;font-size:3.4rem">🏠</div><div class="objeto" style="left:15%;bottom:14%" data-tiembla>🌳</div>
+        <div class="objeto" style="left:70%;bottom:10%" data-tiembla>🪵</div><div class="objeto" style="left:84%;bottom:10%">⛽</div>`;
+      break;
+    case "estepa":
+      h += `<div class="suelo estepa"></div>
+        <div class="objeto" style="left:10%;bottom:22%" data-cae>🌲</div><div class="objeto" style="left:30%;bottom:22%" data-cae>🪧</div>
+        <div class="objeto" style="left:55%;bottom:8%" data-cae>🚛</div><div class="objeto" style="left:80%;bottom:22%" data-cae>🌲</div>`;
+      break;
+    case "frutales":
+      h += `<div class="estrellas"></div><div class="objeto" style="right:8%;top:10%;font-size:2.6rem">🌙</div><div class="suelo campo" style="height:38%"></div>`;
+      for (let i = 0; i < 6; i++) h += `<div class="objeto" style="left:${4 + i * 16}%;bottom:${18 + (i % 2) * 6}%">🌳</div><div class="objeto" style="left:${9 + i * 16}%;bottom:${30 + (i % 2) * 6}%;font-size:1.1rem">🌸</div>`;
+      h += `<div class="objeto" style="left:3%;top:10%;font-size:2rem">🌡️</div>`;
+      break;
+    case "vereda":
+      h += `<div class="suelo asfalto"></div>
+        <div class="objeto" style="left:4%;bottom:26%;font-size:5rem">🏠</div>
+        <div class="objeto" style="left:7%;bottom:66%;font-size:1.3rem">🍂🍂🍂</div>
+        <div class="objeto" style="left:42%;bottom:26%;font-size:3.6rem">🌳</div>
+        <div class="objeto" style="left:60%;bottom:12%">🗑️</div>
+        <div class="objeto" style="left:78%;bottom:5%;font-size:1.8rem">🕳️</div>`;
+      break;
+    case "patio":
+      h += `<div class="suelo campo"></div>
+        <div class="objeto" style="left:62%;bottom:24%;font-size:4.6rem">🏠</div>
+        <div class="objeto" style="left:6%;bottom:22%;font-size:3.2rem" data-cae>🌳</div>
+        <div class="objeto" style="left:28%;bottom:12%" data-cae data-guardar>🪴</div>
+        <div class="objeto" style="left:42%;bottom:10%" data-cae data-guardar>🪑</div>
+        <div class="objeto" style="left:52%;bottom:8%" data-guardar>🐕</div>`;
+      break;
+    case "plaza":
+      h += `<div class="sol-grande">☀️</div><div class="suelo estepa"></div>
+        <div class="objeto" style="left:6%;bottom:22%;font-size:3.6rem">🌳</div>
+        <div class="objeto" style="left:36%;bottom:12%">🪑</div><div class="objeto" style="left:37%;bottom:20%" data-jadea>👴</div>
+        <div class="objeto" style="left:62%;bottom:8%" data-jadea>🐶</div><div class="objeto" style="left:80%;bottom:10%" data-jadea>🐱</div>
+        <div class="objeto" style="left:3%;top:8%;font-size:2rem">🌡️</div>`;
+      break;
+    case "parque":
+      h += `<div class="suelo campo"></div>
+        <div class="objeto" style="left:18%;bottom:22%;font-size:4.6rem" data-arbol>🌳</div>
+        <div class="objeto" style="left:50%;bottom:10%;font-size:2.8rem">🚗</div>
+        <div class="objeto" style="right:5%;bottom:24%;font-size:3.2rem">🏠</div>
+        <div class="objeto" style="left:38%;bottom:12%" data-persona>🧍</div>`;
+      break;
+    case "tormenta":
+      h += `<div class="nube-grande">⛈️</div><div class="suelo campo"></div>
+        <div class="objeto" style="left:15%;bottom:12%">🏘️</div><div class="objeto" style="left:45%;bottom:14%">🚗</div>
+        <div class="objeto" style="left:70%;bottom:12%">🌾</div><div class="objeto" style="left:85%;bottom:12%">🌾</div>`;
+      break;
+  }
+  if (e.fenomeno === "lluvia") h += lluvia(60);
+  if (e.fenomeno === "viento") h += rafagas(10, "");
+  if (e.fenomeno === "polvo")  h += rafagas(14, "polvo");
+  h += `<div class="agua"></div><div class="aluvion"></div><div class="velo"></div><div class="sello-escena"></div>`;
+  cont.innerHTML = h;
+}
+
+function edificios(derecha) {
+  return `<div class="edificios" style="right:${derecha}">${[60, 85, 45, 95, 70, 55, 80].map(x => `<div style="height:${x}%"></div>`).join("")}</div>`;
+}
+function montanas() {
+  return `<div class="montana" style="left:-10%;width:60%;height:75%"></div>
+    <div class="montana" style="left:30%;width:55%;height:90%;filter:brightness(.85)"></div>
+    <div class="montana" style="left:65%;width:50%;height:65%"></div>`;
+}
+function lluvia(n) {
+  let s = "";
+  for (let i = 0; i < n; i++)
+    s += `<span class="gota" style="left:${Math.random() * 100}%;animation-duration:${.5 + Math.random() * .5}s;animation-delay:-${Math.random() * 1.5}s"></span>`;
+  return s;
+}
+function rafagas(n, clase) {
+  let s = "";
+  for (let i = 0; i < n; i++)
+    s += `<span class="rafaga ${clase}" style="top:${5 + Math.random() * 75}%;animation-duration:${.6 + Math.random() * .8}s;animation-delay:-${Math.random() * 2}s"></span>`;
+  return s;
+}
+
+/* Aplica el efecto del resultado sobre un diorama ya construido */
+function animarEfecto(cont, efecto, resultado) {
+  const agua = cont.querySelector(".agua"), aluvion = cont.querySelector(".aluvion");
+  const velo = cont.querySelector(".velo"), sello = cont.querySelector(".sello-escena");
+  const agregar = (html) => cont.insertAdjacentHTML("beforeend", html);
+  sello.textContent = icono(resultado);
+
+  // Doble requestAnimationFrame: el navegador pinta el estado inicial y recién después anima
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    switch (efecto) {
+      case "inundacion":      agua.classList.add("activa"); agua.style.height = "55%"; break;
+      case "inundacion-leve": agua.classList.add("activa"); agua.style.height = "24%"; break;
+      case "drenaje":
+        cont.querySelectorAll(".gota").forEach(g => g.remove());
+        cont.className = "escena cielo-calmo"; agregar(`<div class="canal-ok"></div>`); break;
+      case "aluvion":
+        aluvion.style.left = "0"; cont.querySelectorAll(".objeto").forEach(o => o.classList.add("temblar")); break;
+      case "aluvion-evitado":
+        aluvion.style.left = "0"; agregar(`<div class="objeto" style="right:4%;top:8%;z-index:9">🧑‍🤝‍🧑⛰️</div>`); break;
+      case "viento-danio":
+        cont.querySelectorAll("[data-cae]").forEach((o, i) => setTimeout(() => o.classList.add("cayendo"), 300 + i * 250)); break;
+      case "viento-ok":
+        agregar(`<div class="objeto" style="left:44%;bottom:8%;z-index:9">🚧</div>`); break;
+      case "polvo":
+        velo.style.background = "rgba(140, 85, 40, .75)"; velo.style.opacity = 1;
+        cont.querySelectorAll("[data-tiembla]").forEach(o => o.classList.add("cayendo")); break;
+      case "sellado":
+        agregar(`<div class="objeto" style="left:50%;bottom:34%;z-index:9">🔒</div><div class="objeto" style="left:30%;bottom:34%;z-index:9">🪟</div>`); break;
+      case "escarcha":
+        velo.style.background = "rgba(200, 230, 255, .5)"; velo.style.opacity = 1;
+        for (let i = 0; i < 6; i++) agregar(`<div class="objeto" style="left:${6 + i * 16}%;bottom:${26 + (i % 2) * 6}%;z-index:9">❄️</div>`);
+        break;
+      case "calor":
+        velo.style.background = "radial-gradient(circle at 50% 80%, rgba(255,170,60,.45), transparent 70%)"; velo.style.opacity = 1;
+        agregar(`<div class="objeto" style="left:24%;bottom:42%;z-index:9">🌀</div><div class="objeto" style="left:66%;bottom:42%;z-index:9">💧</div>`); break;
+      case "granizo":
+        for (let i = 0; i < 30; i++)
+          agregar(`<span class="piedra" style="left:${Math.random() * 100}%;animation-duration:${.7 + Math.random() * .5}s;animation-delay:-${Math.random()}s">🧊</span>`);
+        cont.querySelectorAll(".objeto").forEach(o => o.classList.add("temblar")); break;
+      case "inundacion-sucia":
+        agua.style.background = "linear-gradient(rgba(120,90,40,.85), rgba(70,50,20,.95))";
+        agua.classList.add("activa"); agua.style.height = "50%"; break;
+      case "patio-ok":
+        cont.querySelectorAll("[data-guardar]").forEach(o => o.style.opacity = 0);
+        agregar(`<div class="objeto" style="left:70%;bottom:56%;z-index:9">🔒</div>`); break;
+      case "golpe-calor":
+        velo.style.background = "radial-gradient(circle at 50% 70%, rgba(255,40,20,.55), rgba(255,120,0,.25))"; velo.style.opacity = 1;
+        cont.querySelectorAll("[data-jadea]").forEach(o => o.classList.add("temblar"));
+        agregar(`<div class="objeto" style="left:45%;top:15%;z-index:9;font-size:3rem">🥵</div>`); break;
+      case "sombra-ok":
+        agregar(`<div class="objeto" style="left:34%;bottom:30%;z-index:9;font-size:3.2rem">⛱️</div>
+          <div class="objeto" style="left:69%;bottom:6%;z-index:9;font-size:1.5rem">🥣</div><div class="objeto" style="left:87%;bottom:7%;z-index:9;font-size:1.5rem">🥣</div>`); break;
+      case "rayo":
+        velo.classList.add("flash");
+        agregar(`<div class="objeto" style="left:21%;bottom:58%;z-index:9;font-size:3.4rem">⚡</div>`);
+        cont.querySelectorAll("[data-arbol], [data-persona]").forEach(o => o.classList.add("temblar")); break;
+      case "refugio-ok":
+        cont.querySelectorAll("[data-persona]").forEach(o => o.style.opacity = 0);
+        agregar(`<div class="objeto" style="left:56%;bottom:30%;z-index:9">🛡️</div><div class="objeto" style="left:53%;bottom:14%;z-index:9;font-size:1.3rem">🙂</div>`); break;
+      case "alerta-ok":
+        agregar(`<div class="objeto" style="left:15%;bottom:34%;z-index:9">📢</div><div class="objeto" style="left:45%;bottom:34%;z-index:9">🛡️</div>`); break;
+    }
+    sello.classList.add("ver");
+  }));
+}
+
+/* =====================================================================
+   E) TRIVIA
+   ===================================================================== */
+function iniciarEscenario() {
+  const esc = escActual();
+  if (esc.celular && estado.celularVisto !== esc.id) return mostrarCelular(esc);
+  estado.respondido = false;
+  actualizarHUD();
+
+  construirEscena($("escena-trivia"), esc);
+  $("tr-region").textContent = `${esc.emoji} ${esc.nombre} — ${esc.lugar}`;
+  $("tr-clima").innerHTML = esc.clima.map(c => `<span class="chip">${c}</span>`).join("");
+  $("tr-fase").textContent = `NIVEL ${estado.indice + 1} · FASE 1: TRIVIA`;
+  $("tr-titulo").textContent = esc.titulo;
+  $("tr-numero").textContent = esc.numero;
+  $("tr-dato").textContent = esc.dato;
+  $("tr-pregunta").textContent = esc.pregunta;
+
+  // Mezclamos el orden de las opciones para que la respuesta no sea siempre la misma letra
+  const cont = $("tr-opciones");
+  cont.innerHTML = "";
+  mezclar([...esc.opciones]).forEach((op, i) => {
+    const b = document.createElement("button");
+    b.className = "opcion";
+    b.innerHTML = `<div class="letra">${op.icono}</div><div><span class="suave">${"ABC"[i]})</span> ${op.texto}</div>`;
+    b.addEventListener("click", seguro(() => responder(op, b)));
+    cont.appendChild(b);
+  });
+
+  mostrarPantalla("p-trivia");
+  sonido("alerta");
+  arrancarTimerTrivia();
+}
+
+/* --- Interludio: invitación al recital en el celular --- */
+function mostrarCelular(esc) {
+  const c = esc.celular;
+  estado.celularVisto = esc.id;
+  estado.respondido = false;
+  actualizarHUD();
+  const ahora = new Date();
+  $("cel-hora").textContent = `${ahora.getHours()}:${String(ahora.getMinutes()).padStart(2, "0")}`;
+  $("cel-notif").textContent = c.notificacion;
+  $("cel-chat").innerHTML = `<div class="cel-contacto">${c.contacto}</div>` + c.mensajes.map(m => `<div class="burbuja">${m}</div>`).join("");
+  $("cel-telefono").style.display = "";
+  $("cel-resultado").style.display = "none";
+  mostrarPantalla("p-celular");
+  sonido("notificacion");
+}
+
+function responderCelular(fue) {
+  if (estado.respondido) return;
+  estado.respondido = true;
+  const c = escActual().celular, r = fue ? c.mal : c.bien;
+  estado.recital = { fue };
+
+  // Sea cual sea la respuesta... ¡el oso inflable gigante sale volando!
+  const capa = document.createElement("div");
+  capa.className = "oso-capa";
+  let html = "";
+  for (let i = 0; i < 8; i++) html += `<span class="rafaga-oso" style="top:${8 + i * 11}%;animation-delay:-${(i * .13).toFixed(2)}s"></span>`;
+  html += ["🎤", "🎸", "🪧", "🎈", "🥁"].map((e, i) => `<div class="escombro" style="top:${i * 9}%;animation-delay:${(.2 + i * .35).toFixed(2)}s">${e}</div>`).join("");
+  html += `<div class="oso">🧸</div><div class="noticia"><span class="cintillo">🔴 ÚLTIMO MOMENTO</span><strong>${c.noticia}</strong></div>`;
+  capa.innerHTML = html;
+  document.body.appendChild(capa);
+  sonido("trueno");
+  setTimeout(() => sonido("trueno"), 1800);
+
+  setTimeout(() => {
+    capa.remove();
+    const puntos = fue ? 0 : CONFIG.puntosCelular;
+    if (puntos) sumarPuntos(puntos);
+    if (fue && CONFIG.celularQuitaVida) perderVida();
+    const v = $("cel-veredicto");
+    v.className = "veredicto " + (fue ? "fallo" : "exito");
+    v.textContent = r.titulo;
+    const pd = $("cel-puntos");
+    pd.textContent = fue ? (CONFIG.celularQuitaVida ? "−1 ❤️ vida" : "+0 ⭐") : `+${puntos} ⭐`;
+    pd.style.color = fue ? "var(--fallo)" : "var(--exito)";
+    $("cel-texto").textContent = r.texto;
+    $("cel-capsula").textContent = c.capsula;
+    $("cel-telefono").style.display = "none";
+    $("cel-resultado").style.display = "";
+    $("btn-cel-seguir").textContent = estado.vidas <= 0 ? "Ver resultado final 🏁" : "Continuar a la trivia ➜";
+    ultimaNavegacion = performance.now();
+    sonido(fue ? "fallo" : "exito");
+  }, 4300);
+}
+
+function mezclar(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+function arrancarTimerTrivia() {
+  clearInterval(estado.timer);
+  estado.segundos = CONFIG.segundosTrivia;
+  const pintar = () => {
+    $("tr-timer-barra").style.width = (estado.segundos / CONFIG.segundosTrivia * 100) + "%";
+    $("tr-timer-num").textContent = estado.segundos;
+    $("tr-timer").classList.toggle("urgente", estado.segundos <= 5);
+  };
+  pintar();
+  estado.timer = setInterval(() => {
+    estado.segundos--;
+    pintar();
+    if (estado.segundos > 0 && estado.segundos <= 5) sonido("tic");
+    if (estado.segundos <= 0) {
+      clearInterval(estado.timer);
+      // Sin respuesta = se elige la primera opción incorrecta (no decidir también es decidir)
+      responder(escActual().opciones.find(o => o.resultado === "fallo"), null, true);
+    }
+  }, 1000);
+}
+
+function responder(op, boton, porTiempo = false) {
+  if (estado.respondido) return;              // evita respuestas dobles por toques múltiples
+  estado.respondido = true;
+  clearInterval(estado.timer);
+  const esc = escActual();
+
+  // Marcar en pantalla la elegida y la correcta
+  document.querySelectorAll("#tr-opciones .opcion").forEach(b => b.disabled = true);
+  if (boton) boton.classList.add(op.resultado === "fallo" ? "incorrecta" : "correcta");
+
+  let puntos = CONFIG.puntosTrivia[op.resultado];
+  if (op.resultado === "exito") puntos += estado.segundos * CONFIG.bonusPorSegundo;
+  estado.historial.push({ esc, trivia: op.resultado, triviaPuntos: puntos, porTiempo, mini: null });
+
+  sonido(op.resultado);
+  setTimeout(() => mostrarCapsula(esc, op, puntos, porTiempo), 700);
+}
+
+function mostrarCapsula(esc, op, puntos, porTiempo) {
+  if (puntos > 0) sumarPuntos(puntos);
+  if (op.resultado === "fallo") perderVida();
+
+  construirEscena($("escena-capsula"), esc);
+  const v = $("cap-veredicto");
+  v.className = "veredicto " + op.resultado;
+  v.textContent = (porTiempo ? "⏰ ¡Se acabó el tiempo! " : "") + op.titulo;
+  const pd = $("cap-puntos");
+  pd.textContent = op.resultado === "fallo" ? "−1 ❤️ vida" : `+${puntos} ⭐`;
+  pd.style.color = op.resultado === "fallo" ? "var(--fallo)" : "var(--exito)";
+  $("cap-consecuencia").textContent = (porTiempo ? "No decidir también es una decisión. " : "") + op.consecuencia;
+  $("cap-texto").textContent = esc.capsula;
+
+  const b = $("btn-cap-seguir");
+  if (estado.vidas <= 0) b.textContent = "Ver resultado final 🏁";
+  else if (esc.minijuego) b.textContent = "🎮 ¡Al minijuego!";
+  else b.textContent = estado.indice + 1 < estado.lista.length ? "Siguiente región ➜" : "Ver resultado final 🏁";
+
+  mostrarPantalla("p-capsula");
+  animarEfecto($("escena-capsula"), op.efecto, op.resultado);
+}
+
+function despuesDeCapsula() {
+  const esc = escActual();
+  if (estado.vidas <= 0) return mostrarFinal();
+  if (esc.minijuego) return mostrarInstrucciones(esc);
+  siguienteEscenario();
+}
+
+function siguienteEscenario() {
+  estado.indice++;
+  if (estado.indice >= estado.lista.length) mostrarFinal();
+  else iniciarEscenario();
+}
+
+/* =====================================================================
+   F) MOTOR CANVAS
+   Todos los minijuegos usan un "mundo" lógico de 800 × 450 unidades.
+   El motor escala ese mundo al tamaño real de la pantalla, así el mismo
+   código funciona en un celular o en un televisor del stand.
+
+   Cada minijuego es un objeto con estas funciones (todas opcionales
+   salvo crear/actualizar/dibujar/evaluar):
+     crear()                  -> devuelve el estado inicial "s"
+     actualizar(s, dt, t)     -> avanza la simulación (dt en segundos)
+     dibujar(ctx, s, t)       -> pinta el cuadro
+     abajo/mover/arriba(s, x, y, id) -> entrada táctil/mouse
+     terminado(s)             -> true para terminar antes de tiempo
+     estado(s)                -> texto del marcador
+     evaluar(s, t)            -> { exito, puntos, resumen }
+   ===================================================================== */
+const W = 800, H = 450;
+const lienzo = $("lienzo");
+const ctx = lienzo.getContext("2d");
+const FUENTE_EMOJI = '"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif';
+let M = null;            // minijuego en curso (null si no hay ninguno)
+let escala = 1;
+
+function ajustarLienzo() {
+  const r = lienzo.getBoundingClientRect();
+  const dpr = window.devicePixelRatio || 1;
+  lienzo.width = Math.max(1, Math.round(r.width * dpr));
+  lienzo.height = Math.max(1, Math.round(r.height * dpr));
+  escala = lienzo.width / W;
+}
+window.addEventListener("resize", () => { if (M) ajustarLienzo(); });
+
+function iniciarMinijuego(def, alTerminar) {
+  M = {
+    def, s: def.crear(), t: 0, pausa: 3, terminado: false, tFin: 0,
+    particulas: [], flotantes: [], alTerminar, ultimo: performance.now(), cuentaMostrada: 0
+  };
+  $("mj-banner-wrap").innerHTML = "";
+  ajustarLienzo();
+  requestAnimationFrame(bucle);
+}
+
+/* El bucle de juego: se ejecuta ~60 veces por segundo */
+function bucle(ahora) {
+  if (!M) return;
+  const dt = Math.min(0.05, (ahora - M.ultimo) / 1000);   // limitamos dt por si la pestaña se pausa
+  M.ultimo = ahora;
+
+  if (M.pausa > 0) {                    // cuenta regresiva 3-2-1
+    M.pausa -= dt;
+    const n = Math.ceil(M.pausa);
+    if (n !== M.cuentaMostrada && n > 0) {
+      M.cuentaMostrada = n;
+      const c = $("mj-cuenta");
+      c.textContent = n; c.classList.remove("anim"); void c.offsetWidth; c.classList.add("anim");
+      sonido("tic");
+    }
+    if (M.pausa <= 0) { $("mj-cuenta").textContent = "¡YA!"; sonido("ok"); }
+  } else if (!M.terminado) {
+    M.t += dt;
+    M.def.actualizar(M.s, dt, M.t);
+    if (M.t >= M.def.duracion || (M.def.terminado && M.def.terminado(M.s))) finalizarMinijuego();
+  } else {
+    M.tFin += dt;
+  }
+
+  // Partículas y textos flotantes
+  M.particulas = M.particulas.filter(p => (p.vida -= dt) > 0);
+  M.particulas.forEach(p => { p.x += p.vx * dt; p.y += p.vy * dt; p.vy += 300 * dt; });
+  M.flotantes = M.flotantes.filter(f => (f.vida -= dt) > 0);
+  M.flotantes.forEach(f => f.y -= 40 * dt);
+
+  // Dibujo
+  ctx.setTransform(escala, 0, 0, escala, 0, 0);
+  ctx.clearRect(0, 0, W, H);
+  M.def.dibujar(ctx, M.s, M.t);
+  M.particulas.forEach(p => {
+    ctx.globalAlpha = Math.min(1, p.vida * 2);
+    ctx.fillStyle = p.color;
+    ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2); ctx.fill();
+  });
+  M.flotantes.forEach(f => {
+    ctx.globalAlpha = Math.min(1, f.vida * 1.5);
+    texto(f.texto, f.x, f.y, f.tam, f.color, "center", true);
+  });
+  ctx.globalAlpha = 1;
+
+  // Marcadores HTML
+  const resta = Math.max(0, M.def.duracion - M.t);
+  $("mj-timer-barra").style.width = (resta / M.def.duracion * 100) + "%";
+  $("mj-timer-num").textContent = Math.ceil(resta);
+  $("mj-timer").classList.toggle("urgente", resta <= 4 && !M.terminado && M.pausa <= 0);
+  const txt = M.def.estado ? M.def.estado(M.s) : "";
+  if ($("mj-estado").textContent !== txt) $("mj-estado").textContent = txt;
+
+  if (M.terminado && M.tFin > 2.2) {     // tras mostrar el cartel, pasamos al resultado
+    const m = M; M = null;
+    m.alTerminar(m.resultado);
+    return;
+  }
+  requestAnimationFrame(bucle);
+}
+
+function finalizarMinijuego() {
+  M.terminado = true;
+  M.s.fin = true;
+  M.resultado = M.def.evaluar(M.s, M.t);
+  $("mj-cuenta").textContent = "";
+  $("mj-banner-wrap").innerHTML = M.resultado.exito
+    ? `<div class="banner victoria">¡VICTORIA!</div>`
+    : `<div class="banner derrota">¡DERROTA!</div>`;
+  sonido(M.resultado.exito ? "victoria" : "fallo");
+  if (!M.resultado.exito) sacudir();
+}
+
+/* --- Entrada: Pointer Events unifican mouse, lápiz y dedos (multitáctil) --- */
+function coordenadas(e) {
+  const r = lienzo.getBoundingClientRect();
+  return [(e.clientX - r.left) / r.width * W, (e.clientY - r.top) / r.height * H];
+}
+const puedeJugar = () => M && !M.terminado && M.pausa <= 0;
+lienzo.addEventListener("pointerdown", (e) => {
+  if (!puedeJugar()) return;
+  e.preventDefault();
+  lienzo.setPointerCapture(e.pointerId);
+  const [x, y] = coordenadas(e);
+  M.def.abajo && M.def.abajo(M.s, x, y, e.pointerId);
+});
+lienzo.addEventListener("pointermove", (e) => {
+  if (!puedeJugar()) return;
+  const [x, y] = coordenadas(e);
+  M.def.mover && M.def.mover(M.s, x, y, e.pointerId);
+});
+["pointerup", "pointercancel"].forEach(tipo => lienzo.addEventListener(tipo, (e) => {
+  if (!puedeJugar()) return;
+  const [x, y] = coordenadas(e);
+  M.def.arriba && M.def.arriba(M.s, x, y, e.pointerId);
+}));
+
+/* --- Utilidades de dibujo y efectos --- */
+function emoji(e, x, y, tam, rot = 0) {
+  ctx.save();
+  ctx.translate(x, y);
+  if (rot) ctx.rotate(rot);
+  ctx.font = `${tam}px ${FUENTE_EMOJI}`;
+  ctx.textAlign = "center"; ctx.textBaseline = "middle";
+  ctx.fillText(e, 0, 0);
+  ctx.restore();
+}
+function texto(t, x, y, tam, color = "#fff", alinear = "center", contorno = false) {
+  ctx.font = `800 ${tam}px "Segoe UI", system-ui, sans-serif`;
+  ctx.textAlign = alinear; ctx.textBaseline = "middle";
+  if (contorno) { ctx.lineWidth = 4; ctx.lineJoin = "round"; ctx.strokeStyle = "rgba(0,0,0,.7)"; ctx.strokeText(t, x, y); }   // round evita "pinchos" en las letras
+  ctx.fillStyle = color;
+  ctx.fillText(t, x, y);
+}
+function rrect(x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+}
+const dist = (ax, ay, bx, by) => Math.hypot(ax - bx, ay - by);
+function chispas(x, y, color, n = 10) {
+  for (let i = 0; i < n; i++) {
+    const a = Math.random() * Math.PI * 2, v = 80 + Math.random() * 180;
+    M.particulas.push({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v - 120, r: 3 + Math.random() * 3, vida: .6 + Math.random() * .4, color });
+  }
+}
+function flotante(t, x, y, color = "#fff", tam = 24) { M.flotantes.push({ texto: t, x, y, color, tam, vida: 1.2 }); }
+function sacudir() {
+  const w = $("lienzo-wrap");
+  w.classList.remove("sacudir"); void w.offsetWidth; w.classList.add("sacudir");
+}
+
+/* =====================================================================
+   G) MINIJUEGOS
+   ===================================================================== */
+const MINIJUEGOS = {
+
+  /* -------------------------------------------------------------------
+     G1. ¡BLOQUEA Y BOMBEA! (Sudestada)
+     Izquierda: ciudad que se llena de lluvia. Centro: muro costero con
+     3 fugas. Derecha: río crecido. Hay que arrastrar compuertas a las
+     fugas y tocar las bombas para bajar el agua.
+     ------------------------------------------------------------------- */
+  compuertas: {
+    titulo: "¡Bloquea y Bombea!", icono: "🚧", duracion: 15,
+    instrucciones: [
+      ["🚧", "ARRASTRÁ las 3 compuertas sobre las fugas del muro (donde entra el agua del río)."],
+      ["⚙️", "TOCÁ rápido las 2 bombas para sacar el agua de lluvia de la ciudad."],
+      ["🎯", "Ganás si al final las 3 fugas están tapadas y el agua de la ciudad está por debajo del 60 %."]
+    ],
+    crear() {
+      return {
+        nivel: 15,                                                        // % de agua en la ciudad
+        fugas: [165, 260, 355].map(y => ({ y, tapada: false })),
+        compuertas: [0, 1, 2].map(i => ({ x: 90 + i * 80, y: 72, bx: 90 + i * 80, by: 72, puesta: false })),
+        bombas: [{ x: 110, y: 385, giro: 0, vel: .6 }, { x: 300, y: 385, giro: 0, vel: .6 }],
+        arr: null, chorros: []
+      };
+    },
+    actualizar(s, dt) {
+      const abiertas = s.fugas.filter(f => !f.tapada).length;
+      s.nivel = Math.min(100, s.nivel + (2.5 + abiertas * 3) * dt);   // lluvia + fugas del río
+      s.bombas.forEach(b => { b.giro += b.vel * dt; b.vel = Math.max(.6, b.vel - 12 * dt); });
+      s.chorros = s.chorros.filter(c => (c.t += dt) < .9);
+    },
+    terminado: (s) => s.nivel >= 100,
+    estado: (s) => `🚧 Fugas tapadas: ${s.fugas.filter(f => f.tapada).length}/3   ·   💧 Agua en la ciudad: ${Math.round(s.nivel)} %`,
+    abajo(s, x, y, id) {
+      for (const b of s.bombas) {
+        if (dist(x, y, b.x, b.y) < 50) {
+          s.nivel = Math.max(0, s.nivel - 4);
+          b.vel = 14;
+          s.chorros.push({ x: b.x, y: b.y - 30, t: 0 });
+          chispas(b.x, b.y - 30, "#7cc3ff", 6);
+          sonido("bomba");
+          return;
+        }
+      }
+      if (s.arr) return;
+      for (const c of s.compuertas) if (!c.puesta && dist(x, y, c.x, c.y) < 42) { s.arr = { id, c }; sonido("tic"); return; }
+    },
+    mover(s, x, y, id) { if (s.arr && s.arr.id === id) { s.arr.c.x = x; s.arr.c.y = y; } },
+    arriba(s, x, y, id) {
+      if (!s.arr || s.arr.id !== id) return;
+      const c = s.arr.c; s.arr = null;
+      const f = s.fugas.find(f => !f.tapada && Math.abs(c.y - f.y) < 55 && Math.abs(c.x - 440) < 90);
+      if (f) {
+        f.tapada = true; c.puesta = true; c.x = 440; c.y = f.y;
+        chispas(440, f.y, "#ffcc33", 14); flotante("¡Tapada!", 440, f.y - 38, "#2ee59d"); sonido("ok");
+      } else { c.x = c.bx; c.y = c.by; }
+    },
+    dibujar(ctx, s, t) {
+      // Cielo de la ciudad
+      let g = ctx.createLinearGradient(0, 0, 0, H);
+      g.addColorStop(0, "#121a2b"); g.addColorStop(1, "#33435f");
+      ctx.fillStyle = g; ctx.fillRect(0, 0, 420, H);
+      // Edificios [x, ancho, alto]
+      [[15, 70, 170], [95, 60, 230], [165, 75, 150], [250, 55, 260], [315, 90, 190]].forEach(([x, w, h]) => {
+        ctx.fillStyle = "#26324a"; ctx.fillRect(x, H - h, w, h);
+        ctx.fillStyle = "rgba(255,230,140,.35)";
+        for (let wy = H - h + 12; wy < H - 20; wy += 24) for (let wx = x + 8; wx < x + w - 10; wx += 18) ctx.fillRect(wx, wy, 8, 12);
+      });
+      // Lluvia
+      ctx.strokeStyle = "rgba(180,210,255,.55)"; ctx.lineWidth = 2; ctx.beginPath();
+      for (let i = 0; i < 60; i++) {
+        const x = (i * 53.7 + t * 80) % 420, y = (i * 97.3 + t * 520) % 470 - 20;
+        ctx.moveTo(x, y); ctx.lineTo(x - 4, y + 14);
+      }
+      ctx.stroke();
+      // Agua en la ciudad (con oleaje)
+      const top = H - s.nivel / 100 * 330;
+      ctx.fillStyle = "rgba(50,120,210,.78)";
+      ctx.beginPath(); ctx.moveTo(0, H);
+      for (let x = 0; x <= 420; x += 20) ctx.lineTo(x, top + Math.sin(x / 30 + t * 4) * 4);
+      ctx.lineTo(420, H); ctx.fill();
+      // Línea de límite 60 %
+      const lim = H - .6 * 330;
+      ctx.setLineDash([10, 8]); ctx.strokeStyle = "#ff4d6d"; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.moveTo(0, lim); ctx.lineTo(420, lim); ctx.stroke(); ctx.setLineDash([]);
+      texto("LÍMITE 60 %", 360, lim - 12, 13, "#ff8da1");
+      texto(`💧 ${Math.round(s.nivel)} %`, 210, 140, 36, s.nivel < 60 ? "#2ee59d" : "#ff4d6d", "center", true);
+
+      // Río crecido
+      const rioTop = 135 + Math.sin(t * 1.5) * 6;
+      g = ctx.createLinearGradient(0, rioTop, 0, H);
+      g.addColorStop(0, "#4f7f9e"); g.addColorStop(1, "#1f3f5c");
+      ctx.fillStyle = "#1b2a44"; ctx.fillRect(460, 0, 340, H);
+      ctx.fillStyle = g; ctx.beginPath(); ctx.moveTo(460, H);
+      for (let x = 460; x <= 800; x += 16) ctx.lineTo(x, rioTop + Math.sin(x / 25 + t * 3) * 7);
+      ctx.lineTo(800, H); ctx.fill();
+      texto("RÍO +3 m 🌊", 640, 100, 22, "#fff", "center", true);
+      texto("💨 Viento del SE ⟵", 640, 60, 18, "#cfe3ff");
+
+      // Muro costero
+      ctx.fillStyle = "#8a8f99"; ctx.fillRect(420, 95, 40, H - 95);
+      ctx.strokeStyle = "#6f747e"; ctx.lineWidth = 2;
+      for (let y = 110; y < H; y += 22) { ctx.beginPath(); ctx.moveTo(420, y); ctx.lineTo(460, y); ctx.stroke(); }
+      texto("MURO", 440, 82, 13, "#cfd3da");
+
+      // Fugas
+      s.fugas.forEach(f => {
+        if (f.tapada) {
+          ctx.strokeStyle = "#2ee59d"; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(440, f.y, 28, 0, Math.PI * 2); ctx.stroke();
+          emoji("🚧", 440, f.y, 44);
+          return;
+        }
+        ctx.fillStyle = "#0b0f18"; ctx.beginPath(); ctx.ellipse(440, f.y, 14, 20, 0, 0, Math.PI * 2); ctx.fill();
+        ctx.strokeStyle = `rgba(255,77,109,${.5 + .5 * Math.sin(t * 8)})`; ctx.lineWidth = 4;
+        ctx.beginPath(); ctx.arc(440, f.y, 32 + 3 * Math.sin(t * 8), 0, Math.PI * 2); ctx.stroke();
+        ctx.fillStyle = "#5ab0ff";
+        for (let k = 0; k < 4; k++) {                  // flechas de agua entrando a la ciudad
+          const px = 470 - ((t * 140 + k * 35) % 140);
+          ctx.beginPath(); ctx.moveTo(px - 12, f.y); ctx.lineTo(px + 6, f.y - 9); ctx.lineTo(px + 6, f.y + 9); ctx.fill();
+        }
+      });
+
+      // Bandeja de compuertas
+      ctx.fillStyle = "rgba(0,0,0,.45)"; rrect(30, 22, 280, 86, 16); ctx.fill();
+      texto("ARRASTRÁ AL MURO ➜", 170, 36, 13, "#ffcc33");
+      s.compuertas.forEach(c => {
+        if (c.puesta) return;
+        const arrastrando = s.arr && s.arr.c === c;
+        ctx.fillStyle = "rgba(255,204,51,.25)"; ctx.beginPath(); ctx.arc(c.x, c.y, 28, 0, Math.PI * 2); ctx.fill();
+        emoji("🚧", c.x, c.y, arrastrando ? 54 : 44);
+      });
+
+      // Bombas
+      s.bombas.forEach(b => {
+        ctx.fillStyle = "#13213d"; ctx.strokeStyle = "#ffcc33"; ctx.lineWidth = 4;
+        ctx.beginPath(); ctx.arc(b.x, b.y, 42, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+        emoji("⚙️", b.x, b.y, 50, b.giro);
+        texto("BOMBA", b.x, b.y + 54, 14, "#ffcc33", "center", true);
+      });
+      // Chorros de agua bombeada hacia el río
+      ctx.fillStyle = "#7cc3ff";
+      s.chorros.forEach(c => {
+        for (let j = 0; j < 6; j++) {
+          const q = c.t / .9 - j * .05;
+          if (q < 0 || q > 1) continue;
+          const x = c.x + (580 - c.x) * q;
+          const y = c.y + (150 - c.y) * q - Math.sin(q * Math.PI) * 130;
+          ctx.beginPath(); ctx.arc(x, y, 6, 0, Math.PI * 2); ctx.fill();
+        }
+      });
+    },
+    evaluar(s) {
+      const tapadas = s.fugas.filter(f => f.tapada).length;
+      const exito = tapadas === 3 && s.nivel < 60;
+      const nivel = Math.round(s.nivel);
+      return {
+        exito,
+        puntos: exito ? 100 + (100 - nivel) : tapadas * 15,
+        resumen: exito ? `Tapaste las 3 fugas y la ciudad quedó con sólo ${nivel} % de agua.`
+          : s.nivel >= 100 ? "La ciudad se inundó por completo: el río siguió entrando y la lluvia no salió."
+          : `Tapaste ${tapadas} de 3 fugas y el agua quedó en ${nivel} %.`
+      };
+    }
+  },
+
+  /* -------------------------------------------------------------------
+     G2. ¡SELLAR LA CASA! (Zonda)
+     Cerrar 3 ventanas (tocar), llevar 2 mascotas a la puerta y guardar
+     el bidón y las ramas en el cobertizo (arrastrar).
+     ------------------------------------------------------------------- */
+  casa: {
+    titulo: "¡Sellar la Casa!", icono: "🏠", duracion: 15,
+    instrucciones: [
+      ["🪟", "TOCÁ las 3 ventanas abiertas para cerrarlas."],
+      ["🐶", "ARRASTRÁ al perro y al gato hasta la PUERTA de la casa."],
+      ["⛽", "ARRASTRÁ el bidón de combustible y las ramas secas al COBERTIZO para evitar incendios."]
+    ],
+    crear() {
+      const polvo = [];
+      for (let i = 0; i < 70; i++) polvo.push({ x: Math.random() * W, y: Math.random() * H, v: 400 + Math.random() * 400, l: 20 + Math.random() * 40 });
+      return {
+        ventanas: [{ x: 300, y: 225 }, { x: 500, y: 225 }, { x: 500, y: 320 }].map(v => ({ ...v, cerrada: false })),
+        objetos: [
+          { tipo: "mascota", e: "🐶", bx: 575, by: 415 },
+          { tipo: "mascota", e: "🐱", bx: 735, by: 418 },
+          { tipo: "peligro", e: "⛽", bx: 70, by: 410 },
+          { tipo: "peligro", e: "🪵", bx: 165, by: 418 }
+        ].map((o, i) => ({ ...o, x: o.bx, y: o.by, listo: false, fase: i })),
+        polvo, arr: null, t: 0
+      };
+    },
+    actualizar(s, dt, t) {
+      s.t = t;
+      s.polvo.forEach(p => { p.x += p.v * dt; if (p.x > W + 50) { p.x = -50; p.y = Math.random() * H; } });
+      s.objetos.forEach(o => {
+        if (o.listo || (s.arr && s.arr.o === o)) return;
+        if (o.tipo === "mascota") o.x = o.bx + Math.sin(t * 1.6 + o.fase) * 14;    // las mascotas se mueven nerviosas
+        else if (Math.random() < dt * 4) M.particulas.push({ x: o.x + (Math.random() - .5) * 20, y: o.y - 20, vx: 60 + Math.random() * 60, vy: -80, r: 3, vida: .5, color: "#ff8a3c" });
+      });
+    },
+    hechos(s) {
+      return { v: s.ventanas.filter(v => v.cerrada).length,
+               m: s.objetos.filter(o => o.tipo === "mascota" && o.listo).length,
+               p: s.objetos.filter(o => o.tipo === "peligro" && o.listo).length };
+    },
+    terminado(s) { const h = MINIJUEGOS.casa.hechos(s); return h.v + h.m + h.p === 7; },
+    estado(s) { const h = MINIJUEGOS.casa.hechos(s); return `🪟 Ventanas: ${h.v}/3   ·   🐾 Mascotas: ${h.m}/2   ·   🔥 Peligros guardados: ${h.p}/2`; },
+    abajo(s, x, y, id) {
+      for (const v of s.ventanas) {
+        if (!v.cerrada && Math.abs(x - v.x) < 46 && Math.abs(y - v.y) < 38) {
+          v.cerrada = true; chispas(v.x, v.y, "#ffcc33", 10); flotante("¡Cerrada!", v.x, v.y - 40, "#2ee59d"); sonido("ok");
+          return;
+        }
+      }
+      if (s.arr) return;
+      for (const o of s.objetos) if (!o.listo && dist(x, y, o.x, o.y) < 42) { s.arr = { id, o }; sonido("tic"); return; }
+    },
+    mover(s, x, y, id) { if (s.arr && s.arr.id === id) { s.arr.o.x = x; s.arr.o.y = y; } },
+    arriba(s, x, y, id) {
+      if (!s.arr || s.arr.id !== id) return;
+      const o = s.arr.o; s.arr = null;
+      const enPuerta = o.x > 345 && o.x < 455 && o.y > 265 && o.y < 400;
+      const enCobertizo = o.x > 612 && o.x < 798 && o.y > 205 && o.y < 385;
+      if (o.tipo === "mascota" && enPuerta) {
+        o.listo = true; chispas(400, 330, "#ff7eb6", 14); flotante("❤️ ¡A salvo!", 400, 270, "#ff7eb6"); sonido("ok");
+      } else if (o.tipo === "peligro" && enCobertizo) {
+        o.listo = true; chispas(705, 320, "#ffcc33", 14); flotante("¡Guardado!", 705, 220, "#2ee59d"); sonido("ok");
+      } else {
+        if (enPuerta || enCobertizo) { flotante(o.tipo === "mascota" ? "¡A la casa!" : "¡Al cobertizo!", x, y - 40, "#ff4d6d"); sonido("error"); }
+        o.x = o.bx; o.y = o.by;
+      }
+    },
+    dibujar(ctx, s, t) {
+      // Cielo marrón y sol tapado por el polvo
+      let g = ctx.createLinearGradient(0, 0, 0, 380);
+      g.addColorStop(0, "#5a3418"); g.addColorStop(1, "#c48d55");
+      ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+      ctx.fillStyle = "rgba(255,190,120,.45)"; ctx.beginPath(); ctx.arc(690, 80, 32, 0, Math.PI * 2); ctx.fill();
+      // Cordillera
+      ctx.fillStyle = "rgba(110,68,38,.85)"; ctx.beginPath();
+      [[0, 300], [80, 150], [160, 250], [240, 120], [330, 260], [420, 170], [520, 300]].forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y));
+      ctx.fill();
+      // Suelo
+      ctx.fillStyle = "#a8773f"; ctx.fillRect(0, 380, W, 70);
+
+      const arr = s.arr && s.arr.o;
+      // Cobertizo
+      ctx.fillStyle = "#7b6a58"; ctx.fillRect(630, 260, 150, 120);
+      ctx.fillStyle = "#5a4a3a"; ctx.beginPath(); ctx.moveTo(620, 262); ctx.lineTo(705, 212); ctx.lineTo(790, 262); ctx.fill();
+      ctx.fillStyle = "#3b2f25"; ctx.fillRect(680, 300, 50, 80);
+      texto("COBERTIZO", 705, 245, 13, "#fff");
+      if (arr && arr.tipo === "peligro") { ctx.strokeStyle = `rgba(46,229,157,${.6 + .4 * Math.sin(t * 10)})`; ctx.lineWidth = 6; ctx.strokeRect(625, 215, 160, 168); }
+      const guardados = s.objetos.filter(o => o.tipo === "peligro" && o.listo);
+      guardados.forEach((o, i) => emoji(o.e, 690 + i * 30, 360, 22));
+
+      // Casa
+      ctx.fillStyle = "#ecd9b6"; ctx.fillRect(240, 170, 320, 210);
+      ctx.fillStyle = "#9c3d2b"; ctx.beginPath(); ctx.moveTo(220, 172); ctx.lineTo(400, 92); ctx.lineTo(580, 172); ctx.fill();
+      ctx.fillStyle = "#7a4b2a"; ctx.fillRect(370, 290, 60, 90);
+      ctx.fillStyle = "#ffcc33"; ctx.beginPath(); ctx.arc(418, 338, 4, 0, Math.PI * 2); ctx.fill();
+      if (arr && arr.tipo === "mascota") { ctx.strokeStyle = `rgba(46,229,157,${.6 + .4 * Math.sin(t * 10)})`; ctx.lineWidth = 6; ctx.strokeRect(362, 282, 76, 104); texto("PUERTA", 400, 272, 13, "#2ee59d", "center", true); }
+      const adentro = s.objetos.filter(o => o.tipo === "mascota" && o.listo).length;
+      if (adentro) texto("❤️".repeat(adentro), 400, 305, 16);
+
+      // Ventanas
+      s.ventanas.forEach(v => {
+        const x = v.x - 36, y = v.y - 28;
+        if (v.cerrada) {
+          ctx.fillStyle = "#7a4b2a"; ctx.fillRect(x, y, 72, 56);
+          ctx.strokeStyle = "#5b3a22"; ctx.lineWidth = 2;
+          for (let k = 8; k < 56; k += 8) { ctx.beginPath(); ctx.moveTo(x, y + k); ctx.lineTo(x + 72, y + k); ctx.stroke(); }
+          texto("✔", v.x, v.y, 26, "#2ee59d", "center", true);
+        } else {
+          ctx.fillStyle = "#2b1a10"; ctx.fillRect(x, y, 72, 56);
+          const ancho = 22 + Math.sin(t * 12 + v.x) * 14;           // cortina agitada por el viento
+          ctx.fillStyle = "#f2e6c9"; ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + ancho, y); ctx.lineTo(x + ancho * .6, y + 56); ctx.lineTo(x, y + 56); ctx.fill();
+          ctx.strokeStyle = `rgba(255,204,51,${.55 + .45 * Math.sin(t * 9)})`; ctx.lineWidth = 5; ctx.strokeRect(x - 4, y - 4, 80, 64);
+          texto("¡TOCÁ!", v.x, y - 14, 13, "#ffcc33", "center", true);
+        }
+        ctx.strokeStyle = "#5b3a22"; ctx.lineWidth = 5; ctx.strokeRect(x, y, 72, 56);
+      });
+
+      // Objetos del patio
+      s.objetos.forEach(o => {
+        if (o.listo) return;
+        const arrastrando = arr === o;
+        if (o.tipo === "peligro") texto("¡Riesgo de incendio!", o.x, o.y - 38, 11, "#ffdd99", "center", true);
+        emoji(o.e, o.x, o.y + (o.tipo === "mascota" && !arrastrando ? Math.abs(Math.sin(t * 6 + o.fase)) * -6 : 0), arrastrando ? 56 : 46);
+      });
+
+      // Polvo arrastrado por el viento
+      ctx.strokeStyle = "rgba(240,200,140,.45)"; ctx.lineWidth = 3; ctx.beginPath();
+      s.polvo.forEach(p => { ctx.moveTo(p.x, p.y); ctx.lineTo(p.x - p.l, p.y + 2); });
+      ctx.stroke();
+
+      ctx.fillStyle = "rgba(0,0,0,.45)"; rrect(14, 12, 380, 40, 12); ctx.fill();
+      texto("💨 Zonda 80 km/h · 🌡️ 35 °C · 💧 5 %", 26, 32, 17, "#fff", "left");
+    },
+    evaluar(s, t) {
+      const h = MINIJUEGOS.casa.hechos(s), total = h.v + h.m + h.p, exito = total === 7;
+      return {
+        exito,
+        puntos: total * 20 + (exito ? 60 + Math.round(Math.max(0, 15 - t) * 4) : 0),   // bonus por rapidez: hasta +60
+        resumen: exito ? `¡Casa sellada en ${t.toFixed(1)} segundos! Ventanas cerradas, mascotas adentro y combustibles guardados.`
+          : `Completaste ${total} de 7 tareas. Lo que quedó afuera puede encenderse o lastimarse con el viento.`
+      };
+    }
+  },
+
+  /* -------------------------------------------------------------------
+     G3. ¡PROTECCIÓN TÉRMICA! (Helada)
+     Comprar y ubicar ventiladores y aspersores con $100 para proteger
+     al menos el 80 % de los árboles. Las mantas no sirven (trampa).
+     Radios ajustados con una simulación: sin ventilador no se llega.
+     ------------------------------------------------------------------- */
+  helada: {
+    titulo: "¡Protección Térmica!", icono: "🌀", duracion: 15,
+    instrucciones: [
+      ["🛒", "Tenés $100. ARRASTRÁ equipos desde la barra de compra hasta el campo."],
+      ["🌀", "Ventilador $40 (protege un área grande) · 🚿 Aspersor $30 (área mediana). Podés moverlos después."],
+      ["🎯", "Protegé al menos el 80 % de los frutales antes de que la temperatura llegue a −2 °C. ¡Ojo con las mantas!"]
+    ],
+    TIENDA: [
+      { tipo: "ventilador", e: "🌀", nombre: "Ventilador", costo: 40, r: 165, x: 100, color: "255,190,80" },
+      { tipo: "aspersor",   e: "🚿", nombre: "Aspersor",   costo: 30, r: 110, x: 280, color: "100,180,255" },
+      { tipo: "manta",      e: "🧣", nombre: "Manta tronco", costo: 10, r: 0, x: 460, color: "255,77,109" }
+    ],
+    crear() {
+      const arboles = [];
+      for (let f = 0; f < 4; f++) for (let c = 0; c < 8; c++) arboles.push({ x: 105 + c * 84, y: 100 + f * 65, protegido: false });
+      return { arboles, equipos: [], dinero: 100, arr: null, listo: false, temp: 4 };
+    },
+    actualizar(s, dt, t) {
+      s.temp = 4 - 6 * Math.min(1, t / 15);
+      s.arboles.forEach(a => a.protegido = s.equipos.some(e => e.r > 0 && dist(a.x, a.y, e.x, e.y) <= e.r));
+    },
+    porcentaje: (s) => Math.round(s.arboles.filter(a => a.protegido).length / s.arboles.length * 100),
+    terminado: (s) => s.listo,
+    estado(s) { return `🌳 Cultivo protegido: ${MINIJUEGOS.helada.porcentaje(s)} % (meta 80 %)   ·   💰 $${s.dinero}`; },
+    abajo(s, x, y, id) {
+      if (x > 610 && y > 365) { s.listo = true; sonido("ok"); return; }        // botón ¡Listo!
+      if (s.arr) return;
+      if (y > 355) {                                                          // barra de compra
+        const item = MINIJUEGOS.helada.TIENDA.find(it => Math.abs(x - it.x) < 80);
+        if (!item) return;
+        if (item.costo > s.dinero) { flotante("¡Sin presupuesto!", item.x, 340, "#ff4d6d"); sonido("error"); return; }
+        s.arr = { id, nuevo: true, item, x, y };
+        sonido("tic");
+        return;
+      }
+      const eq = s.equipos.find(e => dist(x, y, e.x, e.y) < 32);                // mover uno ya colocado
+      if (eq) s.arr = { id, nuevo: false, eq, x, y };
+    },
+    mover(s, x, y, id) {
+      if (!s.arr || s.arr.id !== id) return;
+      s.arr.x = x; s.arr.y = y;
+      if (!s.arr.nuevo) { s.arr.eq.x = Math.max(70, Math.min(730, x)); s.arr.eq.y = Math.max(70, Math.min(330, y)); }
+    },
+    arriba(s, x, y, id) {
+      if (!s.arr || s.arr.id !== id) return;
+      const a = s.arr; s.arr = null;
+      if (!a.nuevo) return;
+      if (y > 345 || y < 55) return;                                          // soltado fuera del campo: se cancela
+      const it = a.item;
+      s.dinero -= it.costo;
+      s.equipos.push({ tipo: it.tipo, e: it.e, r: it.r, color: it.color, x: Math.max(70, Math.min(730, x)), y: Math.max(70, Math.min(330, y)) });
+      if (it.tipo === "manta") {
+        flotante("🧣 ¡Las mantas no protegen las flores!", 400, 200, "#ff8da1", 22); sonido("error"); sacudir();
+      } else { chispas(x, y, `rgb(${it.color})`, 14); sonido("ok"); }
+    },
+    dibujar(ctx, s, t) {
+      const H_ = MINIJUEGOS.helada;
+      ctx.fillStyle = "#0a1330"; ctx.fillRect(0, 0, W, H);
+      // Cabecera: termómetro, avance de la helada y presupuesto
+      const frio = s.temp < 0;
+      texto(`🌡️ ${s.temp.toFixed(1)} °C`, 20, 28, 24, frio ? "#9fd8ff" : "#fff", "left");
+      const pct = H_.porcentaje(s);
+      texto(`Protegido: ${pct} % / 80 %`, 400, 28, 22, pct >= 80 ? "#2ee59d" : "#ffcc33");
+      texto(`💰 $${s.dinero}`, 780, 28, 24, "#ffcc33", "right");
+      ctx.fillStyle = "#1b2c4f"; ctx.fillRect(0, 50, W, 7);
+      ctx.fillStyle = "#9fd8ff"; ctx.fillRect(0, 50, W * Math.min(1, t / 15), 7);
+      emoji("❄️", Math.min(W - 12, W * Math.min(1, t / 15)), 53, 16);
+
+      // Campo
+      ctx.fillStyle = "#173a22"; rrect(55, 64, 690, 280, 18); ctx.fill();
+      ctx.save(); rrect(55, 64, 690, 280, 18); ctx.clip();
+      ctx.strokeStyle = "rgba(0,0,0,.25)"; ctx.lineWidth = 18;
+      for (let f = 0; f < 4; f++) { ctx.beginPath(); ctx.moveTo(55, 100 + f * 65 + 16); ctx.lineTo(745, 100 + f * 65 + 16); ctx.stroke(); }
+      // Áreas de influencia
+      const dibujarArea = (x, y, r, color) => {
+        ctx.fillStyle = `rgba(${color},.17)`; ctx.strokeStyle = `rgba(${color},.8)`; ctx.lineWidth = 3; ctx.setLineDash([8, 6]);
+        ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill(); ctx.stroke(); ctx.setLineDash([]);
+      };
+      s.equipos.forEach(e => e.r > 0 && dibujarArea(e.x, e.y, e.r, e.color));
+      if (s.arr && s.arr.nuevo && s.arr.item.r > 0) dibujarArea(s.arr.x, s.arr.y, s.arr.item.r, s.arr.item.color);
+      ctx.restore();
+
+      // Árboles
+      s.arboles.forEach(a => {
+        const congelado = s.fin && !a.protegido;
+        if (a.protegido) { ctx.fillStyle = "rgba(255,170,60,.35)"; ctx.beginPath(); ctx.arc(a.x, a.y, 24, 0, Math.PI * 2); ctx.fill(); }
+        else if (s.temp < 1.5) { ctx.fillStyle = "rgba(160,210,255,.3)"; ctx.beginPath(); ctx.arc(a.x, a.y, 22, 0, Math.PI * 2); ctx.fill(); }
+        ctx.globalAlpha = congelado ? .45 : 1;
+        emoji("🌳", a.x, a.y, 30);
+        if (!congelado) emoji("🌸", a.x + 10, a.y - 10, 13);
+        ctx.globalAlpha = 1;
+        if (congelado || (!a.protegido && s.temp < 0)) emoji("❄️", a.x, a.y, congelado ? 28 : 16);
+      });
+
+      // Equipos colocados
+      s.equipos.forEach(e => {
+        if (e.tipo === "ventilador") emoji("🌀", e.x, e.y, 40, t * 10);
+        else if (e.tipo === "aspersor") {
+          ctx.fillStyle = "#7cc3ff";
+          for (let k = 0; k < 8; k++) {
+            const ang = k * Math.PI / 4 + t * 2, rr = ((t * 60 + k * 7) % 40) + 14;
+            ctx.beginPath(); ctx.arc(e.x + Math.cos(ang) * rr, e.y + Math.sin(ang) * rr, 3, 0, Math.PI * 2); ctx.fill();
+          }
+          emoji("🚿", e.x, e.y, 34);
+        } else { emoji("🧣", e.x, e.y, 32); texto("✖", e.x + 16, e.y - 16, 20, "#ff4d6d", "center", true); }
+      });
+      if (!s.equipos.length && !s.arr) texto("⬇ Arrastrá equipos desde abajo al campo ⬆", 400, 205, 22, `rgba(255,255,255,${.6 + .4 * Math.sin(t * 5)})`, "center", true);
+
+      // Barra de compra
+      ctx.fillStyle = "#0f1a30"; ctx.fillRect(0, 352, W, 98);
+      H_.TIENDA.forEach(it => {
+        ctx.globalAlpha = it.costo <= s.dinero ? 1 : .35;
+        ctx.fillStyle = "#1b2c4f"; ctx.strokeStyle = `rgb(${it.color})`; ctx.lineWidth = 3;
+        rrect(it.x - 80, 362, 160, 78, 14); ctx.fill(); ctx.stroke();
+        emoji(it.e, it.x - 46, 401, 38);
+        texto(it.nombre, it.x + 22, 388, 14, "#fff");
+        texto(`$${it.costo}`, it.x + 22, 415, 22, "#ffcc33");
+        ctx.globalAlpha = 1;
+      });
+      ctx.fillStyle = "#2ee59d"; rrect(612, 365, 172, 72, 16); ctx.fill();
+      texto("✅ ¡LISTO!", 698, 401, 24, "#062b1d");
+
+      // Equipo que se está arrastrando desde la tienda
+      if (s.arr && s.arr.nuevo) emoji(s.arr.item.e, s.arr.x, s.arr.y, 46);
+    },
+    evaluar(s) {
+      const pct = MINIJUEGOS.helada.porcentaje(s), exito = pct >= 80;
+      const mantas = s.equipos.filter(e => e.tipo === "manta").length;
+      return {
+        exito,
+        puntos: exito ? 100 + pct + s.dinero : pct,
+        resumen: (exito ? `¡Protegiste el ${pct} % del cultivo y te sobraron $${s.dinero}!` : `Protegiste sólo el ${pct} % del cultivo: el resto se congeló.`)
+          + (mantas ? ` Gastaste $${mantas * 10} en mantas, que no protegen las flores.` : "")
+      };
+    }
+  },
+
+  /* -------------------------------------------------------------------
+     G4. DEFENSA DE RADAR (Sistema convectivo)
+     Celdas de tormenta se acercan al pueblo. Tocar SOLO las severas
+     (rojas/violetas). Tocar una verde = falsa alarma.
+     ------------------------------------------------------------------- */
+  radar: {
+    titulo: "Defensa de Radar", icono: "📡", duracion: 15,
+    CX: 400, CY: 235, R: 200,
+    instrucciones: [
+      ["🟣", "TOCÁ las tormentas ROJAS/VIOLETAS para emitir una alerta de evacuación y disiparlas."],
+      ["🟢", "NO toques las nubes VERDES: son lluvia leve. Una falsa alarma te hace perder credibilidad."],
+      ["🏠", "Ganás si ninguna tormenta severa llega al pueblo y cometés como máximo 2 falsas alarmas."]
+    ],
+    crear() {
+      // 12 celdas: las 2 primeras fijas (una de cada tipo, para aprender) y el resto mezcladas
+      const tipos = ["leve", "severa", ...mezclar(["severa", "severa", "severa", "severa", "severa", "leve", "leve", "leve", "leve", "leve"])];
+      const plan = tipos.map((tipo, i) => ({ t: .4 + i * .85, tipo, ang: Math.random() * Math.PI * 2 }));
+      return { plan, celdas: [], alertas: 0, falsas: 0, impactos: 0, flash: 0, barrido: 0 };
+    },
+    actualizar(s, dt, t) {
+      const D = MINIJUEGOS.radar;
+      s.barrido = (t * Math.PI) % (Math.PI * 2);                         // una vuelta cada 2 s
+      while (s.plan.length && s.plan[0].t <= t) {
+        const p = s.plan.shift(), severa = p.tipo === "severa";
+        s.celdas.push({ ...p, d: D.R + 15, v: (D.R - 15) / (severa ? 5 : 6.5), r: severa ? 26 : 22, estado: "activa", fade: 0, visto: -9,
+          lobulos: [0, 1, 2].map(() => [(Math.random() - .5) * 20, (Math.random() - .5) * 20]) });
+      }
+      s.flash = Math.max(0, s.flash - dt);
+      s.celdas.forEach(c => {
+        if (c.estado !== "activa") { c.fade += dt; return; }
+        c.d -= c.v * dt;
+        let dif = (s.barrido - c.ang) % (Math.PI * 2); if (dif < 0) dif += Math.PI * 2;
+        if (dif < .15) c.visto = t;                                       // el barrido "ilumina" la celda
+        if (c.d < 28) {
+          c.estado = "llego";
+          if (c.tipo === "severa") {
+            s.impactos++; s.flash = .6; sacudir(); sonido("fallo");
+            chispas(D.CX, D.CY, "#dff4ff", 24); flotante("🧊 ¡Granizo en el pueblo!", D.CX, D.CY - 50, "#ff4d6d", 24);
+          } else flotante("🌧️ sólo lluvia", D.CX, D.CY - 45, "#7dff8a", 18);
+        }
+      });
+      s.celdas = s.celdas.filter(c => c.estado === "activa" || c.fade < .7);
+    },
+    estado: (s) => `📢 Alertas acertadas: ${s.alertas}   ·   ❌ Falsas alarmas: ${s.falsas}   ·   💥 Daños: ${s.impactos}`,
+    abajo(s, x, y) {
+      const D = MINIJUEGOS.radar;
+      let mejor = null, md = Infinity;
+      s.celdas.forEach(c => {
+        if (c.estado !== "activa") return;
+        const cx = D.CX + Math.cos(c.ang) * c.d, cy = D.CY + Math.sin(c.ang) * c.d, dd = dist(x, y, cx, cy);
+        if (dd < c.r + 24 && dd < md) { md = dd; mejor = { c, cx, cy }; }
+      });
+      if (!mejor) return;
+      const { c, cx, cy } = mejor;
+      c.estado = "tocada";
+      if (c.tipo === "severa") {
+        s.alertas++; chispas(cx, cy, "#e070ff", 16); flotante("📢 ¡ALERTA!", cx, cy - 34, "#2ee59d"); sonido("ok");
+      } else {
+        s.falsas++; flotante("❌ Falsa alarma", cx, cy - 34, "#ff4d6d"); sonido("error"); sacudir();
+      }
+    },
+    dibujar(ctx, s, t) {
+      const { CX, CY, R } = MINIJUEGOS.radar;
+      ctx.fillStyle = "#03110a"; ctx.fillRect(0, 0, W, H);
+      // Pantalla del radar
+      ctx.fillStyle = "#062214"; ctx.beginPath(); ctx.arc(CX, CY, R, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = "rgba(46,229,157,.35)"; ctx.lineWidth = 1.5;
+      for (let k = 1; k <= 3; k++) { ctx.beginPath(); ctx.arc(CX, CY, R * k / 3, 0, Math.PI * 2); ctx.stroke(); }
+      ctx.beginPath(); ctx.moveTo(CX - R, CY); ctx.lineTo(CX + R, CY); ctx.moveTo(CX, CY - R); ctx.lineTo(CX, CY + R); ctx.stroke();
+      texto("N", CX, CY - R - 12, 14, "#2ee59d");
+
+      ctx.save(); ctx.beginPath(); ctx.arc(CX, CY, R, 0, Math.PI * 2); ctx.clip();
+      // Celdas de tormenta (más brillantes recién barridas)
+      s.celdas.forEach(c => {
+        const x = CX + Math.cos(c.ang) * c.d, y = CY + Math.sin(c.ang) * c.d;
+        const vis = c.estado === "activa" ? .4 + .6 * Math.max(0, 1 - (t - c.visto) / 1.8) : Math.max(0, 1 - c.fade / .7);
+        const k = c.estado === "activa" ? 1 : 1 + c.fade * 1.5;
+        ctx.globalAlpha = vis;
+        const capas = c.tipo === "severa"
+          ? [[1.6, "rgba(46,204,64,.5)"], [1.25, "#ffdc00"], [.9, "#ff2b2b"], [.5, "#c03bff"]]
+          : [[1.3, "rgba(46,204,64,.45)"], [.85, "#2ecc40"], [.4, "#7dff8a"]];
+        capas.forEach(([f, col]) => {
+          ctx.fillStyle = col;
+          ctx.beginPath(); ctx.arc(x, y, c.r * f * k, 0, Math.PI * 2); ctx.fill();
+          c.lobulos.forEach(([ox, oy]) => { ctx.beginPath(); ctx.arc(x + ox * f, y + oy * f, c.r * f * .6 * k, 0, Math.PI * 2); ctx.fill(); });
+        });
+        if (c.estado === "tocada") emoji(c.tipo === "severa" ? "✅" : "❌", x, y, 30);
+        ctx.globalAlpha = 1;
+      });
+      // Barrido del radar (cuña con estela)
+      for (let k = 0; k < 20; k++) {
+        const a1 = s.barrido - (19 - k) * .04;
+        ctx.fillStyle = `rgba(46,229,157,${.01 + .012 * k})`;
+        ctx.beginPath(); ctx.moveTo(CX, CY); ctx.arc(CX, CY, R, a1 - .04, a1); ctx.fill();
+      }
+      ctx.strokeStyle = "#7dffc4"; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(CX, CY); ctx.lineTo(CX + Math.cos(s.barrido) * R, CY + Math.sin(s.barrido) * R); ctx.stroke();
+      ctx.restore();
+
+      // Pueblo en el centro
+      ctx.strokeStyle = "rgba(255,255,255,.6)"; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(CX, CY, 28, 0, Math.PI * 2); ctx.stroke();
+      emoji("🏠", CX, CY, 34);
+      ctx.strokeStyle = "#2ee59d"; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(CX, CY, R, 0, Math.PI * 2); ctx.stroke();
+
+      // Panel izquierdo: consigna
+      texto("📡 RADAR", 20, 40, 22, "#2ee59d", "left");
+      texto("Tocá SOLO", 20, 90, 20, "#fff", "left");
+      texto("🔴🟣 severas", 20, 122, 22, "#ff8da1", "left");
+      texto("No toques", 20, 170, 18, "#a9b8d8", "left");
+      texto("🟢 lluvia leve", 20, 198, 18, "#7dff8a", "left");
+      // Panel derecho: escala de reflectividad
+      texto("Reflectividad (dBZ)", 785, 40, 15, "#fff", "right");
+      [["#2ecc40", "20–35", "Lluvia leve"], ["#ffdc00", "40–45", "Lluvia fuerte"], ["#ff2b2b", "50–60", "Tormenta severa"], ["#c03bff", "65+", "Granizo"]]
+        .forEach(([col, dbz, nom], i) => {
+          const y = 75 + i * 36;
+          ctx.fillStyle = col; rrect(640, y - 12, 26, 24, 5); ctx.fill();
+          texto(dbz, 675, y - 5, 13, "#fff", "left");
+          texto(nom, 675, y + 10, 11, "#a9b8d8", "left");
+        });
+
+      // Destello rojo cuando el granizo golpea el pueblo
+      if (s.flash > 0) { ctx.fillStyle = `rgba(255,40,70,${s.flash * .5})`; ctx.fillRect(0, 0, W, H); }
+    },
+    evaluar(s) {
+      const exito = s.impactos === 0 && s.falsas <= 2;
+      return {
+        exito,
+        puntos: Math.max(0, s.alertas * 25 - s.falsas * 15 + (exito ? 100 : 0)),
+        resumen: exito ? `¡Pueblo protegido! ${s.alertas} alertas acertadas y ${s.falsas} falsas alarmas.`
+          : s.impactos ? `${s.impactos} tormenta(s) severa(s) llegaron al pueblo sin aviso.`
+          : `Demasiadas falsas alarmas (${s.falsas}): la gente dejó de creer en tus avisos.`
+      };
+    }
+  },
+  /* ===================================================================
+     MINIJUEGOS DE LA CAMPAÑA "PREPARA TU BARRIO"
+     =================================================================== */
+
+  /* -------------------------------------------------------------------
+     G5. ¡DESTAPA EL BARRIO! (Lluvias intensas)
+     Tocar las hojas de la canaleta (siguen cayendo del árbol) y arrastrar
+     las bolsas que la correntada lleva hacia la boca de tormenta hasta
+     el contenedor alto.
+     ------------------------------------------------------------------- */
+  destapar: {
+    titulo: "¡Destapa el Barrio!", icono: "🍂", duracion: 15,
+    SUMIDERO: 575,
+    instrucciones: [
+      ["🍂", "TOCÁ las hojas de la canaleta del techo para limpiarla (¡siguen cayendo del árbol!)."],
+      ["🗑️", "ARRASTRÁ las bolsas de basura que flotan hacia la boca de tormenta y metelas en el CONTENEDOR alto."],
+      ["🎯", "Ganás si la canaleta queda limpia y ninguna bolsa tapa la boca de tormenta."]
+    ],
+    crear() {
+      const hojas = [];
+      for (let i = 0; i < 7; i++) hojas.push({ x: 45 + i * 38 + Math.random() * 10 });
+      // Cada bolsa aparece en un momento distinto y flota hacia el sumidero
+      const bolsas = [0, 1.2, 3, 5].map((t0, i) => ({ t0, x: -30, y: 418, v: 58 + i * 3, estado: "espera", fase: i }));
+      return { hojas, caidas: [], proxHoja: 2, bolsas, limpiadas: 0, guardadas: 0, tapones: 0, agua: 0, arr: null, t: 0 };
+    },
+    actualizar(s, dt, t) {
+      const D = MINIJUEGOS.destapar;
+      s.t = t;
+      // Hojas nuevas que el viento arranca del árbol
+      if (t >= s.proxHoja && t < 11) { s.caidas.push({ x0: 380, y0: 190, tx: 40 + Math.random() * 260, p: 0 }); s.proxHoja += 2.2; }
+      s.caidas.forEach(c => c.p += dt / 1.3);
+      s.caidas.filter(c => c.p >= 1).forEach(c => s.hojas.push({ x: c.tx }));
+      s.caidas = s.caidas.filter(c => c.p < 1);
+      // Bolsas arrastradas por la correntada
+      s.bolsas.forEach(b => {
+        if (b.estado === "espera" && t >= b.t0) b.estado = "flota";
+        if (b.estado !== "flota" || (s.arr && s.arr.b === b)) return;
+        b.x += b.v * dt;
+        b.y = 418 + Math.sin(t * 3 + b.fase) * 4;
+        if (b.x >= D.SUMIDERO - 12) {
+          b.estado = "tapon"; b.x = D.SUMIDERO; s.tapones++;
+          flotante("¡Boca de tormenta TAPADA!", D.SUMIDERO, 370, "#ff4d6d", 22); sacudir(); sonido("fallo");
+        }
+      });
+      // El agua de la calle sube si el sumidero está tapado o la canaleta desborda
+      const objetivo = Math.min(1, s.tapones * .45 + (s.hojas.length >= 4 ? .12 : 0));
+      s.agua += (objetivo - s.agua) * Math.min(1, dt * 1.5);
+    },
+    terminado: (s) => s.t > 11 && !s.hojas.length && !s.caidas.length && s.bolsas.every(b => b.estado === "guardada" || b.estado === "tapon"),
+    estado: (s) => `🍂 Hojas en la canaleta: ${s.hojas.length}   ·   🗑️ Al contenedor: ${s.guardadas}/4   ·   🕳️ Boca de tormenta: ${s.tapones ? "¡TAPADA!" : "libre"}`,
+    abajo(s, x, y, id) {
+      const i = s.hojas.findIndex(h => dist(x, y, h.x, 172) < 28);
+      if (i >= 0) {
+        const h = s.hojas.splice(i, 1)[0];
+        s.limpiadas++; chispas(h.x, 172, "#e08a2c", 8); sonido("tic");
+        if (!s.hojas.length) flotante("¡Canaleta limpia!", 170, 140, "#2ee59d");
+        return;
+      }
+      if (s.arr) return;
+      const b = s.bolsas.find(b => b.estado === "flota" && dist(x, y, b.x, b.y) < 42);
+      if (b) { s.arr = { id, b }; sonido("tic"); }
+    },
+    mover(s, x, y, id) { if (s.arr && s.arr.id === id) { s.arr.b.x = x; s.arr.b.y = y; } },
+    arriba(s, x, y, id) {
+      if (!s.arr || s.arr.id !== id) return;
+      const b = s.arr.b; s.arr = null;
+      if (x > 670 && x < 800 && y > 180 && y < 390) {
+        b.estado = "guardada"; s.guardadas++;
+        chispas(737, 230, "#2ee59d", 14); flotante("¡Al contenedor!", 737, 185, "#2ee59d"); sonido("ok");
+      } else {                                  // si la soltás en otro lado, vuelve al agua y sigue flotando
+        b.y = 418; b.x = Math.max(-20, Math.min(MINIJUEGOS.destapar.SUMIDERO - 50, x));
+      }
+    },
+    dibujar(ctx, s, t) {
+      const D = MINIJUEGOS.destapar;
+      let g = ctx.createLinearGradient(0, 0, 0, H);
+      g.addColorStop(0, "#151c2c"); g.addColorStop(1, "#45536b");
+      ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+      // Casa con techo y canaleta
+      ctx.fillStyle = "#d9c7a6"; ctx.fillRect(40, 184, 260, 190);
+      ctx.fillStyle = "#7a3b2e"; ctx.beginPath(); ctx.moveTo(25, 184); ctx.lineTo(170, 95); ctx.lineTo(315, 184); ctx.fill();
+      ctx.fillStyle = "#6b4423"; ctx.fillRect(140, 290, 50, 84);
+      ctx.fillStyle = "#9fd8ff"; ctx.fillRect(65, 230, 50, 40); ctx.fillRect(220, 230, 50, 40);
+      ctx.fillStyle = "#9aa3ad"; ctx.fillRect(18, 168, 304, 16);            // canaleta
+      ctx.fillStyle = "#7d858f"; ctx.fillRect(306, 184, 12, 190);           // caño de bajada
+      texto("CANALETA", 170, 158, 12, "#cfd3da");
+      const tapada = s.hojas.length >= 3;
+      if (tapada) {                                                         // agua desbordando por el borde
+        ctx.fillStyle = "rgba(120,180,255,.55)";
+        for (let k = 0; k < 6; k++) ctx.fillRect(30 + k * 52 + Math.sin(t * 9 + k) * 3, 184, 6, 190);
+        texto("¡Desborda!", 170, 205, 15, "#9fd8ff", "center", true);
+      } else {
+        ctx.fillStyle = "#7cc3ff"; ctx.fillRect(310, 360 + (t * 40) % 14, 6, 10);   // el agua baja por el caño
+      }
+      // Hojas en la canaleta (con aro para indicar que se tocan)
+      s.hojas.forEach(h => {
+        ctx.strokeStyle = `rgba(255,204,51,${.4 + .4 * Math.sin(t * 8 + h.x)})`; ctx.lineWidth = 3;
+        ctx.beginPath(); ctx.arc(h.x, 172, 22, 0, Math.PI * 2); ctx.stroke();
+        emoji("🍂", h.x, 170, 30);
+      });
+      // Árbol que suelta hojas
+      ctx.fillStyle = "#5b3a22"; ctx.fillRect(388, 260, 16, 115);
+      emoji("🌳", 396, 230, 130, Math.sin(t * 2) * .05);
+      s.caidas.forEach(c => {
+        const x = c.x0 + (c.tx - c.x0) * c.p, y = c.y0 + (172 - c.y0) * c.p - Math.sin(c.p * Math.PI) * 50 + Math.sin(c.p * 14) * 6;
+        emoji("🍂", x, y, 24, c.p * 8);
+      });
+      // Vereda y calle
+      ctx.fillStyle = "#9e9e9e"; ctx.fillRect(0, 374, W, 14);
+      ctx.fillStyle = "#3a3f4a"; ctx.fillRect(0, 388, W, 62);
+      ctx.fillStyle = `rgba(60,130,220,${.35 + s.agua * .4})`;
+      const nivel = 438 - s.agua * 70;
+      ctx.beginPath(); ctx.moveTo(0, H);
+      for (let x = 0; x <= W; x += 20) ctx.lineTo(x, nivel + Math.sin(x / 25 + t * 4) * 3);
+      ctx.lineTo(W, H); ctx.fill();
+      ctx.fillStyle = "rgba(200,230,255,.6)";                               // correntada hacia el sumidero
+      for (let k = 0; k < 10; k++) ctx.fillRect((k * 60 + t * 90) % (D.SUMIDERO - 20), 440, 22, 3);
+      // Boca de tormenta
+      ctx.fillStyle = "#111"; ctx.fillRect(D.SUMIDERO - 32, 428, 64, 18);
+      ctx.strokeStyle = "#666"; ctx.lineWidth = 3;
+      for (let k = -24; k <= 24; k += 12) { ctx.beginPath(); ctx.moveTo(D.SUMIDERO + k, 428); ctx.lineTo(D.SUMIDERO + k, 446); ctx.stroke(); }
+      texto("BOCA DE TORMENTA", D.SUMIDERO, 360, 12, s.tapones ? "#ff4d6d" : "#fff", "center", true);
+      if (s.tapones) { ctx.strokeStyle = `rgba(255,77,109,${.6 + .4 * Math.sin(t * 10)})`; ctx.lineWidth = 4; ctx.strokeRect(D.SUMIDERO - 40, 400, 80, 50); }
+      // Contenedor alto
+      const arrastrando = !!s.arr;
+      ctx.fillStyle = "#1b5e20"; ctx.fillRect(684, 202, 107, 14);
+      ctx.fillStyle = "#2e7d32"; ctx.fillRect(690, 216, 95, 140);
+      ctx.fillStyle = "#555"; ctx.fillRect(696, 356, 8, 30); ctx.fillRect(771, 356, 8, 30);
+      texto("CONTENEDOR", 737, 250, 12, "#fff");
+      texto(`🗑️ ${s.guardadas}/4`, 737, 290, 20, "#fff");
+      if (arrastrando) { ctx.strokeStyle = `rgba(46,229,157,${.6 + .4 * Math.sin(t * 10)})`; ctx.lineWidth = 6; ctx.strokeRect(678, 196, 119, 196); }
+      // Bolsas
+      s.bolsas.forEach(b => {
+        if (b.estado === "espera" || b.estado === "guardada") return;
+        const grande = s.arr && s.arr.b === b;
+        emoji("🗑️", b.x, b.y, grande ? 52 : 40, b.estado === "tapon" ? .4 : Math.sin(t * 3 + b.fase) * .15);
+      });
+      // Lluvia
+      ctx.strokeStyle = "rgba(180,210,255,.5)"; ctx.lineWidth = 2; ctx.beginPath();
+      for (let i = 0; i < 70; i++) { const x = (i * 57.3 + t * 70) % W, y = (i * 97.3 + t * 560) % 470 - 20; ctx.moveTo(x, y); ctx.lineTo(x - 4, y + 14); }
+      ctx.stroke();
+      ctx.fillStyle = "rgba(0,0,0,.45)"; rrect(470, 14, 316, 38, 12); ctx.fill();
+      texto("🔴 Alerta roja por tormentas", 628, 33, 17, "#fff");
+    },
+    evaluar(s) {
+      const exito = !s.hojas.length && !s.tapones;
+      return {
+        exito,
+        puntos: s.limpiadas * 6 + s.guardadas * 30 + (exito ? 100 : 0),
+        resumen: exito ? `¡Barrio destapado! Limpiaste ${s.limpiadas} hojas y guardaste ${s.guardadas} bolsas en el contenedor.`
+          : s.tapones ? `${s.tapones} bolsa(s) taparon la boca de tormenta y la calle se inundó.`
+          : `Quedaron ${s.hojas.length} hojas en la canaleta: el agua desborda y cae contra la pared de la casa.`
+      };
+    }
+  },
+
+  /* -------------------------------------------------------------------
+     G6. ¡ASEGURA EL PATIO! (Vientos fuertes)
+     Las ráfagas empujan los objetos hacia la derecha: si salen de la
+     pantalla se vuelven proyectiles. La chapa suelta vuela a los 10 s.
+     ------------------------------------------------------------------- */
+  patio: {
+    titulo: "¡Asegura el Patio!", icono: "🪴", duracion: 15,
+    instrucciones: [
+      ["🪴", "ARRASTRÁ macetas, sillas y herramientas al COBERTIZO antes de que el viento se las lleve."],
+      ["🔨", "TOCÁ 3 veces la chapa suelta del techo para clavarla antes de que salga volando."],
+      ["🎯", "Ganás si guardás los 5 objetos y la chapa queda asegurada."]
+    ],
+    crear() {
+      const objetos = [["🪴", 230, 8], ["🧰", 300, 10], ["🪑", 370, 24], ["🪴", 440, 8], ["🪑", 510, 24]]
+        .map(([e, x, v], i) => ({ e, x, y: 410 + (i % 2) * 14, v, estado: "suelto", giro: 0, fase: i }));
+      const lineas = [];
+      for (let i = 0; i < 45; i++) lineas.push({ x: Math.random() * W, y: Math.random() * 380, l: 30 + Math.random() * 50 });
+      return { objetos, lineas, clavos: 0, chapaVolo: false, chapaT: 0, rafaga: 0, guardados: 0, volados: 0, arr: null, t: 0 };
+    },
+    actualizar(s, dt, t) {
+      s.t = t;
+      s.rafaga = Math.pow(Math.max(0, Math.sin(t * 1.7)), 2) * .8 + .2;        // ráfagas que van y vienen (0.2 a 1)
+      s.lineas.forEach(l => { l.x += (300 + 900 * s.rafaga) * dt; if (l.x > W + 60) { l.x = -60; l.y = Math.random() * 380; } });
+      s.objetos.forEach(o => {
+        if (o.estado !== "suelto" || (s.arr && s.arr.o === o)) return;
+        o.x += o.v * (.3 + 1.6 * s.rafaga) * dt;
+        if (o.e === "🪑") o.giro += s.rafaga * dt * 2;
+        if (o.x > W + 20) {
+          o.estado = "volado"; s.volados++;
+          flotante("💥 ¡Se volvió un proyectil!", 640, 360, "#ff4d6d", 20); sacudir(); sonido("fallo");
+        }
+      });
+      if (!s.chapaVolo && s.clavos < 3 && t >= 10) {
+        s.chapaVolo = true; s.chapaT = t;
+        flotante("¡La chapa salió volando!", 640, 110, "#ff4d6d", 24); sacudir(); sonido("fallo");
+      }
+    },
+    terminado: (s) => s.guardados + s.volados === 5 && (s.clavos >= 3 || s.chapaVolo),
+    estado: (s) => `📦 Guardados: ${s.guardados}/5   ·   🔨 Chapa: ${s.chapaVolo ? "¡VOLÓ!" : s.clavos >= 3 ? "asegurada ✔" : s.clavos + "/3 clavos"}   ·   💨 Ráfaga: ${Math.round(40 + 60 * s.rafaga)} km/h`,
+    abajo(s, x, y, id) {
+      if (!s.chapaVolo && s.clavos < 3 && dist(x, y, 640, 160) < 58) {
+        s.clavos++; chispas(600 + s.clavos * 20, 162, "#d0d4da", 8); flotante(`🔨 ${s.clavos}/3`, 640, 125, "#ffcc33"); sonido("martillo");
+        if (s.clavos === 3) { flotante("¡Chapa asegurada!", 640, 95, "#2ee59d"); sonido("ok"); }
+        return;
+      }
+      if (s.arr) return;
+      const o = s.objetos.find(o => o.estado === "suelto" && dist(x, y, o.x, o.y) < 42);
+      if (o) { s.arr = { id, o }; sonido("tic"); }
+    },
+    mover(s, x, y, id) { if (s.arr && s.arr.id === id) { s.arr.o.x = x; s.arr.o.y = y; } },
+    arriba(s, x, y, id) {
+      if (!s.arr || s.arr.id !== id) return;
+      const o = s.arr.o; s.arr = null;
+      if (x > 10 && x < 195 && y > 200 && y < 395) {
+        o.estado = "guardado"; s.guardados++;
+        chispas(100, 330, "#2ee59d", 12); flotante("¡Guardado!", 100, 225, "#2ee59d"); sonido("ok");
+      } else { o.y = Math.max(400, Math.min(428, y)); }
+    },
+    dibujar(ctx, s, t) {
+      let g = ctx.createLinearGradient(0, 0, 0, 380);
+      g.addColorStop(0, "#4b4f5e"); g.addColorStop(1, "#b49a78");
+      ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+      ctx.fillStyle = "#6b8f3a"; ctx.fillRect(0, 380, W, 70);
+      // Cobertizo (a la izquierda: hay que arrastrar contra el viento)
+      const arr = s.arr && s.arr.o;
+      ctx.fillStyle = "#7b6a58"; ctx.fillRect(20, 240, 160, 140);
+      ctx.fillStyle = "#5a4a3a"; ctx.beginPath(); ctx.moveTo(10, 242); ctx.lineTo(100, 195); ctx.lineTo(190, 242); ctx.fill();
+      ctx.fillStyle = "#2b221a"; ctx.fillRect(65, 285, 70, 95);
+      texto("COBERTIZO", 100, 228, 13, "#fff");
+      s.objetos.filter(o => o.estado === "guardado").forEach((o, i) => emoji(o.e, 80 + (i % 3) * 20, 345 - Math.floor(i / 3) * 24, 20));
+      if (arr) { ctx.strokeStyle = `rgba(46,229,157,${.6 + .4 * Math.sin(t * 10)})`; ctx.lineWidth = 6; ctx.strokeRect(14, 192, 172, 194); }
+      // Árbol sacudido por el viento
+      ctx.fillStyle = "#5b3a22"; ctx.fillRect(452, 300, 14, 80);
+      emoji("🌳", 460, 280, 110, Math.sin(t * 6) * .08 * (.4 + s.rafaga));
+      // Casa con la chapa suelta
+      ctx.fillStyle = "#e6d3b3"; ctx.fillRect(540, 190, 240, 190);
+      ctx.fillStyle = "#8d3b2b"; ctx.beginPath(); ctx.moveTo(525, 192); ctx.lineTo(660, 120); ctx.lineTo(795, 192); ctx.fill();
+      ctx.fillStyle = "#3b5f80"; ctx.fillRect(570, 240, 60, 50); ctx.fillRect(690, 240, 60, 50);
+      ctx.fillStyle = "#6b4423"; ctx.fillRect(635, 300, 46, 80);
+      const dibujarChapa = (x, y, ang, asegurada) => {
+        ctx.save(); ctx.translate(x, y); ctx.rotate(ang);
+        ctx.fillStyle = "#b8bec6"; ctx.fillRect(0, -11, 90, 22);
+        ctx.strokeStyle = "#8a9099"; ctx.lineWidth = 2;
+        for (let k = 8; k < 90; k += 10) { ctx.beginPath(); ctx.moveTo(k, -11); ctx.lineTo(k, 11); ctx.stroke(); }
+        if (asegurada) { ctx.fillStyle = "#333"; [15, 45, 75].forEach(k => { ctx.beginPath(); ctx.arc(k, 0, 3, 0, Math.PI * 2); ctx.fill(); }); }
+        ctx.restore();
+      };
+      if (s.chapaVolo) {
+        const dtv = t - s.chapaT;
+        ctx.fillStyle = "#2a1e18"; ctx.fillRect(600, 150, 80, 16);                      // agujero en el techo
+        dibujarChapa(595 + dtv * 320, 160 - dtv * 110, dtv * 9, false);
+      } else if (s.clavos >= 3) {
+        dibujarChapa(595, 160, 0, true);
+        texto("✔", 690, 140, 24, "#2ee59d", "center", true);
+      } else {
+        const ang = -Math.abs(Math.sin(t * 12)) * .35 * (.4 + s.rafaga) * (1 + s.t / 10);
+        dibujarChapa(595, 160, ang, false);
+        ctx.strokeStyle = `rgba(255,204,51,${.5 + .5 * Math.sin(t * 9)})`; ctx.lineWidth = 4;
+        ctx.beginPath(); ctx.arc(640, 160, 58, 0, Math.PI * 2); ctx.stroke();
+        texto(`¡TOCÁ! ${s.clavos}/3 🔨`, 640, 88, 15, "#ffcc33", "center", true);
+        texto(`vuela en ${Math.max(0, Math.ceil(10 - s.t))} s`, 640, 222, 13, "#ff8da1", "center", true);
+      }
+      // Objetos del patio
+      s.objetos.forEach(o => {
+        if (o.estado !== "suelto") return;
+        emoji(o.e, o.x, o.y, arr === o ? 54 : 44, o.giro);
+      });
+      // Ráfagas visibles
+      ctx.strokeStyle = `rgba(255,255,255,${.25 + .5 * s.rafaga})`; ctx.lineWidth = 3; ctx.beginPath();
+      s.lineas.forEach(l => { ctx.moveTo(l.x, l.y); ctx.lineTo(l.x - l.l * (.5 + s.rafaga), l.y); });
+      ctx.stroke();
+      ctx.fillStyle = "rgba(0,0,0,.45)"; rrect(14, 12, 250, 40, 12); ctx.fill();
+      texto(`💨 Ráfaga: ${Math.round(40 + 60 * s.rafaga)} km/h ➜`, 26, 32, 18, s.rafaga > .7 ? "#ff8da1" : "#fff", "left");
+    },
+    evaluar(s) {
+      const exito = s.guardados === 5 && s.clavos >= 3;
+      return {
+        exito,
+        puntos: s.guardados * 25 + (s.clavos >= 3 ? 50 : 0) + (exito ? 75 : 0),
+        resumen: exito ? "¡Patio asegurado! Todo guardado y la chapa clavada: no quedó ningún proyectil suelto."
+          : `Guardaste ${s.guardados} de 5 objetos` + (s.chapaVolo ? " y la chapa salió volando." : s.clavos >= 3 ? "." : ` y la chapa quedó con ${s.clavos}/3 clavos.`)
+      };
+    }
+  },
+
+  /* -------------------------------------------------------------------
+     G7. ¡BRIGADA DE HIDRATACIÓN! (Ola de calor)
+     Cada víctima tiene un medidor de calor que sube. Agua fresca para
+     los animales, sombrilla para el abuelo. El hielo es una trampa.
+     ------------------------------------------------------------------- */
+  hidratacion: {
+    titulo: "¡Brigada de Hidratación!", icono: "🥣", duracion: 15,
+    instrucciones: [
+      ["🥣", "ARRASTRÁ platos de agua fresca hasta los animales que jadean."],
+      ["⛱️", "ARRASTRÁ la sombrilla hasta el abuelo que está sentado al sol."],
+      ["🧊", "¡Ojo! El hielo NO sirve: un cambio brusco de temperatura puede causar un shock."]
+    ],
+    crear() {
+      const victimas = [
+        { tipo: "animal", e: "🐶", x: 230, y: 395, calor: 35, ritmo: 5.5 },
+        { tipo: "animal", e: "🐱", x: 380, y: 415, calor: 25, ritmo: 6 },
+        { tipo: "animal", e: "🐶", x: 660, y: 400, calor: 40, ritmo: 5 },
+        { tipo: "abuelo", e: "👴", x: 520, y: 292, calor: 30, ritmo: 5 }
+      ].map((v, i) => ({ ...v, atendido: false, colapso: false, fase: i }));
+      const fichas = [
+        { tipo: "agua", e: "🥣", bx: 130 }, { tipo: "agua", e: "🥣", bx: 200 }, { tipo: "agua", e: "🥣", bx: 270 },
+        { tipo: "sombra", e: "⛱️", bx: 355 }, { tipo: "hielo", e: "🧊", bx: 440 }
+      ].map(f => ({ ...f, by: 62, x: f.bx, y: 62, usada: false }));
+      return { victimas, fichas, temp: 33, errores: 0, arr: null };
+    },
+    actualizar(s, dt, t) {
+      s.temp = 33 + 8 * Math.min(1, t / 15);
+      s.victimas.forEach(v => {
+        if (v.atendido) { v.calor = Math.max(0, v.calor - 25 * dt); return; }
+        if (v.colapso) return;
+        v.calor += v.ritmo * dt;
+        if (v.calor >= 100) {
+          v.colapso = true; v.calor = 100;
+          flotante("🥵 ¡Golpe de calor!", v.x, v.y - 60, "#ff4d6d", 20); sacudir(); sonido("fallo");
+        }
+      });
+    },
+    terminado: (s) => s.victimas.every(v => v.atendido || v.colapso),
+    estado(s) {
+      const animales = s.victimas.filter(v => v.tipo === "animal" && v.atendido).length;
+      const abuelo = s.victimas.find(v => v.tipo === "abuelo");
+      return `🥣 Animales hidratados: ${animales}/3   ·   ⛱️ Abuelo: ${abuelo.atendido ? "a la sombra ✔" : abuelo.colapso ? "¡golpe de calor!" : "¡AL SOL!"}   ·   🌡️ ${s.temp.toFixed(1)} °C`;
+    },
+    abajo(s, x, y, id) {
+      if (s.arr) return;
+      const f = s.fichas.find(f => !f.usada && dist(x, y, f.x, f.y) < 38);
+      if (f) { s.arr = { id, f }; sonido("tic"); }
+    },
+    mover(s, x, y, id) { if (s.arr && s.arr.id === id) { s.arr.f.x = x; s.arr.f.y = y; } },
+    arriba(s, x, y, id) {
+      if (!s.arr || s.arr.id !== id) return;
+      const f = s.arr.f; s.arr = null;
+      const v = s.victimas.filter(v => !v.atendido && !v.colapso && dist(x, y, v.x, v.y) < (v.tipo === "abuelo" ? 95 : 75))
+        .sort((a, b) => dist(x, y, a.x, a.y) - dist(x, y, b.x, b.y))[0];
+      const volver = () => { f.x = f.bx; f.y = f.by; };
+      if (!v) return volver();
+      if (f.tipo === "hielo") {
+        s.errores++; flotante("🧊 ¡No! Puede causar shock térmico", v.x, v.y - 60, "#ff4d6d", 18); sonido("error"); sacudir();
+        return volver();
+      }
+      if (f.tipo === "agua" && v.tipo === "animal") {
+        v.atendido = true; f.usada = true; f.x = v.x + 34; f.y = v.y + 14;
+        chispas(v.x, v.y, "#7cc3ff", 14); flotante("💧 ¡Gracias!", v.x, v.y - 55, "#7cc3ff"); sonido("ok");
+      } else if (f.tipo === "sombra" && v.tipo === "abuelo") {
+        v.atendido = true; f.usada = true; f.x = v.x; f.y = v.y - 62;
+        chispas(v.x, v.y, "#2ee59d", 14); flotante("😌 ¡Qué alivio!", v.x, v.y - 110, "#2ee59d"); sonido("ok");
+      } else {
+        flotante(v.tipo === "abuelo" ? "Al abuelo: ¡sombra! ⛱️" : "A los animales: ¡agua! 🥣", v.x, v.y - 60, "#ffcc33", 18); sonido("error");
+        volver();
+      }
+    },
+    dibujar(ctx, s, t) {
+      const calorFrac = (s.temp - 33) / 8;
+      let g = ctx.createLinearGradient(0, 0, 0, 330);
+      g.addColorStop(0, "#ffb347"); g.addColorStop(1, "#ffeab3");
+      ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+      // Sol gigante con rayos que giran
+      ctx.save(); ctx.translate(700, 80); ctx.rotate(t * .5);
+      ctx.fillStyle = "rgba(255,200,40,.55)";
+      for (let k = 0; k < 12; k++) { ctx.rotate(Math.PI / 6); ctx.beginPath(); ctx.moveTo(-10, 60); ctx.lineTo(10, 60); ctx.lineTo(0, 100 + 10 * Math.sin(t * 4 + k)); ctx.fill(); }
+      ctx.restore();
+      emoji("☀️", 700, 80, 110);
+      // Plaza
+      ctx.fillStyle = "#d8c08a"; ctx.fillRect(0, 330, W, 120);
+      ctx.fillStyle = "#9cc45a"; ctx.beginPath(); ctx.ellipse(130, 345, 120, 18, 0, 0, Math.PI * 2); ctx.fill();
+      emoji("🌳", 130, 270, 120);
+      ctx.fillStyle = "rgba(0,0,0,.18)"; ctx.beginPath(); ctx.ellipse(140, 350, 80, 12, 0, 0, Math.PI * 2); ctx.fill();
+      // Banco
+      ctx.fillStyle = "#7a4b2a"; ctx.fillRect(465, 312, 110, 12); ctx.fillRect(472, 324, 8, 22); ctx.fillRect(560, 324, 8, 22);
+      // Aire caliente ondulando
+      ctx.strokeStyle = `rgba(255,255,255,${.12 + .15 * calorFrac})`; ctx.lineWidth = 2;
+      for (let k = 0; k < 6; k++) {
+        ctx.beginPath();
+        for (let x = 0; x <= W; x += 20) ctx.lineTo(x, 240 + k * 25 + Math.sin(x / 40 + t * 3 + k) * 5);
+        ctx.stroke();
+      }
+      // Víctimas con su medidor de calor
+      s.victimas.forEach(v => {
+        if (v.tipo === "abuelo" && v.atendido) { ctx.fillStyle = "rgba(0,0,0,.25)"; ctx.beginPath(); ctx.ellipse(v.x, v.y + 45, 70, 14, 0, 0, Math.PI * 2); ctx.fill(); }
+        const jadeo = !v.atendido && !v.colapso ? Math.abs(Math.sin(t * 10 + v.fase)) * -5 : 0;
+        ctx.globalAlpha = v.colapso ? .5 : 1;
+        emoji(v.e, v.x, v.y + jadeo, 48, v.colapso ? Math.PI / 2 : 0);
+        ctx.globalAlpha = 1;
+        if (!v.atendido && !v.colapso) {
+          emoji("💦", v.x + 26, v.y - 22 + (t * 30 + v.fase * 7) % 12, 14);
+          const c = v.calor / 100;
+          ctx.fillStyle = "rgba(0,0,0,.4)"; rrect(v.x - 32, v.y - 48, 64, 10, 5); ctx.fill();
+          ctx.fillStyle = c < .5 ? "#ffcc33" : c < .8 ? "#ff8a3c" : "#ff2b2b"; rrect(v.x - 32, v.y - 48, 64 * c, 10, 5); ctx.fill();
+        }
+        if (v.atendido) texto("✔", v.x - 28, v.y - 30, 22, "#1a9e5f", "center", true);
+        if (v.colapso) emoji("😵", v.x, v.y - 45, 26);
+      });
+      // Bandeja de recursos
+      ctx.fillStyle = "rgba(0,0,0,.3)"; rrect(90, 22, 400, 80, 16); ctx.fill();
+      texto("ARRASTRÁ ⬇", 290, 30, 12, "#fff");
+      s.fichas.forEach(f => {
+        const arrastrando = s.arr && s.arr.f === f;
+        if (f.usada) { emoji(f.e, f.x, f.y, f.tipo === "sombra" ? 90 : 30); return; }
+        emoji(f.e, f.x, f.y, arrastrando ? 56 : 44);
+        if (f.tipo === "hielo" && !arrastrando) texto("hielo", f.x, f.y + 30, 11, "#fff");
+      });
+      // Termómetro: se pone rojo y titila por encima de 38 °C
+      const rojo = s.temp >= 38;
+      ctx.fillStyle = "#fff"; rrect(22, 120, 30, 240, 15); ctx.fill();
+      const alto = 220 * Math.min(1, (s.temp - 30) / 12);
+      ctx.fillStyle = rojo ? (Math.sin(t * 12) > 0 ? "#ff1a1a" : "#c40000") : "#ff8a3c";
+      rrect(28, 350 - alto, 18, alto, 9); ctx.fill();
+      ctx.beginPath(); ctx.arc(37, 372, 22, 0, Math.PI * 2); ctx.fill();
+      texto(`${s.temp.toFixed(1)} °C`, 40, 100, 20, rojo ? "#d40000" : "#5a2d00", "left");
+      // Velo de calor sobre toda la escena
+      ctx.fillStyle = `rgba(255,60,0,${.18 * calorFrac})`; ctx.fillRect(0, 0, W, H);
+    },
+    evaluar(s) {
+      const salvados = s.victimas.filter(v => v.atendido).length, colapsos = s.victimas.filter(v => v.colapso).length;
+      const exito = colapsos === 0;
+      return {
+        exito,
+        puntos: Math.max(0, salvados * 40 + (exito ? 90 : 0) - s.errores * 20),
+        resumen: (exito ? "¡Brigada exitosa! Los animales tienen agua fresca y el abuelo está a la sombra."
+          : `${colapsos} sufrieron un golpe de calor: cada segundo cuenta.`)
+          + (s.errores ? ` Usaste hielo ${s.errores} vez/veces: recordá que debe ser agua fresca, no helada.` : "")
+      };
+    }
+  },
+
+  /* -------------------------------------------------------------------
+     G8. ¡A CUBIERTO! (Tormenta eléctrica)
+     Arrastrar 2 personas al auto o a la casa; tocar a la que está lejos
+     para que se agache. Rayos a los 4,5 / 9 / 13,5 s. El árbol = error
+     crítico (termina el minijuego).
+     ------------------------------------------------------------------- */
+  cubierto: {
+    titulo: "¡A Cubierto!", icono: "⚡", duracion: 15,
+    RAYOS: [4.5, 9, 13.5],
+    ARBOL: { x: 205, y: 385 },
+    instrucciones: [
+      ["🚗", "ARRASTRÁ a las 2 personas cercanas hasta adentro del AUTO o de la CASA."],
+      ["🧎", "La persona que está LEJOS no llega a tiempo: TOCALA para que adopte la posición de seguridad (en cuclillas)."],
+      ["🌳", "¡NUNCA lleves a nadie debajo del árbol! Los rayos caen en lo más alto."]
+    ],
+    crear() {
+      const personas = [
+        { x: 330, y: 410, lejos: false }, { x: 430, y: 398, lejos: false }, { x: 55, y: 420, lejos: true }
+      ].map((p, i) => ({ ...p, bx: p.x, by: p.y, estado: "expuesta", refugio: null, fase: i }));
+      return { personas, proxRayo: 0, flash: 0, rayo: null, critico: false, alcanzados: 0, arr: null, t: 0 };
+    },
+    descargar(s, tx, ty) {                     // dibuja un rayo hasta (tx, ty) y hace flash
+      const pts = [[tx + (Math.random() - .5) * 120, 0]];
+      for (let k = 1; k < 8; k++) pts.push([tx + (Math.random() - .5) * 60 * (1 - k / 8), ty * k / 8]);
+      pts.push([tx, ty]);
+      s.rayo = { pts, vida: .45 }; s.flash = 1;
+      sonido("trueno"); sacudir();
+    },
+    actualizar(s, dt, t) {
+      const D = MINIJUEGOS.cubierto;
+      s.t = t;
+      s.flash = Math.max(0, s.flash - dt * 2.5);
+      if (s.rayo && (s.rayo.vida -= dt) <= 0) s.rayo = null;
+      if (s.proxRayo < D.RAYOS.length && t >= D.RAYOS[s.proxRayo]) {
+        const primero = s.proxRayo === 0;
+        s.proxRayo++;
+        const expuestas = s.personas.filter(p => p.estado === "expuesta");
+        if (primero || !expuestas.length) {
+          D.descargar(s, D.ARBOL.x, 250);
+          flotante("⚡ ¡Cayó en el árbol!", D.ARBOL.x, 200, "#fff", 22);
+        } else {
+          expuestas.forEach(p => { p.estado = "alcanzada"; s.alcanzados++; });
+          D.descargar(s, expuestas[0].x, expuestas[0].y - 20);
+          flotante("⚡ ¡Quedó expuesta al rayo!", expuestas[0].x, expuestas[0].y - 70, "#ff4d6d", 20);
+        }
+      }
+    },
+    terminado: (s) => s.critico || s.personas.every(p => p.estado === "refugiada" || p.estado === "agachada" || p.estado === "alcanzada") ,
+    estado(s) {
+      const D = MINIJUEGOS.cubierto;
+      const r = s.personas.filter(p => p.estado === "refugiada").length;
+      const lejos = s.personas.find(p => p.lejos);
+      const prox = s.proxRayo < D.RAYOS.length ? Math.max(0, Math.ceil(D.RAYOS[s.proxRayo] - s.t)) + " s" : "—";
+      return `🚗 A cubierto: ${r}/2   ·   🧎 Posición de seguridad: ${lejos.estado === "agachada" ? "sí ✔" : "no"}   ·   ⚡ Próximo rayo: ${prox}`;
+    },
+    abajo(s, x, y, id) {
+      const p = s.personas.find(p => p.estado === "expuesta" && dist(x, y, p.x, p.y - 10) < 44);
+      if (!p) return;
+      if (p.lejos) {
+        p.estado = "agachada"; chispas(p.x, p.y, "#2ee59d", 12); flotante("🧎 ¡Posición de seguridad!", p.x + 90, p.y - 60, "#2ee59d", 18); sonido("ok");
+        return;
+      }
+      if (!s.arr) { s.arr = { id, p }; sonido("tic"); }
+    },
+    mover(s, x, y, id) { if (s.arr && s.arr.id === id) { s.arr.p.x = x; s.arr.p.y = y; } },
+    arriba(s, x, y, id) {
+      const D = MINIJUEGOS.cubierto;
+      if (!s.arr || s.arr.id !== id) return;
+      const p = s.arr.p; s.arr = null;
+      if (dist(x, y, D.ARBOL.x, D.ARBOL.y - 30) < 85) {               // ¡debajo del árbol!
+        s.critico = true; p.estado = "alcanzada"; p.x = D.ARBOL.x + 20; p.y = D.ARBOL.y;
+        D.descargar(s, D.ARBOL.x, 250);
+        flotante("❌ ¡NUNCA bajo un árbol!", D.ARBOL.x, 170, "#ff4d6d", 26);
+        return;
+      }
+      const enAuto = x > 495 && x < 640 && y > 340 && y < 440;
+      const enCasa = x > 680 && x < 795 && y > 240 && y < 390;
+      if (enAuto || enCasa) {
+        p.estado = "refugiada"; p.refugio = enAuto ? "auto" : "casa";
+        chispas(x, y, "#2ee59d", 12); flotante(enAuto ? "🚗 ¡Jaula de Faraday!" : "🏠 ¡A salvo!", x, y - 50, "#2ee59d", 18); sonido("ok");
+      } else { p.y = Math.max(360, Math.min(430, y)); }
+    },
+    dibujar(ctx, s, t) {
+      const D = MINIJUEGOS.cubierto;
+      let g = ctx.createLinearGradient(0, 0, 0, 350);
+      g.addColorStop(0, "#10131d"); g.addColorStop(1, "#3b4458");
+      ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+      // Nubes negras
+      ctx.fillStyle = "#1c2030";
+      for (let k = 0; k < 9; k++) { ctx.beginPath(); ctx.ellipse((k * 110 + t * 12) % 900 - 50, 30 + (k % 3) * 18, 90, 40, 0, 0, Math.PI * 2); ctx.fill(); }
+      if (Math.sin(t * 7.3) > .985) { ctx.fillStyle = "rgba(255,255,255,.12)"; ctx.fillRect(0, 0, W, H); }   // relámpagos lejanos
+      ctx.fillStyle = "#3f6b35"; ctx.fillRect(0, 350, W, 100);
+      // Casa lejana
+      ctx.fillStyle = "#cfc3a8"; ctx.fillRect(690, 260, 100, 120);
+      ctx.fillStyle = "#7a3b2e"; ctx.beginPath(); ctx.moveTo(680, 262); ctx.lineTo(740, 215); ctx.lineTo(800, 262); ctx.fill();
+      ctx.fillStyle = "#2b221a"; ctx.fillRect(725, 320, 32, 60);
+      texto("CASA", 740, 245, 12, "#fff");
+      // Auto
+      emoji("🚗", 568, 398, 100);
+      texto("AUTO", 568, 345, 13, "#fff", "center", true);
+      const refugiados = (r) => s.personas.filter(p => p.estado === "refugiada" && p.refugio === r).length;
+      for (let i = 0; i < refugiados("auto"); i++) emoji("🙂", 548 + i * 26, 385, 18);
+      for (let i = 0; i < refugiados("casa"); i++) emoji("🙂", 732 + i * 18, 340, 16);
+      if (s.arr) {
+        ctx.strokeStyle = `rgba(46,229,157,${.6 + .4 * Math.sin(t * 10)})`; ctx.lineWidth = 5;
+        ctx.strokeRect(495, 340, 145, 100); ctx.strokeRect(680, 240, 115, 150);
+        ctx.setLineDash([8, 6]); ctx.strokeStyle = "#ff4d6d";
+        ctx.beginPath(); ctx.arc(D.ARBOL.x, D.ARBOL.y - 30, 85, 0, Math.PI * 2); ctx.stroke(); ctx.setLineDash([]);
+        texto("¡NO!", D.ARBOL.x, D.ARBOL.y - 120, 22, "#ff4d6d", "center", true);
+      }
+      // Árbol aislado
+      ctx.fillStyle = "#5b3a22"; ctx.fillRect(D.ARBOL.x - 9, 300, 18, 85);
+      emoji("🌳", D.ARBOL.x, 270, 150);
+      // Personas
+      s.personas.forEach(p => {
+        if (p.estado === "refugiada") return;
+        if (p.estado === "agachada") { emoji("🧎", p.x, p.y, 46); return; }
+        if (p.estado === "alcanzada") { ctx.globalAlpha = .5; emoji("🧍", p.x, p.y, 48); ctx.globalAlpha = 1; emoji("⚡", p.x + 20, p.y - 30, 26); return; }
+        const grande = s.arr && s.arr.p === p;
+        if (p.lejos) {
+          ctx.strokeStyle = `rgba(255,204,51,${.5 + .5 * Math.sin(t * 9)})`; ctx.lineWidth = 4;
+          ctx.beginPath(); ctx.arc(p.x, p.y - 10, 38, 0, Math.PI * 2); ctx.stroke();
+          texto("LEJOS: ¡TOCALO!", p.x + 30, p.y - 62, 13, "#ffcc33", "center", true);
+        }
+        emoji("🧍", p.x, p.y, grande ? 58 : 48);
+      });
+      // Rayo y destello blanco
+      if (s.rayo) {
+        ctx.save();
+        ctx.strokeStyle = "#fff"; ctx.lineWidth = 5; ctx.shadowColor = "#bcd8ff"; ctx.shadowBlur = 25;
+        ctx.beginPath(); s.rayo.pts.forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)); ctx.stroke();
+        ctx.restore();
+      }
+      if (s.flash > 0) { ctx.fillStyle = `rgba(255,255,255,${s.flash * .85})`; ctx.fillRect(0, 0, W, H); }
+      // Lluvia
+      ctx.strokeStyle = "rgba(180,210,255,.45)"; ctx.lineWidth = 2; ctx.beginPath();
+      for (let i = 0; i < 60; i++) { const x = (i * 57.3 + t * 70) % W, y = (i * 97.3 + t * 560) % 470 - 20; ctx.moveTo(x, y); ctx.lineTo(x - 4, y + 14); }
+      ctx.stroke();
+      if (s.proxRayo < D.RAYOS.length) {
+        ctx.fillStyle = "rgba(0,0,0,.5)"; rrect(600, 12, 186, 40, 12); ctx.fill();
+        texto(`⚡ Rayo en ${Math.max(0, D.RAYOS[s.proxRayo] - s.t).toFixed(1)} s`, 693, 32, 18, "#ffcc33");
+      }
+    },
+    evaluar(s) {
+      const refugiadas = s.personas.filter(p => p.estado === "refugiada").length;
+      const agachada = s.personas.find(p => p.lejos).estado === "agachada";
+      const exito = !s.critico && !s.alcanzados && refugiadas === 2 && agachada;
+      return {
+        exito,
+        puntos: s.critico ? 0 : refugiadas * 60 + (agachada ? 60 : 0) + (exito ? 70 : 0),
+        resumen: s.critico ? "Llevaste a alguien debajo del árbol: es el lugar más peligroso durante una tormenta eléctrica."
+          : exito ? "¡Todos a salvo! Dos personas a cubierto y la tercera en posición de seguridad."
+          : `${refugiadas} de 2 personas a cubierto` + (agachada ? "" : " y la persona lejana quedó de pie en el descampado") + "."
+      };
+    }
+  }
+};
+
+function mostrarInstrucciones(esc) {
+  const def = MINIJUEGOS[esc.minijuego];
+  $("ins-fase").textContent = `NIVEL ${estado.indice + 1} · FASE 2: MINIJUEGO · ${def.duracion} SEGUNDOS`;
+  $("ins-icono").textContent = def.icono;
+  $("ins-titulo").textContent = def.titulo;
+  $("ins-pasos").innerHTML = def.instrucciones.map(([ic, t]) => `<div class="paso"><span class="ic">${ic}</span><span>${t}</span></div>`).join("");
+  mostrarPantalla("p-instrucciones");
+}
+
+function arrancarMinijuego() {
+  const esc = escActual(), def = MINIJUEGOS[esc.minijuego];
+  $("mj-titulo").textContent = `${def.icono} ${def.titulo}`;
+  $("mj-cuenta").textContent = "";
+  mostrarPantalla("p-minijuego");
+  // Esperamos un cuadro para que el canvas ya tenga su tamaño real en pantalla
+  requestAnimationFrame(() => iniciarMinijuego(def, mostrarResultadoMinijuego));
+}
+
+/* =====================================================================
+   H) RESULTADOS
+   ===================================================================== */
+function mostrarResultadoMinijuego(res) {
+  const esc = escActual();
+  estado.historial[estado.historial.length - 1].mini = res;
+  if (res.puntos > 0) sumarPuntos(res.puntos);
+  if (!res.exito) perderVida();
+
+  const v = $("res-veredicto");
+  v.className = "veredicto " + (res.exito ? "exito" : "fallo");
+  v.textContent = res.exito ? `🏆 ¡${MINIJUEGOS[esc.minijuego].titulo.replace(/[¡!]/g, "")} superado!` : "💥 ¡No alcanzó!";
+  $("res-puntos").textContent = `+${res.puntos} ⭐` + (res.exito ? "" : "   ·   −1 ❤️ vida");
+  $("res-puntos").style.color = res.exito ? "var(--exito)" : "var(--fallo)";
+  $("res-resumen").textContent = res.resumen;
+  $("res-leccion").textContent = esc.leccion;
+
+  const ultimo = estado.indice + 1 >= estado.lista.length;
+  $("btn-res-seguir").textContent = (estado.vidas <= 0 || ultimo) ? "Ver resultado final 🏁" : "Siguiente escenario ➜";
+  mostrarPantalla("p-resultado");
+}
+
+function despuesDeResultado() {
+  if (estado.vidas <= 0) mostrarFinal();
+  else siguienteEscenario();
+}
+
+function puntajeMaximo() {
+  return estado.lista.reduce((suma, e) => suma + CONFIG.maxTrivia + (e.minijuego ? CONFIG.maxMinijuego : 0) + (e.celular ? CONFIG.puntosCelular : 0), 0);
+}
+
+function mostrarFinal() {
+  clearInterval(estado.timer);
+  const completo = estado.historial.length === estado.lista.length;
+  const gano = estado.vidas > 0 && completo;
+  const ratio = estado.puntaje / puntajeMaximo();
+  const modo = MODOS[estado.modo];
+  const rango = modo.rangos.filter(([min]) => ratio >= min).pop()[1];
+  $("fin-leccion-titulo").textContent = modo.leccion.titulo;
+  $("fin-leccion-texto").innerHTML = modo.leccion.texto;
+
+  $("fin-icono").textContent = gano ? "🏆" : "💥";
+  $("fin-titulo").textContent = gano ? "¡VICTORIA!" : "¡DERROTA!";
+  $("fin-titulo").style.color = gano ? "var(--exito)" : "var(--fallo)";
+  $("fin-rango").textContent = rango;
+  $("fin-subtitulo").textContent = gano
+    ? `Terminaste con ${estado.vidas} ❤️. ${modo.leccion.victoria}`
+    : "Te quedaste sin vidas, pero lo importante es lo que aprendiste. ¡Repasemos!";
+
+  // Animación de conteo del puntaje
+  const el = $("fin-puntaje"), objetivo = estado.puntaje, t0 = performance.now();
+  (function contar(ahora) {
+    const p = Math.min(1, (ahora - t0) / 1200);
+    el.textContent = Math.round(objetivo * (1 - Math.pow(1 - p, 3)));
+    if (p < 1) requestAnimationFrame(contar);
+  })(t0);
+
+  $("fin-tabla").innerHTML = `<tr><th>Escenario</th><th>Trivia</th><th>Minijuego</th></tr>` +
+    estado.historial.map(h => `<tr>
+      <td>${h.esc.emoji} ${h.esc.nombre}</td>
+      <td>${icono(h.trivia)} ${h.porTiempo ? "⏰ sin responder" : h.triviaPuntos ? "+" + h.triviaPuntos : "0"}</td>
+      <td>${h.esc.minijuego ? (h.mini ? `${h.mini.exito ? "✅" : "❌"} +${h.mini.puntos}` : "— no jugado") : "—"}</td>
+    </tr>`).join("") +
+    (estado.recital ? `<tr><td>📱 Invitación al recital</td><td colspan="2">${estado.recital.fue ? "❌ Fuiste con alerta naranja" : `✅ Te quedaste en casa (+${CONFIG.puntosCelular})`}</td></tr>` : "");
+
+  $("fin-capsulas").innerHTML = estado.lista.map(e => `<div><strong>${e.emoji} ${e.nombre}</strong>${e.capsula}</div>`).join("");
+
+  guardarRecord(estado.puntaje);
+  mostrarPantalla("p-final");
+  sonido(gano ? "victoria" : "fallo");
+  if (gano) lanzarConfeti();
+}
+
+function lanzarConfeti() {
+  const colores = ["#ffcc33", "#2ee59d", "#3fa9f5", "#ff4d6d", "#c03bff"];
+  for (let i = 0; i < 90; i++) {
+    const c = document.createElement("div");
+    c.className = "confeti";
+    c.style.left = Math.random() * 100 + "vw";
+    c.style.background = colores[i % colores.length];
+    c.style.animationDuration = 2 + Math.random() * 2 + "s";
+    c.style.animationDelay = Math.random() * .8 + "s";
+    document.body.appendChild(c);
+    setTimeout(() => c.remove(), 5000);
+  }
+}
+
+/* Récord del stand guardado en el navegador (si no se puede, el juego sigue igual) */
+const CLAVE_RECORD = "alertaTerritorio.record";
+function leerRecord() { try { return +localStorage.getItem(CLAVE_RECORD) || 0; } catch (e) { return 0; } }
+function guardarRecord(p) { try { if (p > leerRecord()) localStorage.setItem(CLAVE_RECORD, p); } catch (e) { /* sin almacenamiento */ } }
+function pintarRecord() { const r = leerRecord(); $("record").textContent = r ? `🏅 Récord del stand: ${r} puntos` : ""; }
+
+/* =====================================================================
+   I) SONIDO (Web Audio API: tonos generados, sin archivos)
+   ===================================================================== */
+let audioCtx = null, sonidoActivo = true;
+function tono(frec, dur, tipo = "sine", cuando = 0, vol = .12) {
+  if (!sonidoActivo) return;
+  try {
+    audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+    const osc = audioCtx.createOscillator(), gan = audioCtx.createGain();
+    osc.type = tipo; osc.frequency.value = frec;
+    const t = audioCtx.currentTime + cuando;
+    gan.gain.setValueAtTime(vol, t);
+    gan.gain.exponentialRampToValueAtTime(.001, t + dur);
+    osc.connect(gan).connect(audioCtx.destination);
+    osc.start(t); osc.stop(t + dur);
+  } catch (e) { /* navegador sin audio: seguimos en silencio */ }
+}
+/* Ruido filtrado: suena como un trueno lejano */
+function ruido(dur, vol = .5) {
+  if (!sonidoActivo) return;
+  try {
+    audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+    const n = Math.floor(audioCtx.sampleRate * dur);
+    const buf = audioCtx.createBuffer(1, n, audioCtx.sampleRate), d = buf.getChannelData(0);
+    for (let i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / n, 2);
+    const src = audioCtx.createBufferSource(), filtro = audioCtx.createBiquadFilter(), gan = audioCtx.createGain();
+    src.buffer = buf; filtro.type = "lowpass"; filtro.frequency.value = 380; gan.gain.value = vol;
+    src.connect(filtro).connect(gan).connect(audioCtx.destination);
+    src.start();
+  } catch (e) { /* sin audio */ }
+}
+
+function sonido(tipo) {
+  const s = {
+    alerta:   () => { tono(880, .15, "square"); tono(660, .15, "square", .18); tono(880, .15, "square", .36); },
+    tic:      () => tono(1200, .05, "square", 0, .06),
+    ok:       () => { tono(660, .08); tono(990, .12, "sine", .07); },
+    bomba:    () => tono(180 + Math.random() * 60, .12, "sawtooth", 0, .07),
+    error:    () => tono(150, .25, "square", 0, .1),
+    exito:    () => { tono(523, .12); tono(659, .12, "sine", .12); tono(784, .25, "sine", .24); },
+    parcial:  () => { tono(523, .15); tono(587, .25, "sine", .15); },
+    fallo:    () => { tono(300, .25, "sawtooth"); tono(200, .4, "sawtooth", .25); },
+    victoria: () => [523, 659, 784, 1046].forEach((f, i) => tono(f, .22, "triangle", i * .13)),
+    martillo: () => { tono(900, .05, "square", 0, .1); tono(500, .06, "square", .05, .08); },
+    trueno:   () => ruido(1.6),
+    notificacion: () => { tono(1320, .09); tono(1760, .14, "sine", .1); tono(1320, .09, "sine", .45); tono(1760, .14, "sine", .55); }
+  };
+  (s[tipo] || (() => {}))();
+}
+
+/* =====================================================================
+   J) ARRANQUE, BOTONES, TECLADO Y "MODO FERIA"
+   ===================================================================== */
+function limpiarConfeti() { document.querySelectorAll(".confeti").forEach(c => c.remove()); }
+
+function nuevaPartida(modo) {
+  if (estado) clearInterval(estado.timer);
+  limpiarConfeti();
+  M = null;
+  estado = estadoInicial(modo);
+  iniciarEscenario();
+}
+
+function volverAlInicio() {
+  if (estado) clearInterval(estado.timer);
+  limpiarConfeti();
+  M = null;
+  estado = estadoInicial("barrio");
+  actualizarHUD();
+  pintarRecord();
+  mostrarPantalla("p-inicio");
+}
+
+$("btn-jugar").addEventListener("click", seguro(() => nuevaPartida("barrio")));
+$("btn-centro").addEventListener("click", seguro(() => nuevaPartida("completo")));
+$("btn-cel-voy").addEventListener("click", seguro(() => responderCelular(true)));
+$("btn-cel-novoy").addEventListener("click", seguro(() => responderCelular(false)));
+$("btn-cel-seguir").addEventListener("click", seguro(() => estado.vidas <= 0 ? mostrarFinal() : iniciarEscenario()));
+$("btn-express").addEventListener("click", seguro(() => nuevaPartida("express")));
+$("btn-cap-seguir").addEventListener("click", seguro(despuesDeCapsula));
+$("btn-ins-listo").addEventListener("click", seguro(arrancarMinijuego));
+$("btn-res-seguir").addEventListener("click", seguro(despuesDeResultado));
+$("btn-fin-otra").addEventListener("click", seguro(() => nuevaPartida(estado.modo)));
+$("btn-fin-inicio").addEventListener("click", seguro(volverAlInicio));
+$("btn-sonido").addEventListener("click", () => {
+  sonidoActivo = !sonidoActivo;
+  $("btn-sonido").textContent = sonidoActivo ? "🔊" : "🔇";
+});
+
+// Teclado: 1/2/3 (o A/B/C) en la trivia; Enter para el botón principal de cada pantalla
+document.addEventListener("keydown", (e) => {
+  if (pantallaActiva("p-trivia")) {
+    const i = { "1": 0, "2": 1, "3": 2, "a": 0, "b": 1, "c": 2 }[e.key.toLowerCase()];
+    const b = $("tr-opciones").children[i];
+    if (b && !b.disabled) b.click();
+  } else if (pantallaActiva("p-celular")) {
+    if ($("cel-resultado").style.display !== "none" && e.key === "Enter") $("btn-cel-seguir").click();
+  } else if (e.key === "Enter") {
+    const b = document.querySelector(".pantalla.activa .btn");
+    if (b) b.click();
+  }
+});
+
+// Modo feria: sin interacción por un rato, vuelve a la portada (salvo en trivia/minijuego, que tienen su propio tiempo)
+let temporizadorInactividad;
+function reiniciarInactividad() {
+  clearTimeout(temporizadorInactividad);
+  temporizadorInactividad = setTimeout(() => {
+    if (!pantallaActiva("p-inicio") && !pantallaActiva("p-trivia") && !pantallaActiva("p-minijuego")) volverAlInicio();
+    else reiniciarInactividad();
+  }, CONFIG.inactividadMs);
+}
+["pointerdown", "keydown"].forEach(ev => document.addEventListener(ev, reiniciarInactividad));
+
+// ¡A jugar!
+estado = estadoInicial("barrio");
+actualizarHUD();
+pintarRecord();
+reiniciarInactividad();
+</script>
+</body>
+</html>
