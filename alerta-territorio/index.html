@@ -482,9 +482,90 @@
   .noticia strong { display: block; font-size: 1.2rem; line-height: 1.3; }
 
   /* ------------------------------------------------------------------
+     10c. CONSULTOR DE INFORMACIÓN ANTE EVENTOS (panel desplegable)
+     ------------------------------------------------------------------ */
+  .btn-consultor {
+    position: fixed; right: 18px; bottom: 18px; z-index: 40;
+    font-family: var(--titulos); font-size: 1.6rem; letter-spacing: 1px; line-height: 1;
+    padding: 14px 20px; min-height: 60px; cursor: pointer; color: #000;
+    background: var(--acento); border: 2px solid #000; border-radius: var(--radio);
+    box-shadow: 0 0 0 3px var(--acento), 0 8px 24px rgba(0,0,0,.6);
+    animation: entrar .4s both;
+  }
+  .btn-consultor.oculto { display: none; }
+  .consultor {
+    position: fixed; inset: 0; z-index: 55; display: none;
+    background: rgba(0,0,0,.78); backdrop-filter: blur(4px);
+  }
+  .consultor.abierto { display: block; animation: aparecer .2s; }
+  .consultor-panel {
+    position: absolute; inset: 3vh 3vw; display: flex; flex-direction: column;
+    background: var(--fondo); border: 2px solid var(--borde); border-radius: var(--radio);
+    box-shadow: 0 0 40px rgba(255,77,0,.25); overflow: hidden;
+    animation: deslizar .3s cubic-bezier(.2,.8,.2,1);
+  }
+  @keyframes deslizar { from { transform: translateY(40px); opacity: 0; } }
+  .consultor-cabecera {
+    display: flex; align-items: center; gap: 14px; padding: 12px 16px;
+    background: var(--tarjeta); border-bottom: 4px solid;
+    border-image: repeating-linear-gradient(45deg, var(--acento), var(--acento) 10px, #000 10px, #000 20px) 1;
+  }
+  .consultor-cabecera h2 { margin: 0; flex: 1; }
+  .btn-cerrar { font-family: var(--titulos); font-size: 1.6rem; min-width: 56px; min-height: 56px; cursor: pointer; color: var(--texto); background: transparent; border: 2px solid var(--borde); border-radius: var(--radio); }
+  .consultor-tabs { display: flex; gap: 8px; padding: 10px 16px; flex-wrap: wrap; background: var(--tarjeta); }
+  .tab {
+    font-family: var(--titulos); font-size: 1.35rem; letter-spacing: .5px; line-height: 1;
+    padding: 12px 16px; min-height: 52px; cursor: pointer; color: var(--texto);
+    background: var(--tarjeta-2); border: 1px solid var(--borde); border-radius: var(--radio);
+  }
+  .tab.activa { background: var(--acento); color: #000; border-color: var(--acento); }
+  .consultor-cuerpo { flex: 1; overflow-y: auto; padding: 18px 20px 30px; -webkit-user-select: text; user-select: text; }
+  .seccion-info { display: none; animation: entrar .3s; }
+  .seccion-info.activa { display: block; }
+  .seccion-info h3 { font-family: var(--titulos); font-size: 1.7rem; font-weight: 500; letter-spacing: .5px; margin: 18px 0 8px; color: var(--acento); }
+  .seccion-info p, .seccion-info li { line-height: 1.55; }
+  .seccion-info ul { padding-left: 22px; }
+  .nota-oficial { margin-top: 22px; padding: 12px 14px; border: 1px dashed var(--texto-suave); border-radius: var(--radio); color: var(--texto-suave); font-size: .95rem; }
+  .nota-oficial a, .seccion-info a { color: var(--acento); }
+  /* Semáforo de alertas */
+  .semaforo { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 8px; }
+  .nivel {
+    cursor: pointer; text-align: center; padding: 16px 8px; min-height: 96px; color: #000;
+    font-family: var(--titulos); font-size: 1.5rem; line-height: 1; letter-spacing: .5px;
+    border: 3px solid transparent; border-radius: var(--radio); transition: transform .15s;
+  }
+  .nivel:hover { transform: translateY(-3px); }
+  .nivel.elegido { border-color: #fff; box-shadow: 0 0 0 3px #000 inset; transform: translateY(-4px); }
+  .nivel small { display: block; font-family: var(--mono); font-size: .8rem; margin-top: 6px; letter-spacing: 0; }
+  .detalle-nivel { margin-top: 12px; padding: 16px; background: var(--tarjeta); border-left: 8px solid; border-radius: var(--radio); }
+  .detalle-nivel h4 { font-family: var(--titulos); font-size: 1.9rem; font-weight: 500; line-height: 1; margin-bottom: 6px; }
+  .detalle-nivel .ejemplo { margin-top: 10px; font-family: var(--mono); font-size: .9rem; color: var(--texto-suave); }
+  .grid-info { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+  .ficha { background: var(--tarjeta); border: 1px solid #2a2d35; border-top: 4px solid var(--borde); border-radius: var(--radio); padding: 14px; }
+  .ficha > strong:first-child { display: block; font-size: 1.1rem; margin-bottom: 4px; }   /* sólo el título de la ficha */
+  /* Números de emergencia */
+  .telefono {
+    display: flex; align-items: center; gap: 14px; text-decoration: none; color: var(--texto);
+    background: var(--tarjeta); border: 2px solid var(--borde); border-radius: var(--radio); padding: 14px 16px; min-height: 84px;
+  }
+  .telefono .num { font-family: var(--titulos); font-size: 3rem; line-height: 1; color: var(--acento); min-width: 86px; text-align: center; }
+  .telefono:hover { background: var(--tarjeta-2); }
+  /* Leyenda del mapa de riesgo */
+  .leyenda-mapa { display: grid; gap: 8px; margin-top: 8px; }
+  .leyenda-mapa div { display: flex; align-items: center; gap: 12px; }
+  .muestra { width: 46px; height: 18px; border-radius: 3px; flex-shrink: 0; }
+  .fase { background: var(--tarjeta); border-radius: var(--radio); padding: 12px 14px; border: 1px solid #2a2d35; }
+  .fase b { display: inline-block; min-width: 72px; color: var(--acento); font-family: var(--mono); }
+  .checklist { columns: 2 220px; list-style: none; padding: 0 !important; }
+  .checklist li { break-inside: avoid; padding: 6px 0; }
+
+  /* ------------------------------------------------------------------
      11. RESPONSIVE
      ------------------------------------------------------------------ */
   @media (max-width: 860px) {
+    .semaforo { grid-template-columns: repeat(2, 1fr); }
+    .consultor-panel { inset: 0; }
+    .btn-consultor { right: 10px; bottom: 10px; font-size: 1.3rem; padding: 10px 14px; min-height: 50px; }
     .layout-2col { grid-template-columns: 1fr; }
     .escena { height: 200px; }
     .lienzo-wrap { width: 100%; }
@@ -499,6 +580,107 @@
 </style>
 </head>
 <body>
+
+<!-- ===================== CONSULTOR DE INFORMACIÓN ANTE EVENTOS ===================== -->
+<button class="btn-consultor" id="btn-consultor" aria-haspopup="dialog">📖 CONSULTOR</button>
+<div class="consultor" id="consultor" role="dialog" aria-modal="true" aria-labelledby="consultor-titulo">
+  <div class="consultor-panel">
+    <div class="consultor-cabecera">
+      <span class="logo-grupo logo-medio" role="img" aria-label="Logo del Grupo de Pronóstico FCAG-UNLP"></span>
+      <h2 id="consultor-titulo">📖 Consultor ante eventos</h2>
+      <button class="btn-cerrar" id="btn-cerrar-consultor" aria-label="Cerrar">✕</button>
+    </div>
+    <div class="consultor-tabs" role="tablist">
+      <button class="tab activa" data-tab="alertas">🚦 Alertas SMN</button>
+      <button class="tab" data-tab="mapa">🗺️ Mapa de riesgo</button>
+      <button class="tab" data-tab="emergencias">📞 Emergencias</button>
+      <button class="tab" data-tab="hacer">🎒 Qué hacer</button>
+    </div>
+    <div class="consultor-cuerpo">
+
+      <!-- ---------- ALERTAS ---------- -->
+      <section class="seccion-info activa" data-seccion="alertas">
+        <p>El <strong>Servicio Meteorológico Nacional (SMN)</strong> usa un <strong>Sistema de Alerta Temprana</strong> por colores.
+          El color indica <strong>cuán peligroso</strong> puede ser el fenómeno para la zona. <strong>Tocá cada color</strong> para ver qué significa y qué hacer.</p>
+        <div class="semaforo" id="semaforo"></div>
+        <div class="detalle-nivel" id="detalle-nivel"></div>
+
+        <h3>¿Alerta o aviso? Los productos del SMN</h3>
+        <div class="grid-info">
+          <div class="ficha"><strong>🔔 Alerta</strong>Se emite con anticipación (horas a días) para zonas concretas (partidos o departamentos) ante lluvias, tormentas, viento, viento Zonda, nevadas y otros fenómenos. Tiene nivel amarillo, naranja o rojo.</div>
+          <div class="ficha"><strong>⚡ Aviso a muy corto plazo</strong>Advierte sobre tormentas severas que ya se están desarrollando y pueden afectar un área en las <strong>próximas horas</strong>. Puede llegar sin una alerta previa: es para actuar <strong>ya</strong>.</div>
+          <div class="ficha"><strong>🌡️ Temperaturas extremas</strong>El calor y el frío extremos tienen su propio sistema de alerta, pensado según el <strong>efecto en la salud</strong> de las personas (como en los escenarios de ola de calor y de frío).</div>
+          <div class="ficha"><strong>📄 Informes especiales</strong>Describen con más detalle un evento relevante: cuándo empieza, cómo evoluciona y qué zonas afecta.</div>
+        </div>
+        <h3>Para recordar</h3>
+        <ul>
+          <li>El color depende de la <strong>intensidad</strong> del fenómeno <strong>y</strong> de la zona: los mismos 60 mm no son igual de peligrosos en todos lados.</li>
+          <li>Las alertas se <strong>actualizan</strong>: consultalas más de una vez durante el día.</li>
+          <li>Informate sólo por <strong>canales oficiales</strong> y no reenvíes audios o mensajes sin fuente.</li>
+        </ul>
+        <div class="nota-oficial">ℹ️ Información de referencia con fines educativos. Consultá siempre las alertas vigentes en
+          <a href="https://www.smn.gob.ar/alertas" target="_blank" rel="noopener">smn.gob.ar/alertas</a> y seguí las indicaciones de Defensa Civil de tu municipio.</div>
+      </section>
+
+      <!-- ---------- MAPA DE RIESGO ---------- -->
+      <section class="seccion-info" data-seccion="mapa">
+        <p>Un <strong>mapa de riesgo hídrico</strong> muestra qué partes de la ciudad se inundan primero cuando llueve mucho y cuáles son las zonas altas y seguras.
+          Es la misma herramienta del minijuego <em>¡Navegando el Mapa de Riesgo!</em>, pero con datos reales de tu ciudad.</p>
+        <h3>Cómo leerlo</h3>
+        <div class="leyenda-mapa">
+          <div><span class="muestra" style="background:#ff1744"></span><span><strong>Zonas inundables:</strong> calles y manzanas que se anegan primero (suelen ser las más bajas).</span></div>
+          <div><span class="muestra" style="background:repeating-linear-gradient(90deg,#7cc3ff 0 10px,transparent 10px 16px);border:1px solid #7cc3ff"></span><span><strong>Arroyos y cauces</strong> (muchos van entubados bajo las calles): cuando desbordan, el agua vuelve a buscar su cauce natural.</span></div>
+          <div><span class="muestra" style="background:#00e676"></span><span><strong>Zonas altas y corredores seguros</strong> para desplazarse o evacuar.</span></div>
+          <div><span class="muestra" style="background:#fff;display:grid;place-items:center;font-size:.8rem">🏥</span><span><strong>Centros de evacuación</strong> y puntos de encuentro.</span></div>
+        </div>
+        <h3>¿Cuándo consultarlo?</h3>
+        <div class="grid-info">
+          <div class="ficha"><strong>🏠 Antes de mudarte</strong>Fijate si la casa está en una zona inundable o cerca de un arroyo.</div>
+          <div class="ficha"><strong>🚗 Antes de salir con alerta</strong>Elegí un recorrido por zonas altas y evitá cruzar cauces y bajos.</div>
+          <div class="ficha"><strong>👨‍👩‍👧 En familia</strong>Acuerden de antemano un punto de encuentro y la ruta a la zona alta más cercana.</div>
+        </div>
+        <h3>Mapa de riesgo de La Plata</h3>
+        <p>La Municipalidad de La Plata publica su mapa de riesgo en
+          <a href="https://riesgo.laplata.gob.ar/mapa.php" target="_blank" rel="noopener"><strong>riesgo.laplata.gob.ar</strong></a> (necesita internet).
+          Si vivís en otra ciudad, buscá el de tu municipio.</p>
+        <div class="nota-oficial">⚠️ Nunca cruces una calle anegada a pie ni en auto: no se ve la profundidad, puede haber tapas abiertas y la corriente puede arrastrar un vehículo.</div>
+      </section>
+
+      <!-- ---------- EMERGENCIAS ---------- -->
+      <section class="seccion-info" data-seccion="emergencias">
+        <p>Números nacionales de emergencia en Argentina. <strong>Son gratuitos</strong> y se pueden marcar desde cualquier teléfono. En un celular, tocá el número para llamar.</p>
+        <div class="grid-info" style="margin-top:12px">
+          <a class="telefono" href="tel:911"><span class="num">911</span><span><strong>Emergencias</strong><br>Policía y emergencias en general.</span></a>
+          <a class="telefono" href="tel:107"><span class="num">107</span><span><strong>SAME / emergencias médicas</strong><br>Ambulancias y atención médica urgente.</span></a>
+          <a class="telefono" href="tel:100"><span class="num">100</span><span><strong>Bomberos</strong><br>Incendios, rescates, árboles o estructuras caídas.</span></a>
+          <a class="telefono" href="tel:103"><span class="num">103</span><span><strong>Defensa Civil</strong><br>Emergencias por temporales, inundaciones y evacuaciones.</span></a>
+          <a class="telefono" href="tel:106"><span class="num">106</span><span><strong>Prefectura Naval</strong><br>Emergencias en ríos, lagos y el mar.</span></a>
+        </div>
+        <h3>Al llamar</h3>
+        <ul>
+          <li>Decí <strong>dónde estás</strong> (calle, altura, entrecalles o una referencia clara).</li>
+          <li>Contá <strong>qué pasa</strong> y si hay personas heridas, atrapadas o en riesgo.</li>
+          <li><strong>No cortes</strong> hasta que te lo indiquen, y dejá la línea libre después.</li>
+        </ul>
+        <div class="nota-oficial">ℹ️ Algunos servicios pueden variar según la provincia o el municipio. Agendá también los teléfonos de Defensa Civil y de la empresa de luz de tu localidad.</div>
+      </section>
+
+      <!-- ---------- QUÉ HACER ---------- -->
+      <section class="seccion-info" data-seccion="hacer">
+        <p>Resumen de lo que aprendiste en el juego: qué hacer <strong>antes</strong>, <strong>durante</strong> y <strong>después</strong> de cada evento.</p>
+        <div id="guias"></div>
+        <h3>🎒 Mochila de emergencia</h3>
+        <ul class="checklist">
+          <li>💧 Agua potable</li><li>🥫 Alimentos que no necesiten cocción</li>
+          <li>🔦 Linterna y pilas de repuesto</li><li>📻 Radio a pilas</li>
+          <li>🔋 Cargador portátil para el celular</li><li>🩹 Botiquín y medicamentos habituales</li>
+          <li>📄 Documentos en bolsa impermeable</li><li>🧥 Abrigo y ropa de repuesto</li>
+          <li>📝 Lista de teléfonos útiles en papel</li><li>🐕 Comida y correa para mascotas</li>
+        </ul>
+      </section>
+    </div>
+  </div>
+</div>
 
 <!-- ===================== HUD ===================== -->
 <header class="hud oculto" id="hud">
@@ -537,6 +719,7 @@
           <button class="btn secundario" id="btn-elegir">🎯 Elegir un desafío</button>
           <button class="btn secundario" id="btn-centro">🛰️ Centro de Alertas (modo experto)</button>
           <button class="btn secundario" id="btn-express">⚡ Modo Express (1 min)</button>
+          <button class="btn secundario" id="btn-consultor-portada">📖 Consultor ante eventos</button>
         </div>
         <div class="record" id="record"></div>
         <div class="credito"><span class="logo-grupo logo-medio" role="img" aria-label=""></span><span>Una propuesta del<br><strong style="color:var(--texto)">Grupo de Pronóstico · FCAG · UNLP</strong></span></div>
@@ -1064,6 +1247,7 @@ function mostrarPantalla(id) {
   document.querySelectorAll(".pantalla").forEach(p => p.classList.remove("activa"));
   $(id).classList.add("activa");
   $("hud").classList.toggle("oculto", id === "p-inicio" || id === "p-selector");
+  if (typeof actualizarBotonConsultor === "function") actualizarBotonConsultor(id);
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 const pantallaActiva = (id) => $(id).classList.contains("activa");
@@ -3565,7 +3749,93 @@ function nuevaPartida(modo) {
   iniciarEscenario();
 }
 
+/* =====================================================================
+   K) CONSULTOR DE INFORMACIÓN ANTE EVENTOS
+   Panel con información real: niveles de alerta, mapa de riesgo,
+   números de emergencia y qué hacer. Se oculta durante las pantallas
+   con tiempo (trivia, minijuego, celular) para no servir de "machete".
+   ===================================================================== */
+const NIVELES_ALERTA = [
+  { color: "#00e676", nombre: "Sin alerta", lema: "Normal",
+    desc: "No se esperan fenómenos meteorológicos peligrosos para la zona.",
+    hacer: ["Seguí con tus actividades.", "Si vas a estar al aire libre, mirá el pronóstico del día."],
+    ejemplo: "" },
+  { color: "#ffd600", nombre: "Alerta amarilla", lema: "Informate",
+    desc: "Fenómenos potencialmente peligrosos que pueden causar daños e interrupciones de forma aislada o localizada.",
+    hacer: ["Seguí la evolución del tiempo por canales oficiales.", "Revisá canaletas y guardá objetos sueltos.", "Evitá actividades al aire libre si el fenómeno se intensifica."],
+    ejemplo: "Ej.: tormentas fuertes aisladas o ráfagas intensas." },
+  { color: "#ff9100", nombre: "Alerta naranja", lema: "Preparate",
+    desc: "Fenómenos peligrosos con capacidad de provocar daños importantes y cortes de servicios (luz, agua, tránsito).",
+    hacer: ["Prepará la mochila de emergencia y cargá el celular.", "Reprogramá viajes y eventos al aire libre.", "Asegurá el patio y entrá a las mascotas."],
+    ejemplo: "En el juego: la invitación al recital con alerta naranja 🧸" },
+  { color: "#ff1744", nombre: "Alerta roja", lema: "Actuá",
+    desc: "Fenómenos excepcionales con gran capacidad de daño, que pueden poner en riesgo la vida.",
+    hacer: ["Seguí las indicaciones de Defensa Civil y de las autoridades.", "Quedate en un lugar seguro y no circules si no es imprescindible.", "Si te indican evacuar, hacelo sin demora y por zonas altas."],
+    ejemplo: "En el juego: lluvias intensas y el mapa de riesgo." }
+];
+
+const GUIAS = [
+  { emoji: "🌧️", titulo: "Lluvias intensas", antes: "Limpiá canaletas y sumideros; no saques la basura.", durante: "No camines ni manejes por calles anegadas.", despues: "No toques cables caídos; avisá de tapas o pozos abiertos." },
+  { emoji: "💨", titulo: "Viento fuerte", antes: "Guardá o atá objetos sueltos; revisá techos con buen tiempo.", durante: "Quedate adentro, lejos de ventanas. Nunca subas al techo.", despues: "Cuidado con árboles, ramas y cables caídos." },
+  { emoji: "🥵", titulo: "Ola de calor", antes: "Planificá actividades para la mañana temprano o la noche.", durante: "Agua fresca, sombra, ropa liviana; agua para los animales.", despues: "Preguntá cómo están los vecinos mayores." },
+  { emoji: "⚡", titulo: "Tormenta eléctrica", antes: "Regla 30/30: si el trueno llega en menos de 30 s, refugiate.", durante: "Edificio cerrado o auto con techo metálico. Nunca bajo un árbol.", despues: "Esperá 30 minutos desde el último trueno para salir." },
+  { emoji: "🥶", titulo: "Ola de frío", antes: "Hacé revisar estufas y calefactores por un gasista matriculado.", durante: "Siempre una rendija abierta. Nunca horno ni brasero para calefaccionar.", despues: "Ante dolor de cabeza, mareos o sueño: aire libre y llamá al 107." },
+  { emoji: "🗺️", titulo: "Inundación", antes: "Conocé el mapa de riesgo y tu ruta a la zona alta.", durante: "Desconectá la electricidad si entra agua; subí a lugares altos.", despues: "No consumas alimentos ni agua que hayan tenido contacto con la inundación." }
+];
+
+let consultorArmado = false;
+function armarConsultor() {
+  if (consultorArmado) return;
+  consultorArmado = true;
+  const sem = $("semaforo");
+  NIVELES_ALERTA.forEach((n, i) => {
+    const b = document.createElement("button");
+    b.className = "nivel"; b.style.background = n.color;
+    b.innerHTML = `${n.nombre}<small>${n.lema.toUpperCase()}</small>`;
+    b.addEventListener("click", () => elegirNivel(i));
+    sem.appendChild(b);
+  });
+  $("guias").innerHTML = `<div class="grid-info">` + GUIAS.map(g => `<div class="ficha"><strong>${g.emoji} ${g.titulo}</strong>
+      <div class="fase" style="margin-top:6px"><b>ANTES</b> ${g.antes}</div>
+      <div class="fase" style="margin-top:6px"><b>DURANTE</b> ${g.durante}</div>
+      <div class="fase" style="margin-top:6px"><b>DESPUÉS</b> ${g.despues}</div></div>`).join("") + `</div>`;
+  elegirNivel(2);
+}
+
+function elegirNivel(i) {
+  const n = NIVELES_ALERTA[i];
+  document.querySelectorAll("#semaforo .nivel").forEach((b, j) => b.classList.toggle("elegido", j === i));
+  const d = $("detalle-nivel");
+  d.style.borderLeftColor = n.color;
+  d.innerHTML = `<h4 style="color:${n.color}">${n.nombre} · ${n.lema}</h4><p>${n.desc}</p>
+    <ul style="margin-top:8px">${n.hacer.map(h => `<li>${h}</li>`).join("")}</ul>
+    ${n.ejemplo ? `<div class="ejemplo">${n.ejemplo}</div>` : ""}`;
+}
+
+function mostrarTab(nombre) {
+  document.querySelectorAll(".consultor .tab").forEach(t => t.classList.toggle("activa", t.dataset.tab === nombre));
+  document.querySelectorAll(".seccion-info").forEach(sx => sx.classList.toggle("activa", sx.dataset.seccion === nombre));
+  document.querySelector(".consultor-cuerpo").scrollTop = 0;
+}
+
+const consultorAbierto = () => $("consultor").classList.contains("abierto");
+function abrirConsultor(tab = "alertas") {
+  armarConsultor();
+  mostrarTab(tab);
+  $("consultor").classList.add("abierto");
+  $("btn-cerrar-consultor").focus();
+}
+function cerrarConsultor() { $("consultor").classList.remove("abierto"); }
+
+/* El botón flotante sólo aparece en pantallas sin reloj */
+function actualizarBotonConsultor(id) {
+  const conTiempo = ["p-trivia", "p-minijuego", "p-celular"].includes(id);
+  $("btn-consultor").classList.toggle("oculto", conTiempo);
+  if (conTiempo) cerrarConsultor();
+}
+
 function volverAlInicio() {
+  cerrarConsultor();
   if (estado) clearInterval(estado.timer);
   limpiarConfeti();
   M = null;
@@ -3589,6 +3859,11 @@ $("btn-fin-elegir").addEventListener("click", seguro(mostrarSelector));
 $("btn-elegir").addEventListener("click", seguro(mostrarSelector));
 $("btn-sel-inicio").addEventListener("click", seguro(volverAlInicio));
 $("btn-fin-inicio").addEventListener("click", seguro(volverAlInicio));
+$("btn-consultor").addEventListener("click", () => abrirConsultor());
+$("btn-consultor-portada").addEventListener("click", seguro(() => abrirConsultor()));
+$("btn-cerrar-consultor").addEventListener("click", cerrarConsultor);
+$("consultor").addEventListener("click", (e) => { if (e.target.id === "consultor") cerrarConsultor(); });   // tocar fuera del panel
+document.querySelectorAll(".consultor .tab").forEach(t => t.addEventListener("click", () => mostrarTab(t.dataset.tab)));
 $("btn-sonido").addEventListener("click", () => {
   sonidoActivo = !sonidoActivo;
   $("btn-sonido").textContent = sonidoActivo ? "🔊" : "🔇";
@@ -3596,6 +3871,7 @@ $("btn-sonido").addEventListener("click", () => {
 
 // Teclado: 1/2/3 (o A/B/C) en la trivia; Enter para el botón principal de cada pantalla
 document.addEventListener("keydown", (e) => {
+  if (consultorAbierto()) { if (e.key === "Escape") cerrarConsultor(); return; }   // con el panel abierto, el juego no recibe teclas
   if (pantallaActiva("p-trivia")) {
     const i = { "1": 0, "2": 1, "3": 2, "a": 0, "b": 1, "c": 2 }[e.key.toLowerCase()];
     const b = $("tr-opciones").children[i];
@@ -3613,7 +3889,7 @@ let temporizadorInactividad;
 function reiniciarInactividad() {
   clearTimeout(temporizadorInactividad);
   temporizadorInactividad = setTimeout(() => {
-    if (!pantallaActiva("p-inicio") && !pantallaActiva("p-trivia") && !pantallaActiva("p-minijuego")) volverAlInicio();
+    if (consultorAbierto() || (!pantallaActiva("p-inicio") && !pantallaActiva("p-trivia") && !pantallaActiva("p-minijuego"))) volverAlInicio();
     else reiniciarInactividad();
   }, CONFIG.inactividadMs);
 }
