@@ -3,10 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>Alerta Territorio</title>
+<title>Operativo Alerta: mitigación y respuesta ante eventos meteorológicos severos - Prono UNLP</title>
 <!--
   =====================================================================
-  ALERTA TERRITORIO: ¿Sobrevivirías a este clima?  — Versión 2
+  OPERATIVO ALERTA: mitigación y respuesta ante eventos meteorológicos severos
+  (antes «Alerta Territorio»)
   Juego educativo para feria de ciencias (meteorología y climatología
   regional de Argentina).
 
@@ -184,7 +185,6 @@
   .mapa-escenarios div:nth-child(6) { animation-delay: .5s; }
   .pulso { animation: pulso 1.6s ease-in-out infinite; }
   @keyframes pulso { 50% { transform: scale(1.06); } }
-  .record { font-family: var(--mono); margin-top: 18px; color: var(--texto-suave); font-weight: 700; }
 
   /* ------------------------------------------------------------------
      5. DIORAMAS (escenas CSS + emojis, heredadas de la versión 1)
@@ -617,6 +617,75 @@
   .checklist li { break-inside: avoid; padding: 6px 0; }
 
   /* ------------------------------------------------------------------
+     10d. ANIMACIONES E INTERACTIVIDAD
+     Los efectos de "pasar el mouse" van dentro de @media (hover: hover):
+     en pantallas táctiles no quedan "pegados" después de tocar.
+     ------------------------------------------------------------------ */
+  /* Onda expansiva al tocar (la crea el JS en el punto exacto del toque) */
+  .btn, .opcion, .tab, .sel-card, .nivel, .telefono, .paso { position: relative; overflow: hidden; }
+  .btn > *, .opcion > *, .sel-card > * { position: relative; z-index: 1; }
+  .onda {
+    position: absolute; border-radius: 50%; pointer-events: none; z-index: 0;
+    background: radial-gradient(circle, rgba(255,255,255,.55), rgba(255,255,255,0) 70%);
+    transform: scale(0); animation: onda .6s ease-out forwards;
+  }
+  @keyframes onda { to { transform: scale(2.6); opacity: 0; } }
+
+  /* Destello que recorre los botones */
+  .btn::after {
+    content: ""; position: absolute; top: 0; bottom: 0; left: -60%; width: 40%; pointer-events: none;
+    background: linear-gradient(100deg, transparent, rgba(255,255,255,.55), transparent);
+    transform: skewX(-20deg); opacity: 0;
+  }
+  @keyframes destello { from { left: -60%; opacity: 1; } to { left: 130%; opacity: 1; } }
+
+  /* Fondo de cuadrícula que se desplaza lento, como un monitor de radar */
+  body { animation: radar-grid 40s linear infinite; }
+  @keyframes radar-grid { to { background-position: 30px 30px, 30px 30px; } }
+
+  .btn, .opcion, .tab, .sel-card, .nivel, .telefono, .ficha, .chip, .mapa-escenarios div, .btn-consultor, .btn-cerrar, .btn-sonido, .logo-portada {
+    transition: transform .18s cubic-bezier(.2,.8,.2,1), box-shadow .18s, background .18s, border-color .18s, color .18s, filter .18s;
+  }
+  .btn:active { transform: translateY(4px) scale(.98); }
+  .opcion:active:not(:disabled), .sel-card:active, .tab:active, .nivel:active, .telefono:active { transform: scale(.97); }
+  .btn-consultor:active { transform: scale(.94); }
+
+  @media (hover: hover) {
+    .btn:hover { transform: translateY(-3px); filter: brightness(1.1); box-shadow: 0 9px 0 #b88a00, 0 0 28px rgba(255,204,0,.45); }
+    .btn:hover::after { animation: destello .7s ease-out; }
+    .pulso:hover { animation: none; }               /* el latido pisaría el transform del hover */
+    .btn.secundario:hover { background: rgba(255,77,0,.14); border-color: var(--acento); color: var(--acento); box-shadow: 0 0 22px rgba(255,77,0,.35); }
+    .btn:active { transform: translateY(4px) scale(.98); }
+
+    .opcion:hover:not(:disabled) { transform: translateX(8px); box-shadow: -6px 0 0 var(--acento), 0 0 22px rgba(255,204,0,.18); }
+    .opcion:hover:not(:disabled) .letra { animation: menear .45s ease-in-out; background: var(--acento); }
+    @keyframes menear { 25% { transform: rotate(-12deg) scale(1.12); } 75% { transform: rotate(10deg) scale(1.12); } }
+
+    .sel-card:hover { transform: translateY(-7px); border-color: var(--acento); box-shadow: 0 12px 30px rgba(255,77,0,.3), 0 0 0 1px var(--acento); }
+    .sel-card:hover .emoji { animation: rebotar .6s ease; }
+    @keyframes rebotar { 30% { transform: translateY(-10px) scale(1.15); } 60% { transform: translateY(2px); } }
+
+    .tab:hover:not(.activa) { border-color: var(--acento); color: var(--acento); transform: translateY(-2px); box-shadow: 0 4px 14px rgba(255,204,0,.2); }
+    .nivel:hover { transform: translateY(-5px) scale(1.03); box-shadow: 0 10px 24px rgba(0,0,0,.5); }
+    .telefono:hover { transform: translateY(-3px); border-color: var(--acento); box-shadow: 0 0 22px rgba(255,204,0,.25); }
+    .telefono:hover .num { animation: latir .8s ease-in-out infinite; }
+    @keyframes latir { 50% { transform: scale(1.12); text-shadow: 0 0 16px rgba(255,204,0,.7); } }
+    .ficha:hover { transform: translateY(-3px); box-shadow: 0 8px 22px rgba(255,77,0,.18); }
+    .chip:hover, .mapa-escenarios div:hover { transform: translateY(-3px); border-color: var(--acento); color: var(--acento); }
+    .btn-consultor:hover { transform: translateY(-4px) rotate(-2deg); box-shadow: 0 0 0 3px var(--acento), 0 0 30px rgba(255,204,0,.6); }
+    .btn-cerrar:hover { background: var(--fallo); border-color: var(--fallo); transform: rotate(90deg); }
+    .btn-sonido:hover { border-color: var(--acento); transform: scale(1.1); }
+    .logo-portada:hover { animation: none; transform: rotate(360deg) scale(1.06); transition: transform .9s cubic-bezier(.2,.8,.2,1); }
+    .hud-logo:hover .logo-hud { transform: rotate(-20deg) scale(1.15); transition: transform .3s; }
+    .inicio h1:hover { text-shadow: 0 0 18px rgba(255,204,0,.45), 0 0 2px #fff; }
+  }
+
+  /* Teclado: contorno visible al navegar con Tab */
+  .btn:focus-visible, .opcion:focus-visible, .tab:focus-visible, .sel-card:focus-visible, .nivel:focus-visible, .telefono:focus-visible {
+    outline: 3px solid var(--acento); outline-offset: 3px;
+  }
+
+  /* ------------------------------------------------------------------
      11. RESPONSIVE
      ------------------------------------------------------------------ */
   @media (max-width: 860px) {
@@ -824,7 +893,7 @@
 
 <!-- ===================== HUD ===================== -->
 <header class="hud oculto" id="hud">
-  <div class="hud-logo"><span class="logo-grupo logo-hud" role="img" aria-label="Logo del Grupo de Pronóstico FCAG-UNLP"></span><div>⚠️ Alerta <span>Territorio</span></div></div>
+  <div class="hud-logo"><span class="logo-grupo logo-hud" role="img" aria-label="Logo del Grupo de Pronóstico FCAG-UNLP"></span><div>⚠️ Operativo <span>Alerta</span></div></div>
   <div class="hud-datos">
     <div class="vidas" id="hud-vidas" title="Vidas / reputación"></div>
     <div>🗺️ Nivel <span id="hud-nivel">1/4</span></div>
@@ -839,7 +908,7 @@
     <div class="inicio">
       <div>
         <div class="logo-grupo logo-portada" role="img" aria-label="Logo del Grupo de Pronóstico FCAG-UNLP"></div>
-        <h1>Alerta Territorio<span>Prepará tu Barrio</span></h1>
+        <h1>Operativo Alerta<span>Mitigación y respuesta ante eventos meteorológicos severos</span></h1>
         <p class="intro suave">
           Las emergencias meteorológicas no se enfrentan sólo desde un centro de control:
           <strong>lo que hacés en tu casa y en tu barrio salva vidas</strong>. En cada situación vas a
@@ -854,6 +923,7 @@
           <div>🥶 Ola de frío</div>
           <div>🗺️ Mapa de riesgo</div>
         </div>
+        <div class="etiqueta-nivel" style="margin-bottom:10px">▶ CAMPAÑA PRINCIPAL: 🏘️ PREPARÁ TU BARRIO</div><br>
         <button class="btn gigante pulso" id="btn-jugar">▶ ¡Jugar!</button>
         <div class="acciones" style="justify-content:center">
           <button class="btn secundario" id="btn-elegir">🎯 Elegir un desafío</button>
@@ -861,7 +931,6 @@
           <button class="btn secundario" id="btn-express">⚡ Modo Express (1 min)</button>
           <button class="btn secundario" id="btn-consultor-portada">📖 Consultor ante eventos</button>
         </div>
-        <div class="record" id="record"></div>
         <div class="credito"><span class="logo-grupo logo-medio" role="img" aria-label=""></span><span>Una propuesta del<br><strong style="color:var(--texto)">Grupo de Pronóstico · FCAG · UNLP</strong></span></div>
       </div>
     </div>
@@ -3755,7 +3824,7 @@ function mostrarFinal() {
   if (estado.suelto) {
     const h = estado.historial[0];
     if (h) jugados[h.esc.id] = gano ? "exito" : "fallo";
-  } else guardarRecord(estado.puntaje);           // el récord del stand cuenta sólo partidas completas
+  }
   $("btn-fin-elegir").style.display = estado.suelto ? "" : "none";
   $("btn-fin-otra").textContent = estado.suelto ? "🔄 Repetir este desafío" : "🔄 Volver a jugar";
   mostrarPantalla("p-final");
@@ -3777,11 +3846,6 @@ function lanzarConfeti() {
   }
 }
 
-/* Récord del stand guardado en el navegador (si no se puede, el juego sigue igual) */
-const CLAVE_RECORD = "alertaTerritorio.record";
-function leerRecord() { try { return +localStorage.getItem(CLAVE_RECORD) || 0; } catch (e) { return 0; } }
-function guardarRecord(p) { try { if (p > leerRecord()) localStorage.setItem(CLAVE_RECORD, p); } catch (e) { /* sin almacenamiento */ } }
-function pintarRecord() { const r = leerRecord(); $("record").textContent = r ? `🏅 Récord del stand: ${r} puntos` : ""; }
 
 /* =====================================================================
    H2) SELECTOR DE DESAFÍOS
@@ -4192,7 +4256,8 @@ function cerrarConsultor() {
 /* El botón flotante sólo aparece en pantallas sin reloj */
 function actualizarBotonConsultor(id) {
   const conTiempo = ["p-trivia", "p-minijuego", "p-celular"].includes(id);
-  $("btn-consultor").classList.toggle("oculto", conTiempo);
+  // En la portada tampoco hace falta: ya tiene su propio botón «Consultor ante eventos»
+  $("btn-consultor").classList.toggle("oculto", conTiempo || id === "p-inicio");
   if (conTiempo) cerrarConsultor();
 }
 
@@ -4203,7 +4268,6 @@ function volverAlInicio() {
   M = null;
   estado = estadoInicial("barrio");
   actualizarHUD();
-  pintarRecord();
   mostrarPantalla("p-inicio");
 }
 
@@ -4231,6 +4295,18 @@ document.querySelectorAll(".consultor-tabs .tab").forEach(t => t.addEventListene
 $("btn-sonido").addEventListener("click", () => {
   sonidoActivo = !sonidoActivo;
   $("btn-sonido").textContent = sonidoActivo ? "🔊" : "🔇";
+});
+
+// Onda expansiva desde el punto exacto donde se toca un botón o tarjeta
+document.addEventListener("pointerdown", (e) => {
+  const el = e.target.closest(".btn, .opcion, .tab, .sel-card, .nivel, .telefono");
+  if (!el || el.disabled) return;
+  const r = el.getBoundingClientRect(), d = Math.max(r.width, r.height);
+  const o = document.createElement("span");
+  o.className = "onda";
+  o.style.cssText = `width:${d}px;height:${d}px;left:${e.clientX - r.left - d / 2}px;top:${e.clientY - r.top - d / 2}px`;
+  el.appendChild(o);
+  setTimeout(() => o.remove(), 650);
 });
 
 // Teclado: 1/2/3 (o A/B/C) en la trivia; Enter para el botón principal de cada pantalla
@@ -4264,8 +4340,8 @@ function reiniciarInactividad() {
 
 // ¡A jugar!
 estado = estadoInicial("barrio");
+actualizarBotonConsultor("p-inicio");
 actualizarHUD();
-pintarRecord();
 reiniciarInactividad();
 </script>
 </body>
