@@ -38,9 +38,9 @@
   =====================================================================
 -->
 <style>
-  /* Fuentes de estilo panel de control. Si no hay internet, se usan las de respaldo
-     (Courier New / Arial Narrow) y el juego funciona igual. @import debe ir PRIMERO. */
-  @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Teko:wght@500;700&display=swap');
+  /* Fuentes: Barlow (texto), Teko (títulos y botones) y Share Tech Mono (sólo datos).
+     Si no hay internet se usan las de respaldo y el juego funciona igual. @import debe ir PRIMERO. */
+  @import url('https://fonts.googleapis.com/css2?family=Barlow:wght@400;600;700&family=Share+Tech+Mono&family=Teko:wght@500;700&display=swap');
 
   /* ------------------------------------------------------------------
      1. VARIABLES DE DISEÑO
@@ -59,14 +59,16 @@
     --radio: 4px;            /* Bordes casi rectos, industriales */
     --sombra: 0 4px 15px rgba(255, 77, 0, 0.15); /* Sombra naranja sutil */
     --titulos: 'Teko', 'Arial Narrow', Impact, sans-serif;   /* tipografía de impacto para títulos */
+    --fuente: 'Barlow', system-ui, 'Segoe UI', Roboto, Arial, sans-serif;   /* texto general: legible */
+    --mono: 'Share Tech Mono', 'Courier New', monospace;      /* sólo para datos de "consola" */
+    --sistema: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;  /* la del celular */
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html { background: var(--fondo); }
   body {
     min-height: 100vh;
-    /* Fuente monoespaciada estilo consola */
-    font-family: 'Share Tech Mono', 'Courier New', monospace;
+    font-family: var(--fuente);
     /* Fondo de cuadrícula táctica (grid de centro de monitoreo) */
     background-color: var(--fondo);
     background-image:
@@ -109,7 +111,7 @@
   .logo-medio { width: 56px; height: 56px; }
   .credito { display: inline-flex; align-items: center; gap: 12px; margin-top: 22px; color: var(--texto-suave); font-weight: 700; font-size: .95rem; text-align: left; }
   .hud-logo span { color: var(--acento); }
-  .hud-datos { display: flex; gap: 22px; align-items: center; flex-wrap: wrap; font-weight: 800; font-size: 1.1rem; }
+  .hud-datos { font-family: var(--mono); display: flex; gap: 22px; align-items: center; flex-wrap: wrap; font-weight: 800; font-size: 1.1rem; }
   .vidas { font-size: 1.5rem; letter-spacing: 2px; }
   .vidas .perdida { filter: grayscale(1); opacity: .3; }
   .vidas .latido { display: inline-block; animation: perderVida .8s; }
@@ -176,7 +178,7 @@
   .mapa-escenarios div:nth-child(6) { animation-delay: .5s; }
   .pulso { animation: pulso 1.6s ease-in-out infinite; }
   @keyframes pulso { 50% { transform: scale(1.06); } }
-  .record { margin-top: 18px; color: var(--texto-suave); font-weight: 700; }
+  .record { font-family: var(--mono); margin-top: 18px; color: var(--texto-suave); font-weight: 700; }
 
   /* ------------------------------------------------------------------
      5. DIORAMAS (escenas CSS + emojis, heredadas de la versión 1)
@@ -291,9 +293,9 @@
      6. TRIVIA
      ------------------------------------------------------------------ */
   .layout-2col { display: grid; gap: 18px; grid-template-columns: 1fr 1.1fr; align-items: start; }
-  .etiqueta-nivel { display: inline-block; font-weight: 900; color: var(--acento); margin-bottom: 6px; letter-spacing: .5px; }
+  .etiqueta-nivel { font-family: var(--mono); display: inline-block; font-weight: 900; color: var(--acento); margin-bottom: 6px; letter-spacing: .5px; }
   .alerta-banner {
-    display: inline-flex; align-items: center; gap: 8px;
+    font-family: var(--mono); display: inline-flex; align-items: center; gap: 8px;
     background: var(--fallo); color: #fff; font-weight: 900; letter-spacing: 1px;
     padding: 6px 14px; border-radius: 99px; margin-bottom: 10px; animation: parpadeo 1s steps(2) infinite;
   }
@@ -305,9 +307,9 @@
   .evento-dato .numero { font-size: 1.9rem; font-weight: 900; color: var(--acento); white-space: nowrap; }
   .pregunta { font-size: 1.15rem; font-weight: 600; margin-bottom: 14px; }
   .chips { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
-  .chip { background: var(--tarjeta-2); border: 1px solid var(--borde); border-radius: 99px; padding: 6px 12px; font-size: .95rem; }
+  .chip { font-family: var(--mono); background: var(--tarjeta-2); border: 1px solid var(--borde); border-radius: 99px; padding: 6px 12px; font-size: .95rem; }
 
-  .timer { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; font-weight: 800; }
+  .timer { font-family: var(--mono); display: flex; align-items: center; gap: 12px; margin-bottom: 14px; font-weight: 800; }
   .barra { flex: 1; height: 16px; border-radius: 99px; background: #000; border: 1px solid var(--borde); overflow: hidden; }
   .barra > div { height: 100%; width: 100%; background: var(--acento); transition: width .25s linear, background .3s; }
   .timer.urgente .barra > div { background: var(--fallo); }
@@ -337,7 +339,7 @@
   .veredicto.exito { color: var(--exito); }
   .veredicto.parcial { color: var(--parcial); }
   .veredicto.fallo { color: var(--fallo); }
-  .puntos-delta { display: inline-block; font-size: 1.35rem; font-weight: 900; margin: 8px 0 10px; animation: subir 1s both .3s; }
+  .puntos-delta { font-family: var(--mono); display: inline-block; font-size: 1.35rem; font-weight: 900; margin: 8px 0 10px; animation: subir 1s both .3s; }
   @keyframes subir { from { opacity: 0; transform: translateY(14px); } }
   .ensenanza {
     margin-top: 14px; padding: 18px; border-radius: var(--radio);
@@ -362,7 +364,7 @@
   .mj-cabecera { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; margin-bottom: 10px; }
   .mj-cabecera h2 { margin: 0; font-size: 1.5rem; }
   .mj-cabecera .timer { flex: 1; min-width: 220px; margin: 0; }
-  .mj-estado { font-weight: 800; font-size: 1.1rem; margin-bottom: 10px; min-height: 1.5em; }
+  .mj-estado { font-family: var(--mono); font-weight: 800; font-size: 1.1rem; margin-bottom: 10px; min-height: 1.5em; }
   .lienzo-wrap {
     position: relative; margin: 0 auto;
     width: min(100%, calc((100vh - 210px) * 16 / 9)); aspect-ratio: 16 / 9;
@@ -428,6 +430,7 @@
     background: #0d0d12; border-radius: 46px;
     box-shadow: 0 0 0 3px #3a3a48, 0 30px 80px rgba(0,0,0,.6);
     animation: vibrar .45s 2;                       /* ¡bzz bzz! llegó un mensaje */
+    font-family: var(--sistema);                    /* parece un teléfono real, no una consola */
   }
   @keyframes vibrar { 10%, 50%, 90% { transform: translateX(-6px) rotate(-1.5deg); } 30%, 70% { transform: translateX(6px) rotate(1.5deg); } }
   .pantalla-cel { height: 100%; border-radius: 34px; overflow: hidden; background: linear-gradient(#1b2a4a, #0e1628); display: flex; flex-direction: column; }
@@ -441,7 +444,7 @@
   .burbuja:nth-child(2) { animation-delay: .7s; }
   .burbuja:nth-child(3) { animation-delay: 1.3s; }
   .cel-botones { display: grid; gap: 10px; padding: 12px; }
-  .cel-botones .btn { width: 100%; min-height: 62px; font-size: 1.15rem; padding: 10px; }
+  .cel-botones .btn { width: 100%; min-height: 62px; font-family: var(--sistema); font-size: 1.15rem; font-weight: 700; letter-spacing: 0; padding: 10px; border-radius: 14px; }
   .btn.voy   { background: #ff4fa3; color: #fff; box-shadow: 0 6px 0 #a3235f; }
   .btn.novoy { background: var(--exito); color: #062b1d; box-shadow: 0 6px 0 #138a5c; }
   .oso-capa {
@@ -470,7 +473,7 @@
   .escombro { position: absolute; left: 0; font-size: 2.6rem; animation: escombro 2.8s linear both; }
   @keyframes escombro { from { transform: translate(-10vw, 70vh) rotate(0); } to { transform: translate(110vw, -30vh) rotate(720deg); } }
   .noticia {
-    position: absolute; left: 50%; bottom: 6vh; width: min(680px, 92vw); transform: translateX(-50%);
+    font-family: var(--sistema); position: absolute; left: 50%; bottom: 6vh; width: min(680px, 92vw); transform: translateX(-50%);
     background: #fff; color: #111; border-radius: 16px; padding: 14px 18px; box-shadow: var(--sombra);
     animation: noticia .5s both 1s;
   }
@@ -1608,7 +1611,7 @@ function emoji(e, x, y, tam, rot = 0) {
   ctx.restore();
 }
 function texto(t, x, y, tam, color = "#fff", alinear = "center", contorno = false) {
-  ctx.font = `800 ${tam}px "Segoe UI", system-ui, sans-serif`;
+  ctx.font = `700 ${tam}px Barlow, "Segoe UI", system-ui, sans-serif`;
   ctx.textAlign = alinear; ctx.textBaseline = "middle";
   if (contorno) { ctx.lineWidth = 4; ctx.lineJoin = "round"; ctx.strokeStyle = "rgba(0,0,0,.7)"; ctx.strokeText(t, x, y); }   // round evita "pinchos" en las letras
   ctx.fillStyle = color;
@@ -3171,7 +3174,7 @@ const MINIJUEGOS = {
       [110, 318, 345, 102],          // la diagonal: el camino más corto… por el fondo del cauce
       [230, 260, 550, 260],
       [390, 260, 390, 355],
-      [550, 160, 550, 260],
+      [550, 192, 550, 260],          // (empieza un poco abajo: la esquina 550,160 queda transitable)
       [390, 355, 710, 355]
     ],
     calles() {                       // todas las calles transitables
@@ -3187,20 +3190,65 @@ const MINIJUEGOS = {
       return Math.hypot(px - (ax + k * dx), py - (ay + k * dy));
     },
     enCalle(x, y) { const D = MINIJUEGOS.mapa; return D.calles().some(c => D.distSeg(x, y, c) <= D.ANCHO); },
-    enRojo(x, y) { const D = MINIJUEGOS.mapa; return D.ROJAS.some(c => D.distSeg(x, y, c) <= 14); },
+    // El agua sube: estas calles se desbordan durante el juego. Con el mapa activo se ve el aviso antes.
+    INUNDACIONES: [
+      { t: 5, seg: [415, 60, 550, 60] },   // corta el atajo de arriba (la esquina 390,60 queda libre para bajar)
+      { t: 9, seg: [70, 160, 70, 260] }    // quien se demoró en arrancar queda aislado
+    ],
+    AVISO: 1.5,                      // segundos de aviso antes de cada desborde
+    VELOCIDAD: 230,                  // px/s: el auto no puede "teletransportarse" al dedo
+    rojasActivas(t) {
+      const D = MINIJUEGOS.mapa;
+      return D.ROJAS.concat(D.INUNDACIONES.filter(f => t >= f.t).map(f => f.seg));
+    },
+    // La zona roja cubre TODO el ancho de la calle (ANCHO + 2): no se puede pasar "pegado al borde"
+    enRojo(x, y, t) { const D = MINIJUEGOS.mapa; return D.rojasActivas(t).some(c => D.distSeg(x, y, c) <= D.ANCHO + 2); },
+    hundir(s, msg) {
+      s.hundido = true; s.tHundido = s.t; s.arr = null; s.objetivo = null;
+      flotante(msg, 400, 110, "#ff4d6d", 26); sacudir(); sonido("fallo");
+    },
+    // Avanza el auto hacia el objetivo, de a pasitos de 4 px, sólo por calles y con un límite de distancia
+    avanzar(s, presupuesto) {
+      const D = MINIJUEGOS.mapa, o = s.objetivo;
+      while (presupuesto > 0) {
+        const dx = o.x - s.auto.x, dy = o.y - s.auto.y, d = Math.hypot(dx, dy);
+        if (d < 2) return;
+        const p = Math.min(4, d, presupuesto), k = p / d;
+        const opciones = [[s.auto.x + dx * k, s.auto.y + dy * k], [s.auto.x + Math.sign(dx) * Math.min(p, Math.abs(dx)), s.auto.y], [s.auto.x, s.auto.y + Math.sign(dy) * Math.min(p, Math.abs(dy))]];
+        const sig = opciones.find(([nx, ny]) => D.enCalle(nx, ny) && (nx !== s.auto.x || ny !== s.auto.y));
+        if (!sig) return;
+        presupuesto -= Math.hypot(sig[0] - s.auto.x, sig[1] - s.auto.y) || p;
+        s.auto.x = sig[0]; s.auto.y = sig[1];
+        if (D.enRojo(s.auto.x, s.auto.y, s.t)) return D.hundir(s, "🌊 ¡Ruta bloqueada por desborde!");
+        if (dist(s.auto.x, s.auto.y, D.HOSPITAL.x, D.HOSPITAL.y) < 28) {
+          s.llego = true; s.arr = null; s.objetivo = null;
+          chispas(D.HOSPITAL.x, D.HOSPITAL.y, "#2ee59d", 20); flotante("🏥 ¡Llegaste a salvo!", D.HOSPITAL.x - 60, D.HOSPITAL.y - 50, "#2ee59d", 22); sonido("ok");
+          return;
+        }
+      }
+    },
     instrucciones: [
       ["🗺️", "Primero TOCÁ el botón «Activar Mapa de Riesgo»: vas a ver las zonas ROJAS (inundables) y las VERDES (seguras)."],
       ["🚗", "ARRASTRÁ el auto por las calles desde la SALIDA hasta el Centro de Evacuación 🏥."],
-      ["🌊", "Si el auto toca una zona roja, se hunde en el agua y perdés. ¡El camino más corto no siempre es el seguro!"]
+      ["🌊", "¡El agua SUBE! Algunas calles se desbordan mientras jugás (el mapa te avisa ⚠️ antes). Si el auto está en una zona roja, se hunde. El auto tiene velocidad máxima: planificá la ruta."]
     ],
     crear() {
       const gotas = [];
       for (let i = 0; i < 70; i++) gotas.push({ x: Math.random() * W, y: Math.random() * H });
-      return { auto: { ...MINIJUEGOS.mapa.SALIDA }, activo: false, hundido: false, tHundido: 0, llego: false, arr: null, gotas, t: 0 };
+      return { auto: { ...MINIJUEGOS.mapa.SALIDA }, objetivo: null, inundadas: 0, activo: false, hundido: false, tHundido: 0, llego: false, arr: null, gotas, t: 0 };
     },
     actualizar(s, dt, t) {
+      const D = MINIJUEGOS.mapa;
       s.t = t;
       s.gotas.forEach(g => { g.y += 520 * dt; g.x -= 60 * dt; if (g.y > H) { g.y = -10; g.x = Math.random() * (W + 60); } });
+      // Nuevos desbordes
+      while (s.inundadas < D.INUNDACIONES.length && t >= D.INUNDACIONES[s.inundadas].t) {
+        const f = D.INUNDACIONES[s.inundadas++];
+        sonido("trueno");
+        if (s.activo) flotante("🌊 ¡Se desbordó otra calle!", (f.seg[0] + f.seg[2]) / 2 + (f.seg[0] === f.seg[2] ? 120 : 0), (f.seg[1] + f.seg[3]) / 2 + (f.seg[0] === f.seg[2] ? 0 : 50), "#ff8da1", 18);
+        if (!s.hundido && !s.llego && D.distSeg(s.auto.x, s.auto.y, f.seg) <= D.ANCHO + 2) return D.hundir(s, "🌊 ¡La calle se desbordó con vos adentro!");
+      }
+      if (s.objetivo && !s.hundido && !s.llego) D.avanzar(s, D.VELOCIDAD * dt);
     },
     terminado: (s) => s.hundido || s.llego,
     estado(s) {
@@ -3216,30 +3264,9 @@ const MINIJUEGOS = {
       if (!s.arr && dist(x, y, s.auto.x, s.auto.y) < 40) { s.arr = { id }; sonido("tic"); }
     },
     mover(s, x, y, id) {
-      const D = MINIJUEGOS.mapa;
-      if (!s.arr || s.arr.id !== id || s.hundido || s.llego) return;
-      // El auto avanza de a pasitos hacia el dedo y sólo por calles (nunca atraviesa manzanas)
-      for (let paso = 0; paso < 80; paso++) {
-        const dx = x - s.auto.x, dy = y - s.auto.y, d = Math.hypot(dx, dy);
-        if (d < 2) break;
-        const k = Math.min(4, d) / d;
-        const opciones = [[s.auto.x + dx * k, s.auto.y + dy * k], [s.auto.x + Math.sign(dx) * Math.min(4, Math.abs(dx)), s.auto.y], [s.auto.x, s.auto.y + Math.sign(dy) * Math.min(4, Math.abs(dy))]];
-        const sig = opciones.find(([nx, ny]) => D.enCalle(nx, ny) && (nx !== s.auto.x || ny !== s.auto.y));
-        if (!sig) break;
-        s.auto.x = sig[0]; s.auto.y = sig[1];
-        if (D.enRojo(s.auto.x, s.auto.y)) {
-          s.hundido = true; s.tHundido = s.t; s.arr = null;
-          flotante("🌊 ¡Ruta bloqueada por desborde!", 400, 110, "#ff4d6d", 26); sacudir(); sonido("fallo");
-          return;
-        }
-        if (dist(s.auto.x, s.auto.y, D.HOSPITAL.x, D.HOSPITAL.y) < 28) {
-          s.llego = true; s.arr = null;
-          chispas(D.HOSPITAL.x, D.HOSPITAL.y, "#2ee59d", 20); flotante("🏥 ¡Llegaste a salvo!", D.HOSPITAL.x - 60, D.HOSPITAL.y - 50, "#2ee59d", 22); sonido("ok");
-          return;
-        }
-      }
+      if (s.arr && s.arr.id === id && !s.hundido && !s.llego) s.objetivo = { x, y };   // el dedo marca hacia dónde ir
     },
-    arriba(s, x, y, id) { if (s.arr && s.arr.id === id) s.arr = null; },
+    arriba(s, x, y, id) { if (s.arr && s.arr.id === id) { s.arr = null; s.objetivo = null; } },
     dibujar(ctx, s, t) {
       const D = MINIJUEGOS.mapa;
       // Manzanas
@@ -3254,9 +3281,16 @@ const MINIJUEGOS = {
       D.calles().forEach(c => trazo(c, "#9aa3b2", 30));
       if (s.activo) {
         D.calles().forEach(c => trazo(c, "rgba(46,229,157,.75)", 30));
-        D.ROJAS.forEach(c => trazo(c, "rgba(255,50,70,.85)", 34));
+        D.rojasActivas(s.t).forEach(c => trazo(c, "rgba(255,50,70,.85)", 34));
         ctx.setLineDash([10, 8]);                                                           // el arroyo entubado
         D.ROJAS.forEach(c => trazo(c, "#7cc3ff", 4));
+        ctx.setLineDash([]);
+        D.INUNDACIONES.forEach(f => {                                                       // aviso de desborde
+          const falta = f.t - s.t;
+          if (falta <= 0 || falta > D.AVISO) return;
+          trazo(f.seg, `rgba(255,145,0,${.6 + .3 * Math.sin(t * 14)})`, 34);
+          texto(`⚠️ se desborda en ${falta.toFixed(1)} s`, (f.seg[0] + f.seg[2]) / 2 + (f.seg[0] === f.seg[2] ? 90 : 0), (f.seg[1] + f.seg[3]) / 2 + (f.seg[0] === f.seg[2] ? 0 : 40), 15, "#ffcc00", "center", true);
+        });
         ctx.setLineDash([]);
         emoji("📉", 300, 240, 22); texto("zona baja", 300, 216, 12, "#ffd0d6", "center", true);
         emoji("⛰️", 70, 30, 22); texto("zona alta", 115, 30, 12, "#c8ffe6", "left", true);
