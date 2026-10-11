@@ -3,10 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>Alerta Territorio</title>
+<title>Operativo Alerta: mitigación y respuesta ante eventos meteorológicos severos - Prono UNLP</title>
 <!--
   =====================================================================
-  ALERTA TERRITORIO: ¿Sobrevivirías a este clima?  — Versión 2
+  OPERATIVO ALERTA: mitigación y respuesta ante eventos meteorológicos severos
+  (antes «Alerta Territorio»)
   Juego educativo para feria de ciencias (meteorología y climatología
   regional de Argentina).
 
@@ -38,30 +39,44 @@
   =====================================================================
 -->
 <style>
+  /* Fuentes: Rubik (texto), Teko (títulos y botones) y Share Tech Mono (sólo datos).
+     Si no hay internet se usan las de respaldo y el juego funciona igual. @import debe ir PRIMERO. */
+  @import url('https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;700&family=Share+Tech+Mono&family=Teko:wght@500;700&display=swap');
+
   /* ------------------------------------------------------------------
      1. VARIABLES DE DISEÑO
      ------------------------------------------------------------------ */
   :root {
-    --fondo: #0b1426;
-    --tarjeta: #1b2c4f;
-    --tarjeta-2: #0f1a30;
-    --borde: #2c4372;
-    --texto: #f2f6ff;
-    --texto-suave: #a9b8d8;
-    --acento: #ffcc33;
-    --exito: #2ee59d;
-    --parcial: #ffb23e;
-    --fallo: #ff4d6d;
-    --radio: 22px;
-    --sombra: 0 12px 30px rgba(0, 0, 0, .35);
+    --fondo: #050505;        /* Negro terminal */
+    --tarjeta: #121418;      /* Gris muy oscuro para las cajas */
+    --tarjeta-2: #1a1d24;
+    --borde: #ff4d00;        /* Naranja alerta internacional */
+    --texto: #e9eef5;        /* Blanco crudo para legibilidad */
+    --texto-suave: #b3bccf;  /* Gris técnico (con contraste suficiente sobre negro) */
+    --acento: #ffcc00;       /* Amarillo advertencia */
+    --exito: #00e676;        /* Verde flúor */
+    --parcial: #ff9100;
+    --fallo: #ff1744;        /* Rojo emergencia */
+    --radio: 4px;            /* Bordes casi rectos, industriales */
+    --sombra: 0 4px 15px rgba(255, 77, 0, 0.15); /* Sombra naranja sutil */
+    --titulos: 'Teko', 'Arial Narrow', Impact, sans-serif;   /* tipografía de impacto para títulos */
+    --fuente: 'Rubik', system-ui, 'Segoe UI', Roboto, Arial, sans-serif;    /* texto general: con cuerpo y legible */
+    --mono: 'Share Tech Mono', 'Courier New', monospace;      /* sólo para datos de "consola" */
+    --sistema: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;  /* la del celular */
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html { background: var(--fondo); }
   body {
     min-height: 100vh;
-    font-family: "Segoe UI", system-ui, -apple-system, Roboto, Arial, sans-serif;
-    background: radial-gradient(circle at 20% 0%, #1d3566 0%, var(--fondo) 55%) fixed;
+    font-family: var(--fuente);
+    font-size: 17px; font-weight: 500;                /* texto con cuerpo: no se ve "plano" sobre el negro */
+    /* Fondo de cuadrícula táctica (grid de centro de monitoreo) */
+    background-color: var(--fondo);
+    background-image:
+      linear-gradient(rgba(255, 77, 0, 0.05) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 77, 0, 0.05) 1px, transparent 1px);
+    background-size: 30px 30px;
     color: var(--texto);
     overflow-x: hidden;
     -webkit-user-select: none; user-select: none;      /* sin selección de texto al tocar */
@@ -76,14 +91,29 @@
     position: sticky; top: 0; z-index: 30;
     display: flex; gap: 14px; align-items: center; justify-content: space-between; flex-wrap: wrap;
     padding: 10px 18px;
-    background: rgba(11, 20, 38, .9); backdrop-filter: blur(8px);
-    border-bottom: 1px solid var(--borde);
+    background: rgba(18, 20, 24, 0.95);
+    backdrop-filter: blur(8px);
+    /* Borde inferior con franjas de peligro amarillo/negro */
+    border-bottom: 4px solid;
+    border-image: repeating-linear-gradient(45deg, var(--acento), var(--acento) 10px, #000 10px, #000 20px) 1;
     transition: opacity .3s;
   }
   .hud.oculto { opacity: 0; pointer-events: none; }
-  .hud-logo { font-weight: 800; font-size: 1.05rem; }
+  .hud-logo { font-weight: 800; font-size: 1.05rem; display: flex; align-items: center; gap: 10px; }
+
+  /* Logo del Grupo de Pronóstico FCAG-UNLP, incrustado como data URI para que
+     el juego siga funcionando sin internet. Se define UNA vez y se reutiliza. */
+  .logo-grupo {
+    display: inline-block; flex-shrink: 0; border-radius: 50%;
+    background: #fff url("data:image/jpeg;base64,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") center / 104% no-repeat;
+    box-shadow: 0 0 0 3px rgba(255,255,255,.85), 0 8px 24px rgba(0,0,0,.4);
+  }
+  .logo-hud { width: 34px; height: 34px; box-shadow: 0 0 0 2px rgba(255,255,255,.8); }
+  .logo-portada { width: 150px; height: 150px; animation: flotar 3s ease-in-out infinite; }
+  .logo-medio { width: 56px; height: 56px; }
+  .credito { display: inline-flex; align-items: center; gap: 12px; margin-top: 22px; color: var(--texto-suave); font-weight: 700; font-size: .95rem; text-align: left; }
   .hud-logo span { color: var(--acento); }
-  .hud-datos { display: flex; gap: 22px; align-items: center; flex-wrap: wrap; font-weight: 800; font-size: 1.1rem; }
+  .hud-datos { font-family: var(--mono); display: flex; gap: 22px; align-items: center; flex-wrap: wrap; font-weight: 800; font-size: 1.1rem; }
   .vidas { font-size: 1.5rem; letter-spacing: 2px; }
   .vidas .perdida { filter: grayscale(1); opacity: .3; }
   .vidas .latido { display: inline-block; animation: perderVida .8s; }
@@ -92,8 +122,8 @@
   .puntaje-num.salta { animation: saltar .5s; }
   @keyframes saltar { 40% { transform: scale(1.4); color: var(--exito); } }
   .btn-sonido {
-    background: none; border: 1px solid var(--borde); color: var(--texto);
-    border-radius: 12px; padding: 6px 12px; font-size: 1.2rem; cursor: pointer;
+    font-family: inherit; background: none; border: 1px solid var(--borde); color: var(--texto);
+    border-radius: var(--radio); padding: 6px 12px; font-size: 1.2rem; cursor: pointer;
   }
 
   /* ------------------------------------------------------------------
@@ -104,10 +134,15 @@
   .pantalla.activa { display: block; animation: entrar .45s cubic-bezier(.2, .8, .2, 1); }
   @keyframes entrar { from { opacity: 0; transform: translateY(24px) scale(.98); } to { opacity: 1; transform: none; } }
 
-  h1 { font-size: clamp(2.2rem, 6vw, 4rem); line-height: 1.05; font-weight: 900; }
-  h2 { font-size: clamp(1.4rem, 3.2vw, 2.1rem); margin-bottom: 10px; line-height: 1.2; }
+  h1 { font-family: var(--titulos); font-size: clamp(3rem, 8vw, 5.4rem); line-height: .95; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; }
+  h2 { font-family: var(--titulos); font-size: clamp(1.9rem, 4.2vw, 2.8rem); margin-bottom: 10px; line-height: 1; font-weight: 700; letter-spacing: .5px; }
   h3 { font-size: 1.25rem; margin-bottom: 8px; }
-  p  { line-height: 1.5; }
+  p  { line-height: 1.6; }
+  strong, b { font-weight: 700; }
+  /* Palabras clave resaltadas en la información (Consultor, cápsulas, portada) */
+  .consultor-cuerpo strong, .ensenanza strong, .intro strong, .detalle-nivel strong, .pregunta strong { color: var(--acento); }
+  .consultor-cuerpo .ficha > strong:first-child, .consultor-cuerpo .chips-fen strong:first-child,
+  .consultor-cuerpo .telefono strong, .consultor-cuerpo .leyenda-mapa strong { color: #fff; }   /* títulos en blanco: el amarillo queda para lo clave */
   .suave { color: var(--texto-suave); }
 
   .tarjeta {
@@ -119,15 +154,15 @@
   .btn {
     display: inline-flex; align-items: center; justify-content: center; gap: 10px;
     min-height: 66px; padding: 14px 34px;
-    font-size: 1.3rem; font-weight: 900; color: #1a1300;
-    background: var(--acento); border: none; border-radius: 18px; cursor: pointer;
+    font-family: var(--titulos); font-size: 1.75rem; font-weight: 700; letter-spacing: 1px; line-height: 1; color: #1a1300;
+    background: var(--acento); border: none; border-radius: var(--radio); cursor: pointer;
     box-shadow: 0 6px 0 #b88a00, var(--sombra);
     transition: transform .12s, box-shadow .12s, filter .2s;
   }
   .btn:hover { filter: brightness(1.08); }
   .btn:active { transform: translateY(5px); box-shadow: 0 1px 0 #b88a00; }
   .btn.secundario { background: transparent; color: var(--texto); border: 2px solid var(--borde); box-shadow: none; }
-  .btn.gigante { min-height: 90px; font-size: 1.8rem; padding: 18px 50px; border-radius: 24px; }
+  .btn.gigante { min-height: 90px; font-size: 2.6rem; padding: 18px 50px; border-radius: var(--radio); }
   .acciones { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 22px; }
 
   /* ------------------------------------------------------------------
@@ -140,7 +175,7 @@
   .inicio .intro { max-width: 700px; margin: 18px auto 26px; font-size: 1.2rem; }
   .mapa-escenarios { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-bottom: 30px; }
   .mapa-escenarios div {
-    background: var(--tarjeta); border: 1px solid var(--borde); border-radius: 16px;
+    background: var(--tarjeta); border: 1px solid var(--borde); border-radius: var(--radio);
     padding: 10px 14px; font-weight: 700; animation: entrar .5s both;
   }
   .mapa-escenarios div:nth-child(2) { animation-delay: .1s; }
@@ -150,7 +185,6 @@
   .mapa-escenarios div:nth-child(6) { animation-delay: .5s; }
   .pulso { animation: pulso 1.6s ease-in-out infinite; }
   @keyframes pulso { 50% { transform: scale(1.06); } }
-  .record { margin-top: 18px; color: var(--texto-suave); font-weight: 700; }
 
   /* ------------------------------------------------------------------
      5. DIORAMAS (escenas CSS + emojis, heredadas de la versión 1)
@@ -265,24 +299,24 @@
      6. TRIVIA
      ------------------------------------------------------------------ */
   .layout-2col { display: grid; gap: 18px; grid-template-columns: 1fr 1.1fr; align-items: start; }
-  .etiqueta-nivel { display: inline-block; font-weight: 900; color: var(--acento); margin-bottom: 6px; letter-spacing: .5px; }
+  .etiqueta-nivel { font-family: var(--mono); display: inline-block; font-weight: 900; color: var(--acento); margin-bottom: 6px; letter-spacing: .5px; }
   .alerta-banner {
-    display: inline-flex; align-items: center; gap: 8px;
+    font-family: var(--mono); display: inline-flex; align-items: center; gap: 8px;
     background: var(--fallo); color: #fff; font-weight: 900; letter-spacing: 1px;
     padding: 6px 14px; border-radius: 99px; margin-bottom: 10px; animation: parpadeo 1s steps(2) infinite;
   }
   @keyframes parpadeo { 50% { filter: brightness(1.4); } }
   .evento-dato {
     display: flex; align-items: center; gap: 14px; margin: 12px 0;
-    background: var(--tarjeta-2); border-radius: 16px; padding: 12px 16px; border-left: 6px solid var(--acento);
+    background: var(--tarjeta-2); border-radius: var(--radio); padding: 12px 16px; border-left: 6px solid var(--acento);
   }
   .evento-dato .numero { font-size: 1.9rem; font-weight: 900; color: var(--acento); white-space: nowrap; }
   .pregunta { font-size: 1.15rem; font-weight: 600; margin-bottom: 14px; }
   .chips { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
-  .chip { background: var(--tarjeta-2); border: 1px solid var(--borde); border-radius: 99px; padding: 6px 12px; font-size: .95rem; }
+  .chip { font-family: var(--mono); background: var(--tarjeta-2); border: 1px solid var(--borde); border-radius: 99px; padding: 6px 12px; font-size: .95rem; }
 
-  .timer { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; font-weight: 800; }
-  .barra { flex: 1; height: 16px; border-radius: 99px; background: #0a1222; border: 1px solid var(--borde); overflow: hidden; }
+  .timer { font-family: var(--mono); display: flex; align-items: center; gap: 12px; margin-bottom: 14px; font-weight: 800; }
+  .barra { flex: 1; height: 16px; border-radius: 99px; background: #000; border: 1px solid var(--borde); overflow: hidden; }
   .barra > div { height: 100%; width: 100%; background: var(--acento); transition: width .25s linear, background .3s; }
   .timer.urgente .barra > div { background: var(--fallo); }
   .timer.urgente { color: var(--fallo); animation: pulso .5s infinite; }
@@ -292,30 +326,30 @@
     display: grid; grid-template-columns: 58px 1fr; gap: 14px; align-items: center;
     width: 100%; min-height: 88px; padding: 12px 16px; text-align: left;
     font: inherit; font-size: 1.05rem; font-weight: 700; color: var(--texto); cursor: pointer;
-    background: var(--tarjeta); border: 2px solid var(--borde); border-radius: 18px;
+    background: var(--tarjeta); border: 2px solid var(--borde); border-radius: var(--radio);
     transition: transform .15s, border-color .15s, background .15s;
     animation: entrar .4s both;
   }
   .opcion:nth-child(2) { animation-delay: .08s; }
   .opcion:nth-child(3) { animation-delay: .16s; }
-  .opcion:hover:not(:disabled) { transform: translateX(6px); border-color: var(--acento); background: #22375f; }
+  .opcion:hover:not(:disabled) { transform: translateX(6px); border-color: var(--acento); background: #1f1a10; }
   .opcion:disabled { cursor: default; }
-  .opcion .letra { width: 58px; height: 58px; border-radius: 14px; display: grid; place-items: center; font-size: 1.8rem; background: var(--tarjeta-2); }
-  .opcion.correcta { border-color: var(--exito); background: #154a3a; }
-  .opcion.incorrecta { border-color: var(--fallo); background: #4a1a26; animation: temblar .25s linear 2; }
+  .opcion .letra { width: 58px; height: 58px; border-radius: var(--radio); display: grid; place-items: center; font-size: 1.8rem; background: var(--tarjeta-2); }
+  .opcion.correcta { border-color: var(--exito); background: #06331c; }
+  .opcion.incorrecta { border-color: var(--fallo); background: #3a0610; animation: temblar .25s linear 2; }
 
   /* ------------------------------------------------------------------
      7. CÁPSULA / RESULTADO
      ------------------------------------------------------------------ */
-  .veredicto { font-size: clamp(1.8rem, 4.5vw, 2.8rem); font-weight: 900; line-height: 1.1; }
+  .veredicto { font-family: var(--titulos); font-size: clamp(2.4rem, 6vw, 3.6rem); font-weight: 700; line-height: 1; letter-spacing: .5px; }
   .veredicto.exito { color: var(--exito); }
   .veredicto.parcial { color: var(--parcial); }
   .veredicto.fallo { color: var(--fallo); }
-  .puntos-delta { display: inline-block; font-size: 1.35rem; font-weight: 900; margin: 8px 0 10px; animation: subir 1s both .3s; }
+  .puntos-delta { font-family: var(--mono); display: inline-block; font-size: 1.35rem; font-weight: 900; margin: 8px 0 10px; animation: subir 1s both .3s; }
   @keyframes subir { from { opacity: 0; transform: translateY(14px); } }
   .ensenanza {
-    margin-top: 14px; padding: 18px; border-radius: 18px;
-    background: linear-gradient(135deg, #1f3a6b, #182c52); border: 2px solid #3d64a8;
+    margin-top: 14px; padding: 18px; border-radius: var(--radio);
+    background: var(--tarjeta-2); border: 1px solid var(--acento); border-left: 6px solid var(--acento);
   }
   .ensenanza h3 { color: var(--acento); }
 
@@ -325,7 +359,7 @@
   .instrucciones { max-width: 760px; margin: 4vh auto 0; text-align: center; }
   .instrucciones .icono-grande { font-size: 4.5rem; }
   .pasos { display: grid; gap: 12px; margin: 22px 0 26px; text-align: left; }
-  .paso { display: flex; gap: 16px; align-items: center; background: var(--tarjeta-2); border-radius: 16px; padding: 14px 18px; font-size: 1.15rem; font-weight: 600; animation: entrar .4s both; }
+  .paso { display: flex; gap: 16px; align-items: center; background: var(--tarjeta-2); border-radius: var(--radio); padding: 14px 18px; font-size: 1.15rem; font-weight: 600; animation: entrar .4s both; }
   .paso:nth-child(2) { animation-delay: .1s; }
   .paso:nth-child(3) { animation-delay: .2s; }
   .paso .ic { font-size: 2.2rem; }
@@ -336,7 +370,7 @@
   .mj-cabecera { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; margin-bottom: 10px; }
   .mj-cabecera h2 { margin: 0; font-size: 1.5rem; }
   .mj-cabecera .timer { flex: 1; min-width: 220px; margin: 0; }
-  .mj-estado { font-weight: 800; font-size: 1.1rem; margin-bottom: 10px; min-height: 1.5em; }
+  .mj-estado { font-family: var(--mono); font-weight: 800; font-size: 1.1rem; margin-bottom: 10px; min-height: 1.5em; }
   .lienzo-wrap {
     position: relative; margin: 0 auto;
     width: min(100%, calc((100vh - 210px) * 16 / 9)); aspect-ratio: 16 / 9;
@@ -350,8 +384,8 @@
   .cuenta.anim { animation: cuenta .9s both; }
   @keyframes cuenta { from { transform: scale(2.2); opacity: 0; } 30% { transform: scale(1); opacity: 1; } to { transform: scale(.8); opacity: 0; } }
   .banner {
-    font-size: clamp(2.6rem, 9vw, 6rem); font-weight: 900; letter-spacing: 2px;
-    padding: 10px 40px; border-radius: 26px; transform: rotate(-4deg);
+    font-family: var(--titulos); font-size: clamp(3.4rem, 11vw, 7.5rem); font-weight: 700; letter-spacing: 3px; line-height: 1;
+    padding: 10px 40px; border-radius: var(--radio); transform: rotate(-4deg);
     box-shadow: 0 20px 60px rgba(0,0,0,.6); animation: banner .6s cubic-bezier(.2, 1.6, .5, 1) both;
   }
   .banner.victoria { background: var(--exito); color: #062b1d; }
@@ -363,13 +397,13 @@
      ------------------------------------------------------------------ */
   .final-cabecera { text-align: center; padding: 6px 0 18px; }
   .final-cabecera .icono-grande { font-size: 5.5rem; }
-  .puntaje-final { font-size: clamp(3rem, 10vw, 5.5rem); font-weight: 900; color: var(--acento); line-height: 1; margin-top: 10px; }
+  .puntaje-final { font-family: var(--titulos); font-size: clamp(4rem, 13vw, 7rem); font-weight: 900; color: var(--acento); line-height: 1; margin-top: 10px; }
   .rango { display: inline-block; margin-top: 12px; padding: 10px 22px; border-radius: 99px; background: var(--tarjeta); border: 2px solid var(--acento); font-size: 1.3rem; font-weight: 900; }
   .tabla { width: 100%; border-collapse: collapse; margin-top: 8px; }
   .tabla td, .tabla th { padding: 10px 8px; border-bottom: 1px solid var(--borde); text-align: left; vertical-align: top; }
   .tabla th { color: var(--texto-suave); font-weight: 600; font-size: .9rem; }
   .capsulas { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); margin-top: 10px; }
-  .capsulas div { background: var(--tarjeta-2); border-radius: 14px; padding: 12px; font-size: .97rem; }
+  .capsulas div { background: var(--tarjeta-2); border-radius: var(--radio); padding: 12px; font-size: .97rem; }
   .capsulas strong { display: block; margin-bottom: 4px; }
   .confeti { position: fixed; top: -20px; z-index: 50; width: 10px; height: 16px; pointer-events: none; animation: confeti linear forwards; }
   @keyframes confeti { to { transform: translateY(110vh) rotate(720deg); } }
@@ -402,6 +436,7 @@
     background: #0d0d12; border-radius: 46px;
     box-shadow: 0 0 0 3px #3a3a48, 0 30px 80px rgba(0,0,0,.6);
     animation: vibrar .45s 2;                       /* ¡bzz bzz! llegó un mensaje */
+    font-family: var(--sistema);                    /* parece un teléfono real, no una consola */
   }
   @keyframes vibrar { 10%, 50%, 90% { transform: translateX(-6px) rotate(-1.5deg); } 30%, 70% { transform: translateX(6px) rotate(1.5deg); } }
   .pantalla-cel { height: 100%; border-radius: 34px; overflow: hidden; background: linear-gradient(#1b2a4a, #0e1628); display: flex; flex-direction: column; }
@@ -415,7 +450,7 @@
   .burbuja:nth-child(2) { animation-delay: .7s; }
   .burbuja:nth-child(3) { animation-delay: 1.3s; }
   .cel-botones { display: grid; gap: 10px; padding: 12px; }
-  .cel-botones .btn { width: 100%; min-height: 62px; font-size: 1.15rem; padding: 10px; }
+  .cel-botones .btn { width: 100%; min-height: 62px; font-family: var(--sistema); font-size: 1.15rem; font-weight: 700; letter-spacing: 0; padding: 10px; border-radius: 14px; }
   .btn.voy   { background: #ff4fa3; color: #fff; box-shadow: 0 6px 0 #a3235f; }
   .btn.novoy { background: var(--exito); color: #062b1d; box-shadow: 0 6px 0 #138a5c; }
   .oso-capa {
@@ -444,7 +479,7 @@
   .escombro { position: absolute; left: 0; font-size: 2.6rem; animation: escombro 2.8s linear both; }
   @keyframes escombro { from { transform: translate(-10vw, 70vh) rotate(0); } to { transform: translate(110vw, -30vh) rotate(720deg); } }
   .noticia {
-    position: absolute; left: 50%; bottom: 6vh; width: min(680px, 92vw); transform: translateX(-50%);
+    font-family: var(--sistema); position: absolute; left: 50%; bottom: 6vh; width: min(680px, 92vw); transform: translateX(-50%);
     background: #fff; color: #111; border-radius: 16px; padding: 14px 18px; box-shadow: var(--sombra);
     animation: noticia .5s both 1s;
   }
@@ -453,9 +488,210 @@
   .noticia strong { display: block; font-size: 1.2rem; line-height: 1.3; }
 
   /* ------------------------------------------------------------------
+     10c. CONSULTOR DE INFORMACIÓN ANTE EVENTOS (panel desplegable)
+     ------------------------------------------------------------------ */
+  .btn-consultor {
+    position: fixed; right: 18px; bottom: 18px; z-index: 40;
+    font-family: var(--titulos); font-size: 1.6rem; letter-spacing: 1px; line-height: 1;
+    padding: 14px 20px; min-height: 60px; cursor: pointer; color: #000;
+    background: var(--acento); border: 2px solid #000; border-radius: var(--radio);
+    box-shadow: 0 0 0 3px var(--acento), 0 8px 24px rgba(0,0,0,.6);
+    animation: entrar .4s both;
+  }
+  .btn-consultor.oculto { display: none; }
+  .consultor {
+    position: fixed; inset: 0; z-index: 55; display: none;
+    background: rgba(0,0,0,.78); backdrop-filter: blur(4px);
+  }
+  .consultor.abierto { display: block; animation: aparecer .2s; }
+  .consultor-panel {
+    position: absolute; inset: 3vh 3vw; display: flex; flex-direction: column;
+    background: var(--fondo); border: 2px solid var(--borde); border-radius: var(--radio);
+    box-shadow: 0 0 40px rgba(255,77,0,.25); overflow: hidden;
+    animation: deslizar .3s cubic-bezier(.2,.8,.2,1);
+  }
+  @keyframes deslizar { from { transform: translateY(40px); opacity: 0; } }
+  .consultor-cabecera {
+    display: flex; align-items: center; gap: 14px; padding: 12px 16px;
+    background: var(--tarjeta); border-bottom: 4px solid;
+    border-image: repeating-linear-gradient(45deg, var(--acento), var(--acento) 10px, #000 10px, #000 20px) 1;
+  }
+  .consultor-cabecera h2 { margin: 0; flex: 1; }
+  .btn-cerrar { font-family: var(--titulos); font-size: 1.6rem; min-width: 56px; min-height: 56px; cursor: pointer; color: var(--texto); background: transparent; border: 2px solid var(--borde); border-radius: var(--radio); }
+  .consultor-tabs { display: flex; gap: 8px; padding: 10px 16px; flex-wrap: wrap; background: var(--tarjeta); }
+  .tab {
+    font-family: var(--titulos); font-size: 1.35rem; letter-spacing: .5px; line-height: 1;
+    padding: 12px 16px; min-height: 52px; cursor: pointer; color: var(--texto);
+    background: var(--tarjeta-2); border: 1px solid var(--borde); border-radius: var(--radio);
+  }
+  .tab.activa { background: var(--acento); color: #000; border-color: var(--acento); }
+  .consultor-cuerpo { flex: 1; overflow-y: auto; padding: 18px 20px 30px; -webkit-user-select: text; user-select: text; }
+  .seccion-info { display: none; animation: entrar .3s; }
+  .seccion-info.activa { display: block; }
+  .seccion-info h3 { font-family: var(--titulos); font-size: 1.7rem; font-weight: 500; letter-spacing: .5px; margin: 18px 0 8px; color: var(--acento); }
+  .seccion-info p, .seccion-info li { line-height: 1.55; }
+  .seccion-info ul { padding-left: 22px; }
+  .nota-oficial { margin-top: 22px; padding: 12px 14px; border: 1px dashed var(--texto-suave); border-radius: var(--radio); color: var(--texto-suave); font-size: .95rem; }
+  .nota-oficial a, .seccion-info a { color: var(--acento); }
+  /* Semáforo de alertas */
+  .semaforo { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 8px; }
+  .nivel {
+    cursor: pointer; text-align: center; padding: 16px 8px; min-height: 96px; color: #000;
+    font-family: var(--titulos); font-size: 1.5rem; line-height: 1; letter-spacing: .5px;
+    border: 3px solid transparent; border-radius: var(--radio); transition: transform .15s;
+  }
+  .nivel:hover { transform: translateY(-3px); }
+  .nivel.elegido { border-color: #fff; box-shadow: 0 0 0 3px #000 inset; transform: translateY(-4px); }
+  .nivel small { display: block; font-family: var(--mono); font-size: .8rem; margin-top: 6px; letter-spacing: 0; }
+  .detalle-nivel { margin-top: 12px; padding: 16px; background: var(--tarjeta); border-left: 8px solid; border-radius: var(--radio); }
+  .detalle-nivel h4 { font-family: var(--titulos); font-size: 1.9rem; font-weight: 500; line-height: 1; margin-bottom: 6px; }
+  .detalle-nivel .ejemplo { margin-top: 10px; font-family: var(--mono); font-size: .9rem; color: var(--texto-suave); }
+  .grid-info { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+  .ficha { background: var(--tarjeta); border: 1px solid #2a2d35; border-top: 4px solid var(--borde); border-radius: var(--radio); padding: 14px; }
+  .ficha > strong:first-child { display: block; font-size: 1.1rem; margin-bottom: 4px; }   /* sólo el título de la ficha */
+  /* Números de emergencia */
+  .telefono {
+    display: flex; align-items: center; gap: 14px; text-decoration: none; color: var(--texto);
+    background: var(--tarjeta); border: 2px solid var(--borde); border-radius: var(--radio); padding: 14px 16px; min-height: 84px;
+  }
+  .telefono .num { font-family: var(--titulos); font-size: 3rem; line-height: 1; color: var(--acento); min-width: 86px; text-align: center; }
+  .telefono:hover { background: var(--tarjeta-2); }
+  .seccion-info a.telefono { color: var(--texto); }   /* la tarjeta es un link: sin esto heredaría el amarillo de los links */
+  /* Leyenda del mapa de riesgo */
+  .leyenda-mapa { display: grid; gap: 8px; margin-top: 8px; }
+  .leyenda-mapa div { display: flex; align-items: center; gap: 12px; }
+  .muestra { width: 46px; height: 18px; border-radius: 3px; flex-shrink: 0; }
+  .fase { background: var(--tarjeta); border-radius: var(--radio); padding: 12px 14px; border: 1px solid #2a2d35; }
+  .fase b { display: inline-block; min-width: 72px; color: var(--acento); font-family: var(--mono); }
+  .lema-sat { display: inline-block; margin-bottom: 10px; padding: 6px 12px; background: #e6007e; color: #fff; font-weight: 700; border-radius: var(--radio); }
+  .modo-semaforo { display: flex; gap: 8px; flex-wrap: wrap; margin: 10px 0; }
+  .detalle-nivel .rotulo { font-family: var(--mono); font-size: .8rem; color: var(--texto-suave); margin-top: 10px; text-transform: uppercase; }
+  .detalle-nivel .frecuencia { display: inline-block; margin-top: 8px; padding: 4px 10px; background: var(--tarjeta-2); border-radius: var(--radio); font-family: var(--mono); font-size: .9rem; }
+  /* Matriz: cómo se decide el color */
+  .matriz { border-collapse: separate; border-spacing: 6px; margin-top: 6px; }
+  .matriz th { font-family: var(--mono); font-size: .85rem; color: var(--texto-suave); font-weight: 400; padding: 4px; text-align: center; }
+  .matriz td.celda { width: 74px; height: 54px; text-align: center; font-family: var(--titulos); font-size: 1.8rem; color: #000; border-radius: var(--radio); cursor: pointer; transition: transform .12s; }
+  .matriz td.celda:hover, .matriz td.celda.elegida { transform: scale(1.08); outline: 3px solid #fff; }
+  .matriz-explica { margin-top: 8px; padding: 10px 12px; background: var(--tarjeta); border-radius: var(--radio); min-height: 44px; }
+  /* Comparación de productos */
+  .tabla-cmp { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: .97rem; }
+  .tabla-cmp th, .tabla-cmp td { border: 1px solid #2a2d35; padding: 8px 10px; text-align: left; vertical-align: top; }
+  .tabla-cmp th { background: var(--tarjeta); font-family: var(--titulos); font-size: 1.3rem; font-weight: 500; letter-spacing: .5px; }
+  .tabla-cmp td:first-child { font-family: var(--mono); font-size: .85rem; color: var(--texto-suave); white-space: nowrap; }
+  .scroll-x { overflow-x: auto; }
+  /* Línea de tiempo */
+  .linea-tiempo { border-collapse: separate; border-spacing: 2px; margin-top: 8px; font-size: .9rem; }
+  .linea-tiempo th { font-family: var(--mono); font-weight: 400; color: var(--texto-suave); padding: 2px 4px; }
+  .linea-tiempo td.fen { padding-right: 10px; white-space: nowrap; }
+  .linea-tiempo td.f { width: 30px; height: 22px; border-radius: 2px; }
+  .chips-fen { display: grid; gap: 8px; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); margin-top: 8px; }
+  .chips-fen div { background: var(--tarjeta); border-radius: var(--radio); padding: 10px 12px; border-left: 4px solid var(--borde); }
+  .chips-fen div.adv { border-left-color: #8e88cc; }
+  .selector-fen { display: flex; gap: 6px; flex-wrap: wrap; margin: 8px 0; }
+  .selector-fen .tab { font-size: 1.15rem; min-height: 46px; padding: 8px 12px; }
+  .selector-fen .tab.adv { border-color: #8e88cc; }
+  .selector-fen .tab.adv.activa { background: #8e88cc; border-color: #8e88cc; }
+  .selector-nivel { display: flex; gap: 6px; margin: 6px 0 10px; }
+  .selector-nivel button { flex: 1; min-height: 48px; font-family: var(--titulos); font-size: 1.3rem; color: #000; border: 3px solid transparent; border-radius: var(--radio); cursor: pointer; }
+  .selector-nivel button.elegido { border-color: #fff; box-shadow: 0 0 0 3px #000 inset; }
+  .recos { counter-reset: reco; list-style: none; padding: 0 !important; display: grid; gap: 6px; }
+  .recos li { counter-increment: reco; display: flex; gap: 10px; align-items: flex-start; background: var(--tarjeta); border-radius: var(--radio); padding: 8px 10px; animation: entrar .25s both; }
+  .recos li::before { content: counter(reco); flex-shrink: 0; width: 26px; height: 26px; display: grid; place-items: center; border-radius: 50%; background: var(--color-reco, var(--acento)); color: #000; font-family: var(--mono); font-size: .9rem; }
+  .recos .nuevo { flex-shrink: 0; margin-left: auto; font-family: var(--mono); font-size: .7rem; padding: 2px 6px; border-radius: 3px; background: #fff; color: #000; }
+  .aviso-informate { display: flex; gap: 12px; align-items: center; padding: 12px 14px; margin-bottom: 12px; background: var(--tarjeta-2); border-left: 6px solid #e6007e; border-radius: var(--radio); }
+  /* Mapa de riesgo embebido (iframe) */
+  .mapa-embebido { margin: 12px 0 6px; border: 2px solid var(--borde); border-radius: var(--radio); overflow: hidden; background: var(--tarjeta); }
+  .mapa-barra { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; padding: 8px; background: var(--tarjeta-2); }
+  .mapa-barra .tab { text-decoration: none; display: inline-flex; align-items: center; }
+  .mapa-barra .tab[hidden] { display: none; }      /* sin esto, display:inline-flex le gana al atributo hidden */
+  .mapa-barra .estado-mapa { margin-left: auto; font-family: var(--mono); font-size: .85rem; color: var(--texto-suave); }
+  .mapa-marco { position: relative; height: 420px; display: grid; place-items: center; background:
+      linear-gradient(rgba(255,77,0,.06) 1px, transparent 1px) 0 0 / 24px 24px,
+      linear-gradient(90deg, rgba(255,77,0,.06) 1px, transparent 1px) 0 0 / 24px 24px, #0b0c0f; }
+  .mapa-marco iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; background: #fff; }
+  .mapa-marco .mensaje { max-width: 460px; text-align: center; padding: 16px; color: var(--texto-suave); }
+  .mapa-marco .mensaje .grande { font-size: 3rem; display: block; }
+  .mapa-embebido.grande { position: fixed; inset: 2vh 2vw; z-index: 70; box-shadow: 0 0 0 100vmax rgba(0,0,0,.75); }
+  .mapa-embebido.grande .mapa-marco { height: calc(96vh - 64px); }
+  .checklist { columns: 2 220px; list-style: none; padding: 0 !important; }
+  .checklist li { break-inside: avoid; padding: 6px 0; }
+
+  /* ------------------------------------------------------------------
+     10d. ANIMACIONES E INTERACTIVIDAD
+     Los efectos de "pasar el mouse" van dentro de @media (hover: hover):
+     en pantallas táctiles no quedan "pegados" después de tocar.
+     ------------------------------------------------------------------ */
+  /* Onda expansiva al tocar (la crea el JS en el punto exacto del toque) */
+  .btn, .opcion, .tab, .sel-card, .nivel, .telefono, .paso { position: relative; overflow: hidden; }
+  .btn > *, .opcion > *, .sel-card > * { position: relative; z-index: 1; }
+  .onda {
+    position: absolute; border-radius: 50%; pointer-events: none; z-index: 0;
+    background: radial-gradient(circle, rgba(255,255,255,.55), rgba(255,255,255,0) 70%);
+    transform: scale(0); animation: onda .6s ease-out forwards;
+  }
+  @keyframes onda { to { transform: scale(2.6); opacity: 0; } }
+
+  /* Destello que recorre los botones */
+  .btn::after {
+    content: ""; position: absolute; top: 0; bottom: 0; left: -60%; width: 40%; pointer-events: none;
+    background: linear-gradient(100deg, transparent, rgba(255,255,255,.55), transparent);
+    transform: skewX(-20deg); opacity: 0;
+  }
+  @keyframes destello { from { left: -60%; opacity: 1; } to { left: 130%; opacity: 1; } }
+
+  /* Fondo de cuadrícula que se desplaza lento, como un monitor de radar */
+  body { animation: radar-grid 40s linear infinite; }
+  @keyframes radar-grid { to { background-position: 30px 30px, 30px 30px; } }
+
+  .btn, .opcion, .tab, .sel-card, .nivel, .telefono, .ficha, .chip, .mapa-escenarios div, .btn-consultor, .btn-cerrar, .btn-sonido, .logo-portada {
+    transition: transform .18s cubic-bezier(.2,.8,.2,1), box-shadow .18s, background .18s, border-color .18s, color .18s, filter .18s;
+  }
+  .btn:active { transform: translateY(4px) scale(.98); }
+  .opcion:active:not(:disabled), .sel-card:active, .tab:active, .nivel:active, .telefono:active { transform: scale(.97); }
+  .btn-consultor:active { transform: scale(.94); }
+
+  @media (hover: hover) {
+    .btn:hover { transform: translateY(-3px); filter: brightness(1.1); box-shadow: 0 9px 0 #b88a00, 0 0 28px rgba(255,204,0,.45); }
+    .btn:hover::after { animation: destello .7s ease-out; }
+    .pulso:hover { animation: none; }               /* el latido pisaría el transform del hover */
+    .btn.secundario:hover { background: rgba(255,77,0,.14); border-color: var(--acento); color: var(--acento); box-shadow: 0 0 22px rgba(255,77,0,.35); }
+    .btn:active { transform: translateY(4px) scale(.98); }
+
+    .opcion:hover:not(:disabled) { transform: translateX(8px); box-shadow: -6px 0 0 var(--acento), 0 0 22px rgba(255,204,0,.18); }
+    .opcion:hover:not(:disabled) .letra { animation: menear .45s ease-in-out; background: var(--acento); }
+    @keyframes menear { 25% { transform: rotate(-12deg) scale(1.12); } 75% { transform: rotate(10deg) scale(1.12); } }
+
+    .sel-card:hover { transform: translateY(-7px); border-color: var(--acento); box-shadow: 0 12px 30px rgba(255,77,0,.3), 0 0 0 1px var(--acento); }
+    .sel-card:hover .emoji { animation: rebotar .6s ease; }
+    @keyframes rebotar { 30% { transform: translateY(-10px) scale(1.15); } 60% { transform: translateY(2px); } }
+
+    .tab:hover:not(.activa) { border-color: var(--acento); color: var(--acento); transform: translateY(-2px); box-shadow: 0 4px 14px rgba(255,204,0,.2); }
+    .nivel:hover { transform: translateY(-5px) scale(1.03); box-shadow: 0 10px 24px rgba(0,0,0,.5); }
+    .telefono:hover { transform: translateY(-3px); border-color: var(--acento); box-shadow: 0 0 22px rgba(255,204,0,.25); }
+    .telefono:hover .num { animation: latir .8s ease-in-out infinite; }
+    @keyframes latir { 50% { transform: scale(1.12); text-shadow: 0 0 16px rgba(255,204,0,.7); } }
+    .ficha:hover { transform: translateY(-3px); box-shadow: 0 8px 22px rgba(255,77,0,.18); }
+    .chip:hover, .mapa-escenarios div:hover { transform: translateY(-3px); border-color: var(--acento); color: var(--acento); }
+    .btn-consultor:hover { transform: translateY(-4px) rotate(-2deg); box-shadow: 0 0 0 3px var(--acento), 0 0 30px rgba(255,204,0,.6); }
+    .btn-cerrar:hover { background: var(--fallo); border-color: var(--fallo); transform: rotate(90deg); }
+    .btn-sonido:hover { border-color: var(--acento); transform: scale(1.1); }
+    .logo-portada:hover { animation: none; transform: rotate(360deg) scale(1.06); transition: transform .9s cubic-bezier(.2,.8,.2,1); }
+    .hud-logo:hover .logo-hud { transform: rotate(-20deg) scale(1.15); transition: transform .3s; }
+    .inicio h1:hover { text-shadow: 0 0 18px rgba(255,204,0,.45), 0 0 2px #fff; }
+  }
+
+  /* Teclado: contorno visible al navegar con Tab */
+  .btn:focus-visible, .opcion:focus-visible, .tab:focus-visible, .sel-card:focus-visible, .nivel:focus-visible, .telefono:focus-visible {
+    outline: 3px solid var(--acento); outline-offset: 3px;
+  }
+
+  /* ------------------------------------------------------------------
      11. RESPONSIVE
      ------------------------------------------------------------------ */
   @media (max-width: 860px) {
+    .semaforo { grid-template-columns: repeat(2, 1fr); }
+    .consultor-panel { inset: 0; }
+    .btn-consultor { right: 10px; bottom: 10px; font-size: 1.3rem; padding: 10px 14px; min-height: 50px; }
     .layout-2col { grid-template-columns: 1fr; }
     .escena { height: 200px; }
     .lienzo-wrap { width: 100%; }
@@ -471,9 +707,193 @@
 </head>
 <body>
 
+<!-- ===================== CONSULTOR DE INFORMACIÓN ANTE EVENTOS ===================== -->
+<button class="btn-consultor" id="btn-consultor" aria-haspopup="dialog">📖 CONSULTOR</button>
+<div class="consultor" id="consultor" role="dialog" aria-modal="true" aria-labelledby="consultor-titulo">
+  <div class="consultor-panel">
+    <div class="consultor-cabecera">
+      <span class="logo-grupo logo-medio" role="img" aria-label="Logo del Grupo de Pronóstico FCAG-UNLP"></span>
+      <h2 id="consultor-titulo">📖 Consultor ante eventos</h2>
+      <button class="btn-cerrar" id="btn-cerrar-consultor" aria-label="Cerrar">✕</button>
+    </div>
+    <div class="consultor-tabs" role="tablist">
+      <button class="tab activa" data-tab="alertas">🚦 Niveles</button>
+      <button class="tab" data-tab="productos">📡 Alerta · ACP · Advertencia</button>
+      <button class="tab" data-tab="mapa">🗺️ Mapa de riesgo</button>
+      <button class="tab" data-tab="emergencias">📞 Emergencias</button>
+      <button class="tab" data-tab="hacer">🎒 Qué hacer</button>
+    </div>
+    <div class="consultor-cuerpo">
+
+      <!-- ---------- ALERTAS ---------- -->
+      <section class="seccion-info activa" data-seccion="alertas">
+        <span class="lema-sat">«Si hay alerta, estate alerta»</span>
+        <p>El <strong>Servicio Meteorológico Nacional (SMN)</strong> informa a través del <strong>Sistema de Alerta Temprana (SAT)</strong>.
+          Las zonas bajo alerta se muestran sobre un mapa con un <strong>color según el grado de severidad</strong> de los fenómenos previstos.
+          Sin alertas, el mapa se ve verde. <strong>Tocá cada color</strong> para ver qué significa.</p>
+        <div class="modo-semaforo">
+          <button class="tab activa" data-modo="general">🌧️ Lluvias, tormentas, viento, Zonda, nevadas</button>
+          <button class="tab" data-modo="temperatura">🌡️ Temperaturas extremas</button>
+        </div>
+        <div class="semaforo" id="semaforo"></div>
+        <div class="detalle-nivel" id="detalle-nivel"></div>
+        <p class="suave" id="nota-modo" style="margin-top:8px"></p>
+
+        <h3>¿Cómo se decide el color?</h3>
+        <p>El SMN combina tres criterios:</p>
+        <ul>
+          <li><strong>Intensidad del fenómeno</strong>, según <strong>umbrales</strong> definidos para cada región a partir de su climatología.</li>
+          <li><strong>Factor adverso</strong>: una situación no necesariamente meteorológica que aumenta el impacto (suelo saturado, movilización de población, sequía…).</li>
+          <li><strong>Probabilidad</strong>: cuanto más lejano el plazo del pronóstico (24, 48 o 72 h), mayor la incertidumbre.</li>
+        </ul>
+        <p>Tocá un casillero del esquema:</p>
+        <div class="scroll-x"><table class="matriz" id="matriz"></table></div>
+        <div class="matriz-explica" id="matriz-explica">👆 Elegí una combinación de intensidad y probabilidad.</div>
+        <div class="nota-oficial">📚 Fuente: SMN – Sistema de Alerta Temprana, <em>Módulo Preguntas frecuentes y definiciones</em> (2.ª edición, julio 2024).
+          Las recomendaciones marcadas como «Qué podés hacer» son una guía del juego. Consultá siempre las alertas vigentes en
+          <a href="https://www.smn.gob.ar/alertas" target="_blank" rel="noopener">smn.gob.ar/alertas</a> y seguí las indicaciones de Defensa Civil.</div>
+      </section>
+
+      <!-- ---------- PRODUCTOS: ALERTA · ACP · ADVERTENCIA ---------- -->
+      <section class="seccion-info" data-seccion="productos">
+        <p>El SAT <strong>unifica en un mismo mapa</strong> tres tipos de mensajes. Pueden estar vigentes <strong>al mismo tiempo</strong> en una zona y no se excluyen entre sí.</p>
+        <div class="scroll-x"><table class="tabla-cmp">
+          <tr><td></td><th style="color:#ffcc00">🔔 Alerta</th><th style="color:#ff1744">⚡ Aviso a muy corto plazo (ACP)</th><th style="color:#a59ee6">🟪 Advertencia</th></tr>
+          <tr><td>Qué es</td><td>Mensaje preventivo sobre fenómenos que podrían poner en riesgo la vida, los bienes o el ambiente.</td><td>Pronóstico <strong>inmediato</strong>: tormentas detectadas por el <strong>radar</strong> que muestran signos de severidad.</td><td>Fenómenos que dificultan el normal desarrollo de la vida social (sobre todo por <strong>reducción de visibilidad</strong>). Pueden ser generalizados en el territorio y/o persistir varios días.</td></tr>
+          <tr><td>Fenómenos</td><td>Lluvias, tormentas, vientos, Zonda, nevadas y temperaturas extremas.</td><td>Sólo tormentas fuertes o severas: lluvias intensas en poco tiempo, ráfagas y/o granizo.</td><td>Niebla, ceniza volcánica, polvo en suspensión y humo.</td></tr>
+          <tr><td>Anticipación</td><td>Generalmente 24, 48 o 72 h antes.</td><td>El fenómeno puede ocurrir desde pocos minutos hasta 3 h después.</td><td>—</td></tr>
+          <tr><td>Validez</td><td>12 h, con información para hasta 3 días.</td><td>1, 2 o 3 horas.</td><td>—</td></tr>
+          <tr><td>Actualización</td><td>Todos los días cerca de las 6 y las 18 h (y cuando haga falta).</td><td>En cualquier momento del día o de la noche.</td><td>Cerca de las 6 y las 18 h.</td></tr>
+          <tr><td>Territorio</td><td>Todo el país; zonas extensas (en general más de 200 mil km²).</td><td>Sólo zonas con radar; áreas chicas (unos 15 mil km² en promedio).</td><td>La zona que puede ser afectada (se marca en el mapa).</td></tr>
+          <tr><td>En el mapa</td><td>Amarillo, naranja o rojo.</td><td>Un <strong>polígono rojo</strong>.</td><td>Color <strong>violeta</strong>, sin niveles.</td></tr>
+        </table></div>
+        <p class="suave" style="margin-top:6px">Los alertas por temperaturas extremas se actualizan cerca de las 19 h y tienen validez de 24 h.</p>
+
+        <h3>La línea de tiempo</h3>
+        <p>Muestra cuándo empieza un evento, cuándo termina y cómo evoluciona en las próximas <strong>72 horas</strong>, en 4 franjas de 6 horas por día:
+          <strong>M</strong>adrugada (0–6 h), <strong>M</strong>añana (6–12 h), <strong>T</strong>arde (12–18 h) y <strong>N</strong>oche (18–24 h).</p>
+        <div class="scroll-x"><table class="linea-tiempo" id="linea-tiempo"></table></div>
+        <p class="suave">Ejemplo ilustrativo. Si en una zona hay varios alertas a la vez, el mapa muestra el <strong>nivel más alto</strong>
+          (por ejemplo, amarillo por viento + naranja por lluvia = naranja), y la línea de tiempo detalla todos.</p>
+
+        <h3>Fenómenos que se alertan</h3>
+        <div class="chips-fen">
+          <div><strong>🌧️ Lluvias</strong><br>Cuando las precipitaciones esperadas alcanzan o superan los umbrales de la región.</div>
+          <div><strong>⛈️ Tormentas</strong><br>Aisladas o generalizadas, con lluvias intensas, ráfagas y/o granizo.</div>
+          <div><strong>💨 Vientos</strong><br>Al menos 2 horas seguidas de vientos intensos o ráfagas sobre los umbrales.</div>
+          <div><strong>Ⓩ Zonda</strong><br>Cordillera, precordillera, puna y eventualmente llanos, desde los 38 °S hasta Bolivia (Cuyo y NOA).</div>
+          <div><strong>❄️ Nevadas</strong><br>Caída de nieve con acumulación por encima de los umbrales.</div>
+          <div><strong>🌡️ Temperaturas extremas</strong><br>Altas o bajas, cuando representan un riesgo para la salud.</div>
+        </div>
+        <h3>Fenómenos que se advierten (violeta)</h3>
+        <div class="chips-fen">
+          <div class="adv"><strong>🌫️ Niebla</strong><br>Reducción de visibilidad.</div>
+          <div class="adv"><strong>🌋 Ceniza volcánica</strong><br>Reducción de visibilidad por ceniza en el aire.</div>
+          <div class="adv"><strong>🟫 Polvo en suspensión</strong><br>Reducción de visibilidad por polvo.</div>
+          <div class="adv"><strong>💨 Humo</strong><br>Reducción de visibilidad por humo.</div>
+        </div>
+        <h3>Para recordar</h3>
+        <ul>
+          <li>Cada alerta o advertencia tiene 4 partes: <strong>mapa</strong>, <strong>línea de tiempo</strong>, <strong>texto</strong> descriptivo y <strong>recomendaciones</strong>.</li>
+          <li>Las zonas de alerta no siempre coinciden con un partido completo: se definieron por geografía y condiciones meteorológicas parecidas.</li>
+          <li>El SAT funciona las 24 horas, los 365 días del año.</li>
+          <li>Informate por <strong>canales oficiales</strong> y no reenvíes mensajes sin fuente.</li>
+        </ul>
+        <div class="nota-oficial">📚 Fuente: SMN – Sistema de Alerta Temprana, <em>Módulo Preguntas frecuentes y definiciones</em> (2.ª edición, julio 2024).
+          <a href="https://www.smn.gob.ar/alertas" target="_blank" rel="noopener">smn.gob.ar/alertas</a></div>
+      </section>
+
+      <!-- ---------- MAPA DE RIESGO ---------- -->
+      <section class="seccion-info" data-seccion="mapa">
+        <p>Un <strong>mapa de riesgo hídrico</strong> muestra qué partes de la ciudad se inundan primero cuando llueve mucho y cuáles son las zonas altas y seguras.
+          Es la misma herramienta del minijuego <em>¡Navegando el Mapa de Riesgo!</em>, pero con datos reales de tu ciudad.</p>
+        <div class="mapa-embebido" id="mapa-embebido">
+          <div class="mapa-barra">
+            <button class="tab" id="btn-cargar-mapa">🗺️ Ver el mapa de La Plata acá</button>
+            <a class="tab" href="https://riesgo.laplata.gob.ar/mapa.php" target="_blank" rel="noopener">↗ Abrir en otra pestaña</a>
+            <button class="tab" id="btn-mapa-grande" hidden>⛶ Agrandar</button>
+            <span class="estado-mapa" id="estado-mapa">necesita internet</span>
+          </div>
+          <div class="mapa-marco" id="mapa-marco">
+            <div class="mensaje"><span class="grande">🗺️</span>Tocá <strong>«Ver el mapa de La Plata acá»</strong> para cargar el mapa de riesgo oficial de la Municipalidad.</div>
+          </div>
+        </div>
+        <p class="suave" style="font-size:.9rem">Si el recuadro queda en blanco o muestra un error, es porque el sitio no permite mostrarse dentro de otras páginas
+          o no hay conexión: usá <strong>«↗ Abrir en otra pestaña»</strong>.</p>
+        <h3>Cómo leerlo</h3>
+        <div class="leyenda-mapa">
+          <div><span class="muestra" style="background:#ff1744"></span><span><strong>Zonas inundables:</strong> calles y manzanas que se anegan primero (suelen ser las más bajas).</span></div>
+          <div><span class="muestra" style="background:repeating-linear-gradient(90deg,#7cc3ff 0 10px,transparent 10px 16px);border:1px solid #7cc3ff"></span><span><strong>Arroyos y cauces</strong> (muchos van entubados bajo las calles): cuando desbordan, el agua vuelve a buscar su cauce natural.</span></div>
+          <div><span class="muestra" style="background:#00e676"></span><span><strong>Zonas altas y corredores seguros</strong> para desplazarse o evacuar.</span></div>
+          <div><span class="muestra" style="background:#fff;display:grid;place-items:center;font-size:.8rem">🏥</span><span><strong>Centros de evacuación</strong> y puntos de encuentro.</span></div>
+        </div>
+        <h3>¿Cuándo consultarlo?</h3>
+        <div class="grid-info">
+          <div class="ficha"><strong>🏠 Antes de mudarte</strong>Fijate si la casa está en una zona inundable o cerca de un arroyo.</div>
+          <div class="ficha"><strong>🚗 Antes de salir con alerta</strong>Elegí un recorrido por zonas altas y evitá cruzar cauces y bajos.</div>
+          <div class="ficha"><strong>👨‍👩‍👧 En familia</strong>Acuerden de antemano un punto de encuentro y la ruta a la zona alta más cercana.</div>
+        </div>
+        <h3>Mapa de riesgo de La Plata</h3>
+        <p>La Municipalidad de La Plata publica su mapa de riesgo en
+          <a href="https://riesgo.laplata.gob.ar/mapa.php" target="_blank" rel="noopener"><strong>riesgo.laplata.gob.ar</strong></a> (necesita internet).
+          Si vivís en otra ciudad, buscá el de tu municipio.</p>
+        <div class="nota-oficial">⚠️ Nunca cruces una calle anegada a pie ni en auto: no se ve la profundidad, puede haber tapas abiertas y la corriente puede arrastrar un vehículo.</div>
+      </section>
+
+      <!-- ---------- EMERGENCIAS ---------- -->
+      <section class="seccion-info" data-seccion="emergencias">
+        <div class="aviso-informate"><span style="font-size:2rem">📱</span><span><strong>Mantenete informado</strong> por las autoridades de tu localidad.
+          <strong>Agendá</strong> los números locales de Protección Civil, Bomberos y Policía. <span class="suave">— Recomendación del SAT</span></span></div>
+        <p>Números nacionales de emergencia en Argentina. <strong>Son gratuitos</strong> y se pueden marcar desde cualquier teléfono. En un celular, tocá el número para llamar.</p>
+        <div class="grid-info" style="margin-top:12px">
+          <a class="telefono" href="tel:911"><span class="num">911</span><span><strong>Emergencias</strong><br>Policía y emergencias en general.</span></a>
+          <a class="telefono" href="tel:107"><span class="num">107</span><span><strong>SAME / emergencias médicas</strong><br>Ambulancias y atención médica urgente.</span></a>
+          <a class="telefono" href="tel:100"><span class="num">100</span><span><strong>Bomberos</strong><br>Incendios, rescates, árboles o estructuras caídas.</span></a>
+          <a class="telefono" href="tel:103"><span class="num">103</span><span><strong>Defensa Civil</strong><br>Emergencias por temporales, inundaciones y evacuaciones.</span></a>
+          <a class="telefono" href="tel:106"><span class="num">106</span><span><strong>Prefectura Naval</strong><br>Emergencias en ríos, lagos y el mar.</span></a>
+        </div>
+        <h3>Al llamar</h3>
+        <ul>
+          <li>Decí <strong>dónde estás</strong> (calle, altura, entrecalles o una referencia clara).</li>
+          <li>Contá <strong>qué pasa</strong> y si hay personas heridas, atrapadas o en riesgo.</li>
+          <li><strong>No cortes</strong> hasta que te lo indiquen, y dejá la línea libre después.</li>
+        </ul>
+        <div class="nota-oficial">ℹ️ Algunos servicios pueden variar según la provincia o el municipio. Agendá también los teléfonos de Defensa Civil y de la empresa de luz de tu localidad.</div>
+      </section>
+
+      <!-- ---------- QUÉ HACER ---------- -->
+      <section class="seccion-info" data-seccion="hacer">
+        <h3 style="margin-top:4px">✅ Recomendaciones oficiales del SAT</h3>
+        <p>Elegí un fenómeno y un nivel. Mirá cómo <strong>las recomendaciones se vuelven más estrictas</strong> al subir el nivel:
+          las marcadas <span class="recos" style="display:inline"><span class="nuevo" style="display:inline-block">NUEVO</span></span> no estaban en el nivel amarillo.</p>
+        <div class="selector-fen" id="selector-fen"></div>
+        <div class="selector-nivel" id="selector-nivel"></div>
+        <ol class="recos" id="recos"></ol>
+        <div id="recos-extra"></div>
+
+        <h3>🎒 Kit de emergencia</h3>
+        <p>Lo que piden las recomendaciones oficiales:</p>
+        <ul class="checklist">
+          <li>💧 Agua potable</li><li>🥫 Alimentos no perecederos (para al menos 3 días)</li>
+          <li>🩹 Botiquín de primeros auxilios</li><li>💊 Los medicamentos que necesites</li>
+          <li>📻 Radio a pilas</li><li>🔦 Linterna y pilas adicionales</li>
+          <li>🔋 Celulares cargados con anticipación</li><li>🧯 Matafuego (por Zonda o riesgo de incendio)</li>
+          <li>🕯️ Velas y fósforos (cortes de energía)</li><li>🧣 Mantas térmicas (frío y nieve)</li>
+        </ul>
+        <p class="suave">También conviene: documentos en una bolsa impermeable, una lista de teléfonos en papel y comida para mascotas.</p>
+
+        <h3>🎮 Lo que aprendiste en el juego</h3>
+        <div id="guias"></div>
+        <div class="nota-oficial">📚 Fuente de las recomendaciones: SAT – <em>Módulo Recomendaciones para alertas y advertencias</em>
+          (Agencia Federal de Emergencias, Servicio Meteorológico Nacional, Ministerio de Salud y otros).</div>
+      </section>
+    </div>
+  </div>
+</div>
+
 <!-- ===================== HUD ===================== -->
 <header class="hud oculto" id="hud">
-  <div class="hud-logo">⚠️ Alerta <span>Territorio</span></div>
+  <div class="hud-logo"><span class="logo-grupo logo-hud" role="img" aria-label="Logo del Grupo de Pronóstico FCAG-UNLP"></span><div>⚠️ Operativo <span>Alerta</span></div></div>
   <div class="hud-datos">
     <div class="vidas" id="hud-vidas" title="Vidas / reputación"></div>
     <div>🗺️ Nivel <span id="hud-nivel">1/4</span></div>
@@ -487,8 +907,8 @@
   <section class="pantalla activa" id="p-inicio">
     <div class="inicio">
       <div>
-        <div class="icono-grande">🏘️</div>
-        <h1>Alerta Territorio<span>Prepará tu Barrio</span></h1>
+        <div class="logo-grupo logo-portada" role="img" aria-label="Logo del Grupo de Pronóstico FCAG-UNLP"></div>
+        <h1>Operativo Alerta<span>Mitigación y respuesta ante eventos meteorológicos severos</span></h1>
         <p class="intro suave">
           Las emergencias meteorológicas no se enfrentan sólo desde un centro de control:
           <strong>lo que hacés en tu casa y en tu barrio salva vidas</strong>. En cada situación vas a
@@ -503,13 +923,15 @@
           <div>🥶 Ola de frío</div>
           <div>🗺️ Mapa de riesgo</div>
         </div>
+        <div class="etiqueta-nivel" style="margin-bottom:10px">▶ CAMPAÑA PRINCIPAL: 🏘️ PREPARÁ TU BARRIO</div><br>
         <button class="btn gigante pulso" id="btn-jugar">▶ ¡Jugar!</button>
         <div class="acciones" style="justify-content:center">
           <button class="btn secundario" id="btn-elegir">🎯 Elegir un desafío</button>
           <button class="btn secundario" id="btn-centro">🛰️ Centro de Alertas (modo experto)</button>
           <button class="btn secundario" id="btn-express">⚡ Modo Express (1 min)</button>
+          <button class="btn secundario" id="btn-consultor-portada">📖 Consultor ante eventos</button>
         </div>
-        <div class="record" id="record"></div>
+        <div class="credito"><span class="logo-grupo logo-medio" role="img" aria-label=""></span><span>Una propuesta del<br><strong style="color:var(--texto)">Grupo de Pronóstico · FCAG · UNLP</strong></span></div>
       </div>
     </div>
   </section>
@@ -517,7 +939,7 @@
   <!-- ===================== SELECTOR DE DESAFÍOS ===================== -->
   <section class="pantalla" id="p-selector">
     <div class="acciones" style="margin-top:0;justify-content:space-between;align-items:center">
-      <h2 style="margin:0">🎯 Elegí un desafío</h2>
+      <h2 style="margin:0;display:flex;align-items:center;gap:14px"><span class="logo-grupo logo-medio" role="img" aria-label="Logo del Grupo de Pronóstico FCAG-UNLP"></span>🎯 Elegí un desafío</h2>
       <button class="btn secundario" id="btn-sel-inicio">🏠 Inicio</button>
     </div>
     <p class="suave">Cada desafío es una trivia + un minijuego de 15 segundos (en Express, sólo la trivia). ¡Jugalos en el orden que quieras!</p>
@@ -645,6 +1067,7 @@
       <button class="btn" id="btn-fin-elegir" style="display:none">🎯 Elegir otro desafío</button>
       <button class="btn secundario" id="btn-fin-inicio">🏠 Inicio</button>
     </div>
+    <div style="text-align:center"><div class="credito"><span class="logo-grupo logo-medio" role="img" aria-label=""></span><span>Juego del<br><strong style="color:var(--texto)">Grupo de Pronóstico · FCAG · UNLP</strong></span></div></div>
   </section>
 </main>
 
@@ -702,7 +1125,7 @@ const ESCENARIOS = [
     ],
     capsula: "El Zonda se calienta y se seca al bajar la montaña (calentamiento adiabático: el aire se comprime al descender y sube su temperatura). Abrir las ventanas mete tierra y calor extremo a tu casa.",
     minijuego: "casa",
-    leccion: "Durante el Zonda la humedad puede caer por debajo del 10 %: la vegetación seca y los combustibles se encienden con una chispa y el viento propaga el fuego. Guardar combustibles y ramas, y proteger a personas y mascotas del polvo, reduce el riesgo."
+    leccion: "Durante el Zonda la humedad puede caer por debajo del 10 %: la vegetación seca y los combustibles se encienden con una chispa y el viento propaga el fuego. Guardar combustibles y ramas, y proteger a personas y mascotas del polvo, reduce el riesgo. Con alerta rojo por Zonda, el SAT recomienda «colgá paños húmedos en las ventanas» (¡la respuesta de la trivia!) y «no enciendas fuego». El SMN emite alertas por Zonda en cordillera, precordillera, puna y eventualmente los llanos, desde los 38 °S (norte de Neuquén) hasta Bolivia: Cuyo y el NOA."
   },
   {
     id: "helada", nombre: "Helada Radiativa", lugar: "Alto Valle / Mendoza", emoji: "❄️",
@@ -746,7 +1169,7 @@ const ESCENARIOS = [
     ],
     capsula: "Los colores rojos en el radar y las nubes tan altas indican tormentas severas con fuertes corrientes de aire (convección profunda), lo que significa ráfagas violentas y granizo de forma repentina.",
     minijuego: "radar",
-    leccion: "El radar mide la reflectividad (dBZ): cuánta señal rebota en gotas y granizo. Ecos de más de 50 dBZ suelen indicar granizo. Alertar a tiempo salva vidas, pero alertar por todo genera 'fatiga de alertas': la gente deja de creer en los avisos."
+    leccion: "El radar mide la reflectividad (dBZ): cuánta señal rebota en gotas y granizo. Ecos de más de 50 dBZ suelen indicar granizo. Cuando el radar detecta tormentas con signos de severidad, el SMN emite un Aviso a muy corto plazo (ACP): un polígono rojo sobre el mapa, válido por 1 a 3 horas. Alertar a tiempo salva vidas, pero alertar por todo genera 'fatiga de alertas': la gente deja de creer en los avisos."
   }
 ];
 
@@ -830,15 +1253,15 @@ const BARRIO = [
     ],
     capsula: "¡La basura y las hojas tapan los sumideros! Las cloacas abiertas colapsan y devuelven agua contaminada a las casas.",
     minijuego: "destapar",
-    leccion: "El desagüe pluvial (sumideros y bocas de tormenta) y la cloaca son redes distintas. Una sola bolsa puede tapar una boca de tormenta. Sacá la basura sólo cuando no hay alerta, limpiá las canaletas antes de la temporada de tormentas y nunca camines por calles inundadas: puede haber tapas abiertas."
+    leccion: "El desagüe pluvial (sumideros y bocas de tormenta) y la cloaca son redes distintas. Una sola bolsa puede tapar una boca de tormenta. Sacá la basura sólo cuando no hay alerta, limpiá las canaletas antes de la temporada de tormentas y nunca camines por calles inundadas: puede haber tapas abiertas. Las recomendaciones oficiales del SAT ante alerta por lluvia empiezan justamente así: «No saques la basura» y «Limpiá desagües y sumideros»."
   },
   {
     id: "viento", nombre: "Vientos Fuertes y Zonda", lugar: "El patio de tu casa", emoji: "💨",
-    clima: ["⚠️ Aviso a corto plazo", "💨 Ráfagas de más de 80 km/h", "🪴 Patio con objetos sueltos"],
+    clima: ["🟠 Alerta naranja por vientos", "💨 Ráfagas de más de 80 km/h", "🪴 Patio con objetos sueltos"],
     escena: { cielo: "cielo-polvo", tipo: "patio", fenomeno: "viento" },
-    titulo: "Aviso a corto plazo: ráfagas destructivas",
-    numero: "80+ km/h", dato: "de ráfagas en los próximos minutos. Estás en el patio de tu casa.",
-    pregunta: "Se emitió un aviso a corto plazo por ráfagas destructivas de más de 80 km/h. Estás en el patio de tu casa. ¿Qué hacés?",
+    titulo: "Alerta naranja por vientos fuertes",
+    numero: "80+ km/h", dato: "de ráfagas previstas para las próximas horas. Estás en el patio de tu casa.",
+    pregunta: "Rige un alerta naranja por vientos fuertes, con ráfagas de más de 80 km/h. Estás en el patio de tu casa. ¿Qué hacés?",
     opciones: [
       { icono: "🪟", texto: "Dejar las ventanas abiertas para que el viento circule y no rompa los vidrios por la presión.",
         resultado: "fallo", efecto: "viento-danio", titulo: "¡Casa revuelta y vidrios rotos!",
@@ -848,11 +1271,11 @@ const BARRIO = [
         consecuencia: "Mascotas adentro, ventanas cerradas y nada suelto: las ráfagas pasaron sin dejar proyectiles." },
       { icono: "🪜", texto: "Subir al techo rápido a clavar las chapas que estén flojas.",
         resultado: "fallo", efecto: "viento-danio", titulo: "¡Nunca al techo con viento!",
-        consecuencia: "Una ráfaga puede tirarte del techo, y una chapa que se suelta corta como una cuchilla. Las reparaciones se hacen ANTES del aviso o cuando el viento ya pasó." }
+        consecuencia: "Una ráfaga puede tirarte del techo, y una chapa que se suelta corta como una cuchilla. Las reparaciones se hacen ANTES del alerta o cuando el viento ya pasó." }
     ],
     capsula: "¡Nunca subas al techo con viento fuerte! Los objetos sueltos en el patio se convierten en proyectiles mortales con ráfagas severas.",
     minijuego: "patio",
-    leccion: "Con ráfagas de 80 km/h una silla de jardín o una maceta pueden volar decenas de metros, romper vidrios o herir a alguien. Lo que se puede mover se guarda; lo pesado (sombrillas, toldos, juegos) se cierra y se ata. Las chapas y techos se revisan con buen tiempo: con el aviso vigente NO se sube al techo, aunque veas una chapa floja. Entrá a las mascotas y quedate adentro, lejos de las ventanas."
+    leccion: "Con ráfagas de 80 km/h una silla de jardín o una maceta pueden volar decenas de metros, romper vidrios o herir a alguien. Lo que se puede mover se guarda; lo pesado (sombrillas, toldos, juegos) se cierra y se ata. Las chapas y techos se revisan con buen tiempo: con el aviso vigente NO se sube al techo, aunque veas una chapa floja. Entrá a las mascotas y quedate adentro, lejos de las ventanas. Dato del SMN: los «avisos a muy corto plazo» (ACP) son sólo para tormentas detectadas por radar; para viento y Zonda se emiten alertas, en general con 24 a 72 h de anticipación. Y una recomendación oficial clave: «No te refugies debajo de marquesinas, carteles publicitarios, árboles o postes»."
   },
   {
     id: "calor", nombre: "Ola de Calor Extrema", lugar: "La plaza del barrio", emoji: "🥵",
@@ -874,7 +1297,7 @@ const BARRIO = [
     ],
     capsula: "El golpe de calor es silencioso pero letal. El agua fresca a la sombra salva tanto a mascotas callejeras como domésticas.",
     minijuego: "hidratacion",
-    leccion: "Los más vulnerables al calor extremo son bebés, adultos mayores, personas con enfermedades crónicas y animales. Señales de alarma: piel caliente y seca, confusión, mareos o jadeo excesivo en mascotas. Ante esos síntomas: sombra, agua fresca (no helada) y llamar a emergencias."
+    leccion: "Recomendaciones oficiales del SAT ante calor extremo: tomá agua sin esperar a tener sed, no te expongas al sol entre las 10 y las 16 h, reducí la actividad física y prestá atención a niños, bebés, embarazadas y personas mayores o con enfermedades crónicas (y a las mascotas: agua fresca, nunca helada). Ante sed intensa, piel seca, agotamiento, mareos, náuseas o dolor de cabeza: pedí asistencia médica, llevá a la persona a un lugar fresco, mojale la ropa y dale agua fresca. El alerta del SMN por temperaturas extremas se basa en el efecto en la salud: en amarillo ya es peligroso para los grupos de riesgo; en rojo puede afectar incluso a personas sanas.",
   },
   {
     id: "rayos", nombre: "Tormenta Eléctrica", lugar: "Un parque abierto", emoji: "⚡",
@@ -905,9 +1328,9 @@ const BARRIO = [
       noticia: "Suspenden el recital al aire libre: una ráfaga arrancó el oso inflable gigante del escenario",
       bien: { titulo: "¡Decisión inteligente!", texto: "Te quedaste en casa. Minutos después, una ráfaga hizo volar el oso inflable y parte del escenario: el público tuvo que evacuar bajo la lluvia y los rayos." },
       mal:  { titulo: "¡Uf, qué susto!", texto: "Fuiste al recital... y una ráfaga arrancó el oso inflable gigante del escenario. Hubo que evacuar a miles de personas bajo la lluvia y los rayos." },
-      capsula: "Con alerta naranja, los eventos masivos al aire libre son muy riesgosos: escenarios, pantallas, carpas e inflables gigantes ofrecen mucha superficie al viento y pueden volar o derrumbarse. Además, una multitud en un predio abierto no tiene dónde refugiarse de los rayos. Antes de salir, revisá las alertas del Servicio Meteorológico Nacional."
+      capsula: "Con alerta naranja, los eventos masivos al aire libre son muy riesgosos: escenarios, pantallas, carpas e inflables gigantes ofrecen mucha superficie al viento y pueden volar o derrumbarse. Además, una multitud en un predio abierto no tiene dónde refugiarse de los rayos. Antes de salir, revisá las alertas del Servicio Meteorológico Nacional: ante alerta naranja, la recomendación oficial es «Salí solo si es necesario»."
     },
-    leccion: "Regla 30/30: si entre el relámpago y el trueno pasan menos de 30 segundos, el rayo está a menos de 10 km y ya hay peligro: buscá refugio. Esperá 30 minutos después del último trueno para salir. Un edificio cerrado o un auto con techo metálico son los mejores refugios; la posición en cuclillas es el último recurso."
+    leccion: "Regla 30/30: si entre el relámpago y el trueno pasan menos de 30 segundos, el rayo está a menos de 10 km y ya hay peligro: buscá refugio. Esperá 30 minutos después del último trueno para salir. Un edificio cerrado o un auto con techo metálico son los mejores refugios; la posición en cuclillas es el último recurso. Recomendación oficial del SAT ante alerta por tormentas: «Si estás al aire libre, buscá refugio inmediato en un edificio, casa o vehículo cerrado»."
   },
   {
     id: "frio", nombre: "Ola de Frío Polar", lugar: "Adentro de tu casa", emoji: "🥶",
@@ -929,7 +1352,7 @@ const BARRIO = [
     ],
     capsula: "¡El monóxido de carbono es un asesino silencioso! Nunca uses el horno o braseros para calefaccionar en lugares cerrados. La ventilación cruzada salva vidas.",
     minijuego: "frio",
-    leccion: "El monóxido de carbono (CO) aparece cuando algo se quema con poco oxígeno: hornos, hornallas, braseros o estufas mal instaladas. No tiene color ni olor y provoca dolor de cabeza, mareos y sueño. Para prevenirlo: rendija de ventilación siempre, artefactos revisados por un gasista matriculado, llama azul (si es amarilla o anaranjada, hay mala combustión) y, si podés, un detector de CO. Nunca seques ropa sobre una estufa."
+    leccion: "El monóxido de carbono (CO) aparece cuando algo se quema con poco oxígeno: hornos, hornallas, braseros o estufas mal instaladas. No tiene color ni olor y provoca dolor de cabeza, mareos y sueño. Para prevenirlo: rendija de ventilación siempre, artefactos revisados por un gasista matriculado, llama azul (si es amarilla o anaranjada, hay mala combustión) y, si podés, un detector de CO. Nunca seques ropa sobre una estufa. El alerta del SMN por temperaturas extremas también incluye el frío extremo: se activa cuando las temperaturas quedan por debajo de las más bajas habituales del lugar (percentil 10). Y otra recomendación oficial que suma: «No fumes en ambientes cerrados»."
   },
   {
     id: "mapa", nombre: "Lluvias Persistentes y Mapa de Riesgo", lugar: "Tu ciudad, con arroyos entubados", emoji: "🗺️",
@@ -951,7 +1374,7 @@ const BARRIO = [
     ],
     capsula: "¡El relieve de la ciudad es clave! Consultar un Mapa de Riesgo te permite identificar qué calles actúan como cuencas naturales de agua y cuáles son las zonas altas y seguras. En La Plata, por ejemplo, la Municipalidad publica el suyo en riesgo.laplata.gob.ar.",
     minijuego: "mapa",
-    leccion: "Muchas ciudades argentinas crecieron sobre arroyos que hoy corren entubados bajo las calles. Cuando llueve mucho, el agua vuelve a buscar su cauce natural y esas calles se inundan primero. Muchos municipios publican mapas de riesgo hídrico (en La Plata: riesgo.laplata.gob.ar): consultalos antes de mudarte o de salir con alerta. Y nunca cruces una calle anegada: 30 cm de agua en movimiento pueden arrastrar un auto."
+    leccion: "Muchas ciudades argentinas crecieron sobre arroyos que hoy corren entubados bajo las calles. Cuando llueve mucho, el agua vuelve a buscar su cauce natural y esas calles se inundan primero. Muchos municipios publican mapas de riesgo hídrico (en La Plata: riesgo.laplata.gob.ar): consultalos antes de mudarte o de salir con alerta. Y nunca cruces una calle anegada: 30 cm de agua en movimiento pueden arrastrar un auto. Para decidir el color del alerta, el SMN considera también el «factor adverso», como un suelo ya saturado por lluvias anteriores."
   }
 ];
 
@@ -983,7 +1406,7 @@ const RANGOS_BARRIO = [
 
 const LECCION_CENTRO = {
   titulo: "🔑 La gran lección: el mismo fenómeno no es el mismo riesgo",
-  texto: "El riesgo depende del <strong>fenómeno</strong> (lluvia, viento, frío, tormenta) × la <strong>vulnerabilidad</strong> del territorio (suelo, relieve, urbanización, preparación). Por eso los servicios meteorológicos emiten <strong>alertas por región</strong> y cada lugar necesita su propia respuesta.",
+  texto: "El riesgo depende del <strong>fenómeno</strong> (lluvia, viento, frío, tormenta) × la <strong>vulnerabilidad</strong> del territorio (suelo, relieve, urbanización, preparación). Por eso el SMN define <strong>umbrales de alerta para cada región</strong>, según su climatología: los mismos 60 mm pueden ser alerta en un lugar y no en otro.",
   victoria: "¡El territorio está a salvo gracias a tus decisiones!"
 };
 
@@ -992,7 +1415,7 @@ const MODOS = {
   barrio: {
     lista: BARRIO, rangos: RANGOS_BARRIO,
     leccion: {
-      titulo: "🔑 La gran lección: la prevención empieza en tu casa",
+      titulo: "🔑 La gran lección: la prevención empieza en tu casa · «Si hay alerta, estate alerta»",
       texto: "Los servicios meteorológicos avisan, pero el impacto final depende de lo que hacemos cada vecino: <strong>sumideros y canaletas limpios</strong>, <strong>objetos sueltos guardados</strong>, <strong>agua fresca y sombra</strong> para quien lo necesita y <strong>saber dónde refugiarse</strong>. Seguí siempre los avisos oficiales del Servicio Meteorológico Nacional y de Defensa Civil de tu municipio, y conocé el mapa de riesgo de tu ciudad (en La Plata: <a href=\"https://riesgo.laplata.gob.ar/mapa.php\" target=\"_blank\" rel=\"noopener\" style=\"color:var(--acento)\">riesgo.laplata.gob.ar</a>).",
       victoria: "¡Tu barrio está preparado gracias a vos!"
     }
@@ -1033,6 +1456,7 @@ function mostrarPantalla(id) {
   document.querySelectorAll(".pantalla").forEach(p => p.classList.remove("activa"));
   $(id).classList.add("activa");
   $("hud").classList.toggle("oculto", id === "p-inicio" || id === "p-selector");
+  if (typeof actualizarBotonConsultor === "function") actualizarBotonConsultor(id);
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 const pantallaActiva = (id) => $(id).classList.contains("activa");
@@ -1580,7 +2004,7 @@ function emoji(e, x, y, tam, rot = 0) {
   ctx.restore();
 }
 function texto(t, x, y, tam, color = "#fff", alinear = "center", contorno = false) {
-  ctx.font = `800 ${tam}px "Segoe UI", system-ui, sans-serif`;
+  ctx.font = `700 ${tam}px Rubik, "Segoe UI", system-ui, sans-serif`;
   ctx.textAlign = alinear; ctx.textBaseline = "middle";
   if (contorno) { ctx.lineWidth = 4; ctx.lineJoin = "round"; ctx.strokeStyle = "rgba(0,0,0,.7)"; ctx.strokeText(t, x, y); }   // round evita "pinchos" en las letras
   ctx.fillStyle = color;
@@ -3143,7 +3567,7 @@ const MINIJUEGOS = {
       [110, 318, 345, 102],          // la diagonal: el camino más corto… por el fondo del cauce
       [230, 260, 550, 260],
       [390, 260, 390, 355],
-      [550, 160, 550, 260],
+      [550, 192, 550, 260],          // (empieza un poco abajo: la esquina 550,160 queda transitable)
       [390, 355, 710, 355]
     ],
     calles() {                       // todas las calles transitables
@@ -3159,20 +3583,65 @@ const MINIJUEGOS = {
       return Math.hypot(px - (ax + k * dx), py - (ay + k * dy));
     },
     enCalle(x, y) { const D = MINIJUEGOS.mapa; return D.calles().some(c => D.distSeg(x, y, c) <= D.ANCHO); },
-    enRojo(x, y) { const D = MINIJUEGOS.mapa; return D.ROJAS.some(c => D.distSeg(x, y, c) <= 14); },
+    // El agua sube: estas calles se desbordan durante el juego. Con el mapa activo se ve el aviso antes.
+    INUNDACIONES: [
+      { t: 5, seg: [415, 60, 550, 60] },   // corta el atajo de arriba (la esquina 390,60 queda libre para bajar)
+      { t: 9, seg: [70, 160, 70, 260] }    // quien se demoró en arrancar queda aislado
+    ],
+    AVISO: 1.5,                      // segundos de aviso antes de cada desborde
+    VELOCIDAD: 230,                  // px/s: el auto no puede "teletransportarse" al dedo
+    rojasActivas(t) {
+      const D = MINIJUEGOS.mapa;
+      return D.ROJAS.concat(D.INUNDACIONES.filter(f => t >= f.t).map(f => f.seg));
+    },
+    // La zona roja cubre TODO el ancho de la calle (ANCHO + 2): no se puede pasar "pegado al borde"
+    enRojo(x, y, t) { const D = MINIJUEGOS.mapa; return D.rojasActivas(t).some(c => D.distSeg(x, y, c) <= D.ANCHO + 2); },
+    hundir(s, msg) {
+      s.hundido = true; s.tHundido = s.t; s.arr = null; s.objetivo = null;
+      flotante(msg, 400, 110, "#ff4d6d", 26); sacudir(); sonido("fallo");
+    },
+    // Avanza el auto hacia el objetivo, de a pasitos de 4 px, sólo por calles y con un límite de distancia
+    avanzar(s, presupuesto) {
+      const D = MINIJUEGOS.mapa, o = s.objetivo;
+      while (presupuesto > 0) {
+        const dx = o.x - s.auto.x, dy = o.y - s.auto.y, d = Math.hypot(dx, dy);
+        if (d < 2) return;
+        const p = Math.min(4, d, presupuesto), k = p / d;
+        const opciones = [[s.auto.x + dx * k, s.auto.y + dy * k], [s.auto.x + Math.sign(dx) * Math.min(p, Math.abs(dx)), s.auto.y], [s.auto.x, s.auto.y + Math.sign(dy) * Math.min(p, Math.abs(dy))]];
+        const sig = opciones.find(([nx, ny]) => D.enCalle(nx, ny) && (nx !== s.auto.x || ny !== s.auto.y));
+        if (!sig) return;
+        presupuesto -= Math.hypot(sig[0] - s.auto.x, sig[1] - s.auto.y) || p;
+        s.auto.x = sig[0]; s.auto.y = sig[1];
+        if (D.enRojo(s.auto.x, s.auto.y, s.t)) return D.hundir(s, "🌊 ¡Ruta bloqueada por desborde!");
+        if (dist(s.auto.x, s.auto.y, D.HOSPITAL.x, D.HOSPITAL.y) < 28) {
+          s.llego = true; s.arr = null; s.objetivo = null;
+          chispas(D.HOSPITAL.x, D.HOSPITAL.y, "#2ee59d", 20); flotante("🏥 ¡Llegaste a salvo!", D.HOSPITAL.x - 60, D.HOSPITAL.y - 50, "#2ee59d", 22); sonido("ok");
+          return;
+        }
+      }
+    },
     instrucciones: [
       ["🗺️", "Primero TOCÁ el botón «Activar Mapa de Riesgo»: vas a ver las zonas ROJAS (inundables) y las VERDES (seguras)."],
       ["🚗", "ARRASTRÁ el auto por las calles desde la SALIDA hasta el Centro de Evacuación 🏥."],
-      ["🌊", "Si el auto toca una zona roja, se hunde en el agua y perdés. ¡El camino más corto no siempre es el seguro!"]
+      ["🌊", "¡El agua SUBE! Algunas calles se desbordan mientras jugás (el mapa te avisa ⚠️ antes). Si el auto está en una zona roja, se hunde. El auto tiene velocidad máxima: planificá la ruta."]
     ],
     crear() {
       const gotas = [];
       for (let i = 0; i < 70; i++) gotas.push({ x: Math.random() * W, y: Math.random() * H });
-      return { auto: { ...MINIJUEGOS.mapa.SALIDA }, activo: false, hundido: false, tHundido: 0, llego: false, arr: null, gotas, t: 0 };
+      return { auto: { ...MINIJUEGOS.mapa.SALIDA }, objetivo: null, inundadas: 0, activo: false, hundido: false, tHundido: 0, llego: false, arr: null, gotas, t: 0 };
     },
     actualizar(s, dt, t) {
+      const D = MINIJUEGOS.mapa;
       s.t = t;
       s.gotas.forEach(g => { g.y += 520 * dt; g.x -= 60 * dt; if (g.y > H) { g.y = -10; g.x = Math.random() * (W + 60); } });
+      // Nuevos desbordes
+      while (s.inundadas < D.INUNDACIONES.length && t >= D.INUNDACIONES[s.inundadas].t) {
+        const f = D.INUNDACIONES[s.inundadas++];
+        sonido("trueno");
+        if (s.activo) flotante("🌊 ¡Se desbordó otra calle!", (f.seg[0] + f.seg[2]) / 2 + (f.seg[0] === f.seg[2] ? 120 : 0), (f.seg[1] + f.seg[3]) / 2 + (f.seg[0] === f.seg[2] ? 0 : 50), "#ff8da1", 18);
+        if (!s.hundido && !s.llego && D.distSeg(s.auto.x, s.auto.y, f.seg) <= D.ANCHO + 2) return D.hundir(s, "🌊 ¡La calle se desbordó con vos adentro!");
+      }
+      if (s.objetivo && !s.hundido && !s.llego) D.avanzar(s, D.VELOCIDAD * dt);
     },
     terminado: (s) => s.hundido || s.llego,
     estado(s) {
@@ -3188,30 +3657,9 @@ const MINIJUEGOS = {
       if (!s.arr && dist(x, y, s.auto.x, s.auto.y) < 40) { s.arr = { id }; sonido("tic"); }
     },
     mover(s, x, y, id) {
-      const D = MINIJUEGOS.mapa;
-      if (!s.arr || s.arr.id !== id || s.hundido || s.llego) return;
-      // El auto avanza de a pasitos hacia el dedo y sólo por calles (nunca atraviesa manzanas)
-      for (let paso = 0; paso < 80; paso++) {
-        const dx = x - s.auto.x, dy = y - s.auto.y, d = Math.hypot(dx, dy);
-        if (d < 2) break;
-        const k = Math.min(4, d) / d;
-        const opciones = [[s.auto.x + dx * k, s.auto.y + dy * k], [s.auto.x + Math.sign(dx) * Math.min(4, Math.abs(dx)), s.auto.y], [s.auto.x, s.auto.y + Math.sign(dy) * Math.min(4, Math.abs(dy))]];
-        const sig = opciones.find(([nx, ny]) => D.enCalle(nx, ny) && (nx !== s.auto.x || ny !== s.auto.y));
-        if (!sig) break;
-        s.auto.x = sig[0]; s.auto.y = sig[1];
-        if (D.enRojo(s.auto.x, s.auto.y)) {
-          s.hundido = true; s.tHundido = s.t; s.arr = null;
-          flotante("🌊 ¡Ruta bloqueada por desborde!", 400, 110, "#ff4d6d", 26); sacudir(); sonido("fallo");
-          return;
-        }
-        if (dist(s.auto.x, s.auto.y, D.HOSPITAL.x, D.HOSPITAL.y) < 28) {
-          s.llego = true; s.arr = null;
-          chispas(D.HOSPITAL.x, D.HOSPITAL.y, "#2ee59d", 20); flotante("🏥 ¡Llegaste a salvo!", D.HOSPITAL.x - 60, D.HOSPITAL.y - 50, "#2ee59d", 22); sonido("ok");
-          return;
-        }
-      }
+      if (s.arr && s.arr.id === id && !s.hundido && !s.llego) s.objetivo = { x, y };   // el dedo marca hacia dónde ir
     },
-    arriba(s, x, y, id) { if (s.arr && s.arr.id === id) s.arr = null; },
+    arriba(s, x, y, id) { if (s.arr && s.arr.id === id) { s.arr = null; s.objetivo = null; } },
     dibujar(ctx, s, t) {
       const D = MINIJUEGOS.mapa;
       // Manzanas
@@ -3226,9 +3674,16 @@ const MINIJUEGOS = {
       D.calles().forEach(c => trazo(c, "#9aa3b2", 30));
       if (s.activo) {
         D.calles().forEach(c => trazo(c, "rgba(46,229,157,.75)", 30));
-        D.ROJAS.forEach(c => trazo(c, "rgba(255,50,70,.85)", 34));
+        D.rojasActivas(s.t).forEach(c => trazo(c, "rgba(255,50,70,.85)", 34));
         ctx.setLineDash([10, 8]);                                                           // el arroyo entubado
         D.ROJAS.forEach(c => trazo(c, "#7cc3ff", 4));
+        ctx.setLineDash([]);
+        D.INUNDACIONES.forEach(f => {                                                       // aviso de desborde
+          const falta = f.t - s.t;
+          if (falta <= 0 || falta > D.AVISO) return;
+          trazo(f.seg, `rgba(255,145,0,${.6 + .3 * Math.sin(t * 14)})`, 34);
+          texto(`⚠️ se desborda en ${falta.toFixed(1)} s`, (f.seg[0] + f.seg[2]) / 2 + (f.seg[0] === f.seg[2] ? 90 : 0), (f.seg[1] + f.seg[3]) / 2 + (f.seg[0] === f.seg[2] ? 0 : 40), 15, "#ffcc00", "center", true);
+        });
         ctx.setLineDash([]);
         emoji("📉", 300, 240, 22); texto("zona baja", 300, 216, 12, "#ffd0d6", "center", true);
         emoji("⛰️", 70, 30, 22); texto("zona alta", 115, 30, 12, "#c8ffe6", "left", true);
@@ -3369,7 +3824,7 @@ function mostrarFinal() {
   if (estado.suelto) {
     const h = estado.historial[0];
     if (h) jugados[h.esc.id] = gano ? "exito" : "fallo";
-  } else guardarRecord(estado.puntaje);           // el récord del stand cuenta sólo partidas completas
+  }
   $("btn-fin-elegir").style.display = estado.suelto ? "" : "none";
   $("btn-fin-otra").textContent = estado.suelto ? "🔄 Repetir este desafío" : "🔄 Volver a jugar";
   mostrarPantalla("p-final");
@@ -3391,11 +3846,6 @@ function lanzarConfeti() {
   }
 }
 
-/* Récord del stand guardado en el navegador (si no se puede, el juego sigue igual) */
-const CLAVE_RECORD = "alertaTerritorio.record";
-function leerRecord() { try { return +localStorage.getItem(CLAVE_RECORD) || 0; } catch (e) { return 0; } }
-function guardarRecord(p) { try { if (p > leerRecord()) localStorage.setItem(CLAVE_RECORD, p); } catch (e) { /* sin almacenamiento */ } }
-function pintarRecord() { const r = leerRecord(); $("record").textContent = r ? `🏅 Récord del stand: ${r} puntos` : ""; }
 
 /* =====================================================================
    H2) SELECTOR DE DESAFÍOS
@@ -3503,13 +3953,321 @@ function nuevaPartida(modo) {
   iniciarEscenario();
 }
 
+/* =====================================================================
+   K) CONSULTOR DE INFORMACIÓN ANTE EVENTOS
+   Panel con información real: niveles de alerta, mapa de riesgo,
+   números de emergencia y qué hacer. Se oculta durante las pantallas
+   con tiempo (trivia, minijuego, celular) para no servir de "machete".
+   ===================================================================== */
+// Significados oficiales (SMN – SAT, Preguntas frecuentes y definiciones, 2.ª ed. 2024).
+// "hacer" es una guía del juego, no texto del SMN.
+const NIVELES = {
+  general: [
+    { color: "#00e676", nombre: "Verde", lema: "Tranquilidad",
+      desc: "No se esperan fenómenos que impliquen riesgos. El verde indica que no hay amenazas, y también se usa para mostrar el cese de una situación adversa.",
+      hacer: ["Seguí con tus actividades habituales.", "Si vas a estar al aire libre, consultá el pronóstico."] },
+    { color: "#ffd600", nombre: "Amarillo", lema: "Informate",
+      desc: "Posibles fenómenos con capacidad de daño. Riesgo de interrupción momentánea de las actividades cotidianas: la población debería estar atenta e informarse, porque el evento podría requerir alguna acción en el corto o mediano plazo.",
+      frecuencia: "Es el nivel más común: más del 90 % de los alertas.",
+      extra: "⚠️ Un alerta amarillo no significa que no pueda haber eventos severos, especialmente con tormentas.",
+      hacer: ["Seguí la evolución por canales oficiales.", "Revisá canaletas y guardá objetos sueltos.", "Evitá actividades al aire libre si el fenómeno se intensifica."],
+      ejemplo: "En el juego: la cápsula de «¿60 mm = 60 mm?» del Modo Express." },
+    { color: "#ff9100", nombre: "Naranja", lema: "Preparate",
+      desc: "Se esperan fenómenos meteorológicos peligrosos para la sociedad, la vida, los bienes y el ambiente: eventos particularmente intensos.",
+      frecuencia: "Menos del 10 % de los alertas.",
+      hacer: ["Prepará la mochila de emergencia y cargá el celular.", "Reprogramá viajes y eventos al aire libre.", "Asegurá el patio y entrá a las mascotas."],
+      ejemplo: "En el juego: el alerta por vientos del patio y la invitación al recital 🧸" },
+    { color: "#ff1744", nombre: "Rojo", lema: "Seguí instrucciones oficiales",
+      desc: "Se esperan fenómenos meteorológicos excepcionales con potencial de provocar emergencias o desastres: la intensidad estaría cerca de su máximo climatológico.",
+      frecuencia: "Reservado para situaciones muy particulares: el 1 % de los casos o menos.",
+      hacer: ["Seguí las indicaciones de Defensa Civil y de las autoridades.", "Quedate en un lugar seguro y no circules si no es imprescindible.", "Si te indican evacuar, hacelo sin demora y por zonas altas."],
+      ejemplo: "En el juego: las lluvias intensas y el mapa de riesgo." }
+  ],
+  temperatura: [
+    { color: "#00e676", nombre: "Verde", lema: "Sin efecto sobre la salud",
+      desc: "Sin peligro sobre la salud de la población.",
+      hacer: ["Seguí con tus actividades habituales."], oficial: true },
+    { color: "#ffd600", nombre: "Amarillo", lema: "Efecto leve a moderado",
+      desc: "Las temperaturas extremas pueden ser peligrosas, sobre todo para los grupos de riesgo: niños y niñas, personas mayores de 65 años y personas con enfermedades crónicas.",
+      hacer: ["Aumentá el consumo de agua sin esperar a tener sed.", "No te expongas al sol en las horas centrales del día (entre las 10 y las 16 horas).", "Prestá atención a niños, bebés, embarazadas y personas mayores o con enfermedades crónicas."], oficial: true },
+    { color: "#ff9100", nombre: "Naranja", lema: "Efecto moderado a alto",
+      desc: "Las temperaturas extremas pueden ser muy peligrosas, especialmente para los grupos de riesgo.",
+      hacer: ["Reducí la actividad física.", "Permanecé en espacios ventilados o acondicionados.", "Con frío: mantené la casa calefaccionada de forma segura y no fumes en ambientes cerrados."], oficial: true,
+      ejemplo: "En el juego: la Brigada de Hidratación y ¡Calor Seguro!" },
+    { color: "#ff1744", nombre: "Rojo", lema: "Efecto alto a extremo",
+      desc: "Las temperaturas extremas son muy peligrosas. Pueden afectar a todas las personas, incluso a las saludables.",
+      hacer: ["Ante mareos, agotamiento, náuseas, dolor de cabeza o piel seca, solicitá de inmediato asistencia médica.", "Llevá a la persona a un lugar fresco y tranquilo, mojale la ropa y dale de beber agua fresca."], oficial: true }
+  ]
+};
+const NOTA_MODO = {
+  general: "Los alertas de este grupo se actualizan todos los días cerca de las 6 y las 18 h.",
+  temperatura: "Los mismos colores tienen otro significado: indican el efecto en la salud. Se actualizan cerca de las 19 h con validez de 24 h. El calor extremo se define a partir del percentil 90 (P90) de las temperaturas del lugar (1961-2010) y el frío extremo a partir del percentil 10 (P10); los percentiles más extremos (P95/P99 y P5/P1) definen los niveles más altos."
+};
+let modoSemaforo = "general";
+
+// Esquema orientativo del SMN: probabilidad (filas) × intensidad + factor adverso (columnas) -> nivel 0..3
+const MATRIZ = {
+  columnas: ["Leve", "Moderado", "Alto", "Extremo"],
+  filas: [["Alta (24 h)", [0, 1, 2, 3]], ["Media (48 h)", [0, 1, 2, 2]], ["Baja (72 h)", [0, 0, 1, 2]]]
+};
+const COLOR_NIVEL = ["#00e676", "#ffd600", "#ff9100", "#ff1744"];
+const NOMBRE_NIVEL = ["verde", "amarillo", "naranja", "rojo"];
+
+// Ejemplo ilustrativo de línea de tiempo (3 días × 4 franjas). 0-3 = nivel de alerta, "v" = advertencia
+const LINEA_TIEMPO = [
+  ["💨 Viento",  [0,1,1,1, 1,1,2,1, 1,0,0,0]],
+  ["🌧️ Lluvia",  [0,0,0,1, 1,1,2,1, 1,0,0,0]],
+  ["⛈️ Tormenta",[0,0,0,0, 0,1,1,0, 0,0,0,0]],
+  ["❄️ Nevadas", [0,0,0,1, 0,1,1,2, 3,1,1,0]],
+  ["🌫️ Niebla",  ["v","v","v","v", "v","v","v",0, "v","v",0,0]]
+];
+
+/* Recomendaciones oficiales del SAT por fenómeno y nivel
+   (Módulo «Recomendaciones para alertas y advertencias»). Frases repetidas en constantes. */
+const R = {
+  segui: "Seguí las instrucciones de las autoridades locales. La calma es fundamental en estas situaciones.",
+  kit: "Prepará un kit de emergencia con agua potable, alimentos, botiquín de primeros auxilios, radio a pilas y linterna. Cargá los celulares con anticipación.",
+  agenda: "Agendá los números locales de Protección Civil, Bomberos y Policía.",
+  ubica: "Ubicá las zonas seguras e identificá lugares a donde ir en caso de evacuación.",
+  comparti: "Compartí estas recomendaciones con tu familia: asegurate de que todos sepan qué hacer en caso de emergencia.",
+  objetos: "Retirá o asegurá objetos que puedan ser arrastrados por el viento, como macetas, sillas o toldos.",
+  puertas: "Cerrá y alejate de puertas y ventanas.",
+  marquesinas: "No te refugies debajo de marquesinas, carteles publicitarios, árboles o postes.",
+  basura: "No saques la basura.", desagues: "Limpiá desagües y sumideros.",
+  luz: "Cortá el suministro eléctrico si ingresa agua.",
+  electro: "Desconectá los electrodomésticos y cortá el suministro eléctrico si ingresa agua.",
+  anegadas: "Alejate de zonas inundables y no ingreses en calles anegadas.",
+  zondaOjos: "Hidratate y protegé tus ojos y nariz del polvo con anteojos y barbijo.",
+  fuego: "No enciendas fuego.",
+  nieveVeh: "Circulá solo con vehículos adecuados y preparados para hielo y nieve. Llevá siempre una pala.",
+  nieveKit: "Prepará un kit de emergencia que incluya linternas, pilas adicionales, velas, fósforos, mantas térmicas, un botiquín de primeros auxilios y cualquier medicamento necesario.",
+  co: "Ventilá para evitar acumulación de monóxido de carbono.",
+  infoAut: "Mantenete informado por las autoridades."
+};
+const nieveAlta = [R.segui, "Salí solo si es imprescindible.", R.nieveVeh,
+  "Revisá el estado de los techos, canaletas y desagües para asegurarte de que estén en buen estado y puedan soportar la acumulación de nieve. Retirá la nieve acumulada.",
+  R.co, "Asegurate de tener suficientes alimentos no perecederos, agua potable para al menos tres días y carga en el celular. Incluí alimentos fáciles de preparar en caso de que haya cortes de energía.",
+  R.nieveKit, "Compartí estas recomendaciones con tu familia: asegurate de que toda la familia sepa qué hacer en caso de emergencia.", R.agenda];
+const RECOMENDACIONES = {
+  lluvia: { emoji: "🌧️", nombre: "Lluvia", niveles: {
+    amarillo: ["Evitá salir.", R.basura, R.desagues, "Alejate de zonas inundables.", R.luz],
+    naranja: [R.segui, "Salí solo si es necesario.", R.basura, R.desagues, R.anegadas, "Conducí con precaución.", R.luz, "No te acerques a cables, postes o carteles con electricidad.", R.kit, R.agenda],
+    rojo: [R.segui, "Salí solo si es imprescindible.", R.basura, R.desagues, "Alejate de ríos, arroyos, zonas inundables y no ingreses en calles anegadas.", "Evitá conducir en calzadas resbaladizas y con visibilidad reducida.", R.luz, R.ubica, R.kit, R.comparti, R.agenda] } },
+  viento: { emoji: "💨", nombre: "Viento", niveles: {
+    amarillo: ["Evitá salir.", R.objetos, R.puertas, R.marquesinas, "Tené precaución al conducir."],
+    naranja: [R.segui, "Salí solo si es necesario.", R.objetos, R.puertas, R.marquesinas, "Con ráfagas intensas o reducción de visibilidad por tierra, buscá un lugar seguro para detenerte.", R.kit, R.agenda],
+    rojo: [R.segui, "No salgas y quedate en el interior de un lugar seguro.", "Alejate de carteles publicitarios, árboles o postes.", R.objetos, R.puertas, "Con ráfagas intensas o reducción de visibilidad por tierra, buscá un lugar seguro para detenerte.", R.kit, R.ubica, R.comparti, R.agenda] } },
+  zonda: { emoji: "Ⓩ", nombre: "Viento Zonda", niveles: {
+    amarillo: ["Evitá salir al momento del fenómeno.", "Cerrá puertas y ventanas para evitar la entrada de polvo y aire caliente.", R.objetos, R.marquesinas, "Conducí con precaución.", R.zondaOjos, R.fuego],
+    naranja: [R.segui, "Salí solo si es necesario.", R.puertas, R.objetos, R.marquesinas, "Evitá conducir si la visibilidad está reducida.", R.zondaOjos, R.fuego, R.kit, R.agenda],
+    rojo: [R.segui, "Salí solo si es imprescindible.", R.puertas, "Colgá paños húmedos en las ventanas, colocá recipientes con agua en el suelo o utilizá un humidificador.", R.objetos, R.marquesinas, "Evitá conducir si la visibilidad está reducida o hay fuego.", R.zondaOjos, R.fuego,
+      "Prepará un kit de emergencia con agua potable, alimentos, matafuego, botiquín de primeros auxilios, radio a pilas y linterna. Cargá los celulares con anticipación.",
+      "Compartí estas recomendaciones con tu familia: asegurate de que todos sepan qué hacer en caso de emergencia o incendios.", R.agenda] } },
+  tormenta: { emoji: "⛈️", nombre: "Tormenta", niveles: {
+    amarillo: ["Evitá salir.", "No saques la basura y limpiá desagües y sumideros.", R.electro, R.puertas, "Retirá o asegurá objetos que puedan ser arrastrados por el viento.", "Si estás al aire libre, buscá refugio inmediato en un edificio, casa o vehículo cerrado."],
+    naranja: [R.segui, "Salí solo si es necesario.", "Permanecé en construcciones cerradas como casas, escuelas, edificios públicos.", R.electro, R.puertas, R.anegadas, "Retirá o asegurá objetos que puedan ser volados por el viento.", R.kit, R.agenda],
+    rojo: [R.segui, "Salí solo si es imprescindible.", R.electro, R.puertas, R.anegadas, "Retirá o asegurá objetos que puedan ser arrastrados por el viento.", R.kit, R.ubica, R.comparti, R.agenda] } },
+  nieve: { emoji: "❄️", nombre: "Nieve", niveles: {
+    amarillo: ["Evitá salir.", "Circulá con vehículos adecuados y preparados para hielo y nieve. Llevá siempre una pala.",
+      "Revisá el estado de los techos, canaletas y desagües para asegurarte de que estén en buen estado y puedan soportar la acumulación de nieve.", R.co,
+      "Asegurate de tener suficientes alimentos no perecederos y agua potable para al menos tres días. Incluí alimentos fáciles de preparar en caso de que haya cortes de energía.", R.nieveKit],
+    naranja: nieveAlta, rojo: nieveAlta } },
+  calor: { emoji: "🥵", nombre: "Calor extremo", unico: true, lista: [
+    "Aumentá el consumo de agua (frecuencia e ingesta) sin esperar a tener sed para mantener una hidratación adecuada.",
+    "No te expongas al sol en exceso, ni en horas centrales del día (entre las 10 y las 16 horas).",
+    "Prestá atención a niños, bebés, embarazadas y personas mayores o con enfermedades crónicas.",
+    "Evitá las bebidas con cafeína, con alcohol o muy azucaradas y comidas muy abundantes.", "Ingerí frutas y verduras.", "Reducí la actividad física.",
+    "Usá ropa ligera, holgada y de colores claros; sombrero, anteojos oscuros.", "Permanecé en espacios ventilados o acondicionados."],
+    extra: "<strong>🚑 Ante sed intensa y sequedad en la boca, sudoración excesiva, sensación de calor sofocante, piel seca, agotamiento, mareos o desmayo, dolores de estómago, falta de apetito, náuseas o vómitos, dolores de cabeza:</strong> solicitá de inmediato asistencia médica; trasladá a la persona a un lugar fresco y tranquilo, intentá refrescarla, mojale la ropa y dale de beber agua fresca." },
+  frio: { emoji: "🥶", nombre: "Frío extremo", unico: true, lista: [
+    "Evitá exponerte por tiempo prolongado al frío en exteriores. En caso de tener que salir, abrigate con muchas capas de ropa liviana.",
+    "Generá más calor corporal mediante el movimiento (caminar, levantarse y sentarse, mover las extremidades, etc.).",
+    "Mantené la casa calefaccionada de forma segura.", "Evitá los cambios bruscos de temperatura.", "Tomá mucho líquido y evitá el consumo de bebidas alcohólicas.",
+    "Si estás afectado por el frío, no te automediques, y consultá con un médico o dirigite al centro de salud más cercano.",
+    "Si tenés medicación recetada mantené el plan de acción actualizado.", "No fumes en ambientes cerrados.",
+    "Prestá especial atención a niños, embarazadas y personas mayores o con enfermedades crónicas."] },
+  humo: { emoji: "💨", nombre: "Humo", advertencia: true, lista: ["Evitá actividades al aire libre.", "Protegete las vías respiratorias y oculares.",
+    "Intentá no circular pero, si tenés que hacerlo, tomá las precauciones en la ruta con baja visibilidad por humo. Conducí despacio, mantené la distancia y utilizá las luces bajas.", R.infoAut] },
+  polvo: { emoji: "🟫", nombre: "Polvo en suspensión", advertencia: true, lista: ["Evitá el uso de vehículos, pero en caso de hacerlo, conducí a una velocidad reducida.",
+    "Usá mascarilla que cubra las vías respiratorias. Protegé tus ojos mientras te encuentres en ambientes abiertos.",
+    "Niños, adultos mayores o personas con patologías respiratorias o cardíacas deben mantenerse en espacios cerrados."] },
+  ceniza: { emoji: "🌋", nombre: "Ceniza volcánica", advertencia: true, lista: ["Evitá actividades al aire libre.", "Asegurate de conocer las rutas de evacuación hacia zonas de seguridad.",
+    "Cubrí fuentes y depósitos de agua para evitar que se contaminen con cenizas.", "Asegurate de cerrar puertas y ventanas.",
+    "Recordá que las cenizas volcánicas pueden dañar el motor de tu vehículo.", R.infoAut] },
+  niebla: { emoji: "🌫️", nombre: "Niebla", advertencia: true, lista: ["Evitá circular.", "Si la niebla te sorprende durante la conducción, mantené distancia entre vehículos y no sobrepases a otros.",
+    "Encendé las luces bajas y las antiniebla.", "Reducí la velocidad.", "En cuanto puedas, estacioná en un lugar seguro. No lo hagas sobre banquinas o calzadas.", R.infoAut] }
+};
+let recoFen = "lluvia", recoNivel = "naranja";
+
+function armarRecomendaciones() {
+  const sf = $("selector-fen");
+  sf.innerHTML = Object.entries(RECOMENDACIONES).map(([k, f]) =>
+    `<button class="tab ${f.advertencia ? "adv" : ""}" data-fen="${k}">${f.emoji} ${f.nombre}${f.advertencia ? " · adv." : ""}</button>`).join("");
+  sf.querySelectorAll(".tab").forEach(b => b.addEventListener("click", () => { recoFen = b.dataset.fen; pintarRecomendaciones(); }));
+  pintarRecomendaciones();
+}
+
+function pintarRecomendaciones() {
+  const f = RECOMENDACIONES[recoFen];
+  document.querySelectorAll("#selector-fen .tab").forEach(b => b.classList.toggle("activa", b.dataset.fen === recoFen));
+  const sn = $("selector-nivel");
+  let lista, color;
+  if (f.niveles) {
+    sn.innerHTML = [["amarillo", "#ffd600"], ["naranja", "#ff9100"], ["rojo", "#ff1744"]].map(([n, c]) =>
+      `<button data-nivel="${n}" style="background:${c}" class="${n === recoNivel ? "elegido" : ""}">${n.toUpperCase()}</button>`).join("");
+    sn.querySelectorAll("button").forEach(b => b.addEventListener("click", () => { recoNivel = b.dataset.nivel; pintarRecomendaciones(); }));
+    lista = f.niveles[recoNivel];
+    color = { amarillo: "#ffd600", naranja: "#ff9100", rojo: "#ff1744" }[recoNivel];
+  } else {
+    sn.innerHTML = f.advertencia
+      ? `<button style="background:#8e88cc;cursor:default" class="elegido">ADVERTENCIA (VIOLETA)</button>`
+      : `<button style="background:#ffd600;cursor:default" class="elegido">MISMAS RECOMENDACIONES PARA TODOS LOS NIVELES</button>`;
+    lista = f.lista;
+    color = f.advertencia ? "#8e88cc" : "#ffd600";
+  }
+  const base = f.niveles ? new Set(f.niveles.amarillo) : null;
+  const ol = $("recos");
+  ol.style.setProperty("--color-reco", color);
+  ol.innerHTML = lista.map((t, i) => `<li style="animation-delay:${i * .03}s"><span>${t}</span>${base && recoNivel !== "amarillo" && !base.has(t) ? `<span class="nuevo">NUEVO</span>` : ""}</li>`).join("");
+  $("recos-extra").innerHTML = f.extra ? `<div class="nota-oficial" style="border-style:solid;color:var(--texto)">${f.extra}</div>` : "";
+}
+
+const GUIAS = [
+  { emoji: "🌧️", titulo: "Lluvias intensas", antes: "Limpiá canaletas y sumideros; no saques la basura.", durante: "No camines ni manejes por calles anegadas.", despues: "No toques cables caídos; avisá de tapas o pozos abiertos." },
+  { emoji: "💨", titulo: "Viento fuerte", antes: "Guardá o atá objetos sueltos; revisá techos con buen tiempo.", durante: "Quedate adentro, lejos de ventanas. Nunca subas al techo.", despues: "Cuidado con árboles, ramas y cables caídos." },
+  { emoji: "🥵", titulo: "Ola de calor", antes: "Planificá actividades para la mañana temprano o la noche.", durante: "Agua fresca, sombra, ropa liviana; agua para los animales.", despues: "Preguntá cómo están los vecinos mayores." },
+  { emoji: "⚡", titulo: "Tormenta eléctrica", antes: "Regla 30/30: si el trueno llega en menos de 30 s, refugiate.", durante: "Edificio cerrado o auto con techo metálico. Nunca bajo un árbol.", despues: "Esperá 30 minutos desde el último trueno para salir." },
+  { emoji: "🥶", titulo: "Ola de frío", antes: "Hacé revisar estufas y calefactores por un gasista matriculado.", durante: "Siempre una rendija abierta. Nunca horno ni brasero para calefaccionar.", despues: "Ante dolor de cabeza, mareos o sueño: aire libre y llamá al 107." },
+  { emoji: "🗺️", titulo: "Inundación", antes: "Conocé el mapa de riesgo y tu ruta a la zona alta.", durante: "Desconectá la electricidad si entra agua; subí a lugares altos.", despues: "No consumas alimentos ni agua que hayan tenido contacto con la inundación." }
+];
+
+let consultorArmado = false;
+function armarConsultor() {
+  if (consultorArmado) return;
+  consultorArmado = true;
+  armarSemaforo();
+  document.querySelectorAll(".modo-semaforo .tab").forEach(b => b.addEventListener("click", () => {
+    modoSemaforo = b.dataset.modo;
+    document.querySelectorAll(".modo-semaforo .tab").forEach(x => x.classList.toggle("activa", x === b));
+    armarSemaforo();
+  }));
+  // Matriz interactiva
+  const m = $("matriz");
+  m.innerHTML = `<tr><th>Probabilidad ↓ / Intensidad →</th>${MATRIZ.columnas.map(c => `<th>${c}</th>`).join("")}</tr>` +
+    MATRIZ.filas.map(([f, niveles], i) => `<tr><th>${f}</th>${niveles.map((n, j) =>
+      `<td class="celda" data-f="${i}" data-c="${j}" style="background:${COLOR_NIVEL[n]}">${n}</td>`).join("")}</tr>`).join("");
+  m.querySelectorAll(".celda").forEach(td => td.addEventListener("click", () => {
+    const [f, niveles] = MATRIZ.filas[td.dataset.f], n = niveles[td.dataset.c];
+    m.querySelectorAll(".celda").forEach(x => x.classList.toggle("elegida", x === td));
+    $("matriz-explica").innerHTML = `Intensidad <strong>${MATRIZ.columnas[td.dataset.c].toLowerCase()}</strong> + probabilidad <strong>${f.toLowerCase()}</strong> → nivel <strong style="color:${COLOR_NIVEL[n]}">${NOMBRE_NIVEL[n]}</strong>.` +
+      (td.dataset.c === "3" && td.dataset.f !== "0" ? " Aunque el fenómeno sea extremo, si todavía falta mucho la incertidumbre es mayor y el color baja." : "");
+  }));
+  // Línea de tiempo de ejemplo
+  const lt = $("linea-tiempo");
+  lt.innerHTML = `<tr><th></th>${["Martes", "Miércoles", "Jueves"].map(d => `<th colspan="4">${d}</th>`).join("")}</tr>` +
+    `<tr><th></th>${"MMTN".repeat(3).split("").map(x => `<th>${x}</th>`).join("")}</tr>` +
+    LINEA_TIEMPO.map(([fen, v]) => `<tr><td class="fen">${fen}</td>${v.map(x => `<td class="f" style="background:${x === "v" ? "#8e88cc" : COLOR_NIVEL[x]}"></td>`).join("")}</tr>`).join("");
+  armarRecomendaciones();
+  // Guías de qué hacer (resumen del juego)
+  $("guias").innerHTML = `<div class="grid-info">` + GUIAS.map(g => `<div class="ficha"><strong>${g.emoji} ${g.titulo}</strong>
+      <div class="fase" style="margin-top:6px"><b>ANTES</b> ${g.antes}</div>
+      <div class="fase" style="margin-top:6px"><b>DURANTE</b> ${g.durante}</div>
+      <div class="fase" style="margin-top:6px"><b>DESPUÉS</b> ${g.despues}</div></div>`).join("") + `</div>`;
+}
+
+function armarSemaforo() {
+  const sem = $("semaforo");
+  sem.innerHTML = "";
+  NIVELES[modoSemaforo].forEach((n, i) => {
+    const b = document.createElement("button");
+    b.className = "nivel"; b.style.background = n.color;
+    b.innerHTML = `${n.nombre}<small>${n.lema.toUpperCase()}</small>`;
+    b.addEventListener("click", () => elegirNivel(i));
+    sem.appendChild(b);
+  });
+  $("nota-modo").textContent = NOTA_MODO[modoSemaforo];
+  elegirNivel(modoSemaforo === "general" ? 1 : 2);
+}
+
+function elegirNivel(i) {
+  const n = NIVELES[modoSemaforo][i];
+  document.querySelectorAll("#semaforo .nivel").forEach((b, j) => b.classList.toggle("elegido", j === i));
+  const d = $("detalle-nivel");
+  d.style.borderLeftColor = n.color;
+  d.innerHTML = `<h4 style="color:${n.color}">${n.nombre} · ${n.lema}</h4><p>${n.desc}</p>
+    ${n.frecuencia ? `<span class="frecuencia">📊 ${n.frecuencia}</span>` : ""}
+    ${n.extra ? `<p style="margin-top:8px">${n.extra}</p>` : ""}
+    <div class="rotulo">${n.oficial ? "Recomendaciones oficiales del SAT (selección)" : "Qué podés hacer · guía del juego"}</div>
+    <ul style="margin-top:4px">${n.hacer.map(h => `<li>${h}</li>`).join("")}</ul>
+    ${n.ejemplo ? `<div class="ejemplo">${n.ejemplo}</div>` : ""}
+    <button class="tab" style="margin-top:10px" onclick="recoNivel='${["amarillo","amarillo","naranja","rojo"][i]}';recoFen='${modoSemaforo === "general" ? "lluvia" : "calor"}';mostrarTab('hacer');pintarRecomendaciones()">✅ Ver recomendaciones oficiales por fenómeno →</button>`;
+}
+
+function mostrarTab(nombre) {
+  document.querySelectorAll(".consultor-tabs .tab").forEach(t => t.classList.toggle("activa", t.dataset.tab === nombre));
+  document.querySelectorAll(".seccion-info").forEach(sx => sx.classList.toggle("activa", sx.dataset.seccion === nombre));
+  document.querySelector(".consultor-cuerpo").scrollTop = 0;
+}
+
+/* Mapa de riesgo de La Plata embebido: se carga sólo a pedido (necesita internet) */
+const URL_MAPA_RIESGO = "https://riesgo.laplata.gob.ar/mapa.php";
+function cargarMapaRiesgo() {
+  const marco = $("mapa-marco"), estadoMapa = $("estado-mapa");
+  if (!navigator.onLine) {
+    marco.innerHTML = `<div class="mensaje"><span class="grande">📡</span><strong>Sin conexión a internet.</strong><br>El mapa oficial está en el sitio de la Municipalidad: conectate a internet o abrilo después en <strong>${URL_MAPA_RIESGO.replace("https://", "")}</strong>.</div>`;
+    estadoMapa.textContent = "sin conexión";
+    return;
+  }
+  if (marco.querySelector("iframe")) return;                       // ya estaba cargado
+  marco.innerHTML = `<div class="mensaje" id="mapa-cargando"><span class="grande">⏳</span>Cargando el mapa de riesgo…</div>`;
+  const f = document.createElement("iframe");
+  f.src = URL_MAPA_RIESGO;
+  f.title = "Mapa de riesgo de la ciudad de La Plata";
+  f.loading = "lazy";
+  f.referrerPolicy = "no-referrer-when-downgrade";
+  f.allow = "fullscreen; geolocation";
+  f.style.opacity = 0;
+  let cargo = false;
+  f.addEventListener("load", () => { cargo = true; f.style.opacity = 1; estadoMapa.textContent = "mapa oficial · La Plata"; const c = $("mapa-cargando"); if (c) c.remove(); });
+  marco.appendChild(f);
+  $("btn-mapa-grande").hidden = false;
+  estadoMapa.textContent = "cargando…";
+  setTimeout(() => {                                                // si tarda demasiado, sugerimos la otra pestaña
+    if (!cargo) { const c = $("mapa-cargando"); if (c) c.innerHTML = `<span class="grande">🐢</span>El mapa está tardando en cargar. Si no aparece, usá <strong>«↗ Abrir en otra pestaña»</strong>.`; estadoMapa.textContent = "tarda en responder"; }
+  }, 12000);
+}
+function agrandarMapa() {
+  const e = $("mapa-embebido"), grande = e.classList.toggle("grande");
+  $("btn-mapa-grande").textContent = grande ? "✕ Achicar" : "⛶ Agrandar";
+}
+
+const consultorAbierto = () => $("consultor").classList.contains("abierto");
+function abrirConsultor(tab = "alertas") {
+  armarConsultor();
+  mostrarTab(tab);
+  $("consultor").classList.add("abierto");
+  $("btn-cerrar-consultor").focus();
+}
+function cerrarConsultor() {
+  $("consultor").classList.remove("abierto");
+  if ($("mapa-embebido").classList.contains("grande")) agrandarMapa();   // el mapa agrandado vuelve a su lugar
+}
+
+/* El botón flotante sólo aparece en pantallas sin reloj */
+function actualizarBotonConsultor(id) {
+  const conTiempo = ["p-trivia", "p-minijuego", "p-celular"].includes(id);
+  // En la portada tampoco hace falta: ya tiene su propio botón «Consultor ante eventos»
+  $("btn-consultor").classList.toggle("oculto", conTiempo || id === "p-inicio");
+  if (conTiempo) cerrarConsultor();
+}
+
 function volverAlInicio() {
+  cerrarConsultor();
   if (estado) clearInterval(estado.timer);
   limpiarConfeti();
   M = null;
   estado = estadoInicial("barrio");
   actualizarHUD();
-  pintarRecord();
   mostrarPantalla("p-inicio");
 }
 
@@ -3527,13 +4285,36 @@ $("btn-fin-elegir").addEventListener("click", seguro(mostrarSelector));
 $("btn-elegir").addEventListener("click", seguro(mostrarSelector));
 $("btn-sel-inicio").addEventListener("click", seguro(volverAlInicio));
 $("btn-fin-inicio").addEventListener("click", seguro(volverAlInicio));
+$("btn-consultor").addEventListener("click", () => abrirConsultor());
+$("btn-consultor-portada").addEventListener("click", seguro(() => abrirConsultor()));
+$("btn-cerrar-consultor").addEventListener("click", cerrarConsultor);
+$("btn-cargar-mapa").addEventListener("click", cargarMapaRiesgo);
+$("btn-mapa-grande").addEventListener("click", agrandarMapa);
+$("consultor").addEventListener("click", (e) => { if (e.target.id === "consultor") cerrarConsultor(); });   // tocar fuera del panel
+document.querySelectorAll(".consultor-tabs .tab").forEach(t => t.addEventListener("click", () => mostrarTab(t.dataset.tab)));
 $("btn-sonido").addEventListener("click", () => {
   sonidoActivo = !sonidoActivo;
   $("btn-sonido").textContent = sonidoActivo ? "🔊" : "🔇";
 });
 
+// Onda expansiva desde el punto exacto donde se toca un botón o tarjeta
+document.addEventListener("pointerdown", (e) => {
+  const el = e.target.closest(".btn, .opcion, .tab, .sel-card, .nivel, .telefono");
+  if (!el || el.disabled) return;
+  const r = el.getBoundingClientRect(), d = Math.max(r.width, r.height);
+  const o = document.createElement("span");
+  o.className = "onda";
+  o.style.cssText = `width:${d}px;height:${d}px;left:${e.clientX - r.left - d / 2}px;top:${e.clientY - r.top - d / 2}px`;
+  el.appendChild(o);
+  setTimeout(() => o.remove(), 650);
+});
+
 // Teclado: 1/2/3 (o A/B/C) en la trivia; Enter para el botón principal de cada pantalla
 document.addEventListener("keydown", (e) => {
+  if (consultorAbierto()) {
+    if (e.key === "Escape") { if ($("mapa-embebido").classList.contains("grande")) agrandarMapa(); else cerrarConsultor(); }
+    return;
+  }   // con el panel abierto, el juego no recibe teclas
   if (pantallaActiva("p-trivia")) {
     const i = { "1": 0, "2": 1, "3": 2, "a": 0, "b": 1, "c": 2 }[e.key.toLowerCase()];
     const b = $("tr-opciones").children[i];
@@ -3551,7 +4332,7 @@ let temporizadorInactividad;
 function reiniciarInactividad() {
   clearTimeout(temporizadorInactividad);
   temporizadorInactividad = setTimeout(() => {
-    if (!pantallaActiva("p-inicio") && !pantallaActiva("p-trivia") && !pantallaActiva("p-minijuego")) volverAlInicio();
+    if (consultorAbierto() || (!pantallaActiva("p-inicio") && !pantallaActiva("p-trivia") && !pantallaActiva("p-minijuego"))) volverAlInicio();
     else reiniciarInactividad();
   }, CONFIG.inactividadMs);
 }
@@ -3559,8 +4340,8 @@ function reiniciarInactividad() {
 
 // ¡A jugar!
 estado = estadoInicial("barrio");
+actualizarBotonConsultor("p-inicio");
 actualizarHUD();
-pintarRecord();
 reiniciarInactividad();
 </script>
 </body>
