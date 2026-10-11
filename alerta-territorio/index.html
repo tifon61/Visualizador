@@ -556,6 +556,42 @@
   .muestra { width: 46px; height: 18px; border-radius: 3px; flex-shrink: 0; }
   .fase { background: var(--tarjeta); border-radius: var(--radio); padding: 12px 14px; border: 1px solid #2a2d35; }
   .fase b { display: inline-block; min-width: 72px; color: var(--acento); font-family: var(--mono); }
+  .lema-sat { display: inline-block; margin-bottom: 10px; padding: 6px 12px; background: #e6007e; color: #fff; font-weight: 700; border-radius: var(--radio); }
+  .modo-semaforo { display: flex; gap: 8px; flex-wrap: wrap; margin: 10px 0; }
+  .detalle-nivel .rotulo { font-family: var(--mono); font-size: .8rem; color: var(--texto-suave); margin-top: 10px; text-transform: uppercase; }
+  .detalle-nivel .frecuencia { display: inline-block; margin-top: 8px; padding: 4px 10px; background: var(--tarjeta-2); border-radius: var(--radio); font-family: var(--mono); font-size: .9rem; }
+  /* Matriz: cómo se decide el color */
+  .matriz { border-collapse: separate; border-spacing: 6px; margin-top: 6px; }
+  .matriz th { font-family: var(--mono); font-size: .85rem; color: var(--texto-suave); font-weight: 400; padding: 4px; text-align: center; }
+  .matriz td.celda { width: 74px; height: 54px; text-align: center; font-family: var(--titulos); font-size: 1.8rem; color: #000; border-radius: var(--radio); cursor: pointer; transition: transform .12s; }
+  .matriz td.celda:hover, .matriz td.celda.elegida { transform: scale(1.08); outline: 3px solid #fff; }
+  .matriz-explica { margin-top: 8px; padding: 10px 12px; background: var(--tarjeta); border-radius: var(--radio); min-height: 44px; }
+  /* Comparación de productos */
+  .tabla-cmp { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: .97rem; }
+  .tabla-cmp th, .tabla-cmp td { border: 1px solid #2a2d35; padding: 8px 10px; text-align: left; vertical-align: top; }
+  .tabla-cmp th { background: var(--tarjeta); font-family: var(--titulos); font-size: 1.3rem; font-weight: 500; letter-spacing: .5px; }
+  .tabla-cmp td:first-child { font-family: var(--mono); font-size: .85rem; color: var(--texto-suave); white-space: nowrap; }
+  .scroll-x { overflow-x: auto; }
+  /* Línea de tiempo */
+  .linea-tiempo { border-collapse: separate; border-spacing: 2px; margin-top: 8px; font-size: .9rem; }
+  .linea-tiempo th { font-family: var(--mono); font-weight: 400; color: var(--texto-suave); padding: 2px 4px; }
+  .linea-tiempo td.fen { padding-right: 10px; white-space: nowrap; }
+  .linea-tiempo td.f { width: 30px; height: 22px; border-radius: 2px; }
+  .chips-fen { display: grid; gap: 8px; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); margin-top: 8px; }
+  .chips-fen div { background: var(--tarjeta); border-radius: var(--radio); padding: 10px 12px; border-left: 4px solid var(--borde); }
+  .chips-fen div.adv { border-left-color: #8e88cc; }
+  .selector-fen { display: flex; gap: 6px; flex-wrap: wrap; margin: 8px 0; }
+  .selector-fen .tab { font-size: 1.15rem; min-height: 46px; padding: 8px 12px; }
+  .selector-fen .tab.adv { border-color: #8e88cc; }
+  .selector-fen .tab.adv.activa { background: #8e88cc; border-color: #8e88cc; }
+  .selector-nivel { display: flex; gap: 6px; margin: 6px 0 10px; }
+  .selector-nivel button { flex: 1; min-height: 48px; font-family: var(--titulos); font-size: 1.3rem; color: #000; border: 3px solid transparent; border-radius: var(--radio); cursor: pointer; }
+  .selector-nivel button.elegido { border-color: #fff; box-shadow: 0 0 0 3px #000 inset; }
+  .recos { counter-reset: reco; list-style: none; padding: 0 !important; display: grid; gap: 6px; }
+  .recos li { counter-increment: reco; display: flex; gap: 10px; align-items: flex-start; background: var(--tarjeta); border-radius: var(--radio); padding: 8px 10px; animation: entrar .25s both; }
+  .recos li::before { content: counter(reco); flex-shrink: 0; width: 26px; height: 26px; display: grid; place-items: center; border-radius: 50%; background: var(--color-reco, var(--acento)); color: #000; font-family: var(--mono); font-size: .9rem; }
+  .recos .nuevo { flex-shrink: 0; margin-left: auto; font-family: var(--mono); font-size: .7rem; padding: 2px 6px; border-radius: 3px; background: #fff; color: #000; }
+  .aviso-informate { display: flex; gap: 12px; align-items: center; padding: 12px 14px; margin-bottom: 12px; background: var(--tarjeta-2); border-left: 6px solid #e6007e; border-radius: var(--radio); }
   .checklist { columns: 2 220px; list-style: none; padding: 0 !important; }
   .checklist li { break-inside: avoid; padding: 6px 0; }
 
@@ -591,7 +627,8 @@
       <button class="btn-cerrar" id="btn-cerrar-consultor" aria-label="Cerrar">✕</button>
     </div>
     <div class="consultor-tabs" role="tablist">
-      <button class="tab activa" data-tab="alertas">🚦 Alertas SMN</button>
+      <button class="tab activa" data-tab="alertas">🚦 Niveles</button>
+      <button class="tab" data-tab="productos">📡 Alerta · ACP · Advertencia</button>
       <button class="tab" data-tab="mapa">🗺️ Mapa de riesgo</button>
       <button class="tab" data-tab="emergencias">📞 Emergencias</button>
       <button class="tab" data-tab="hacer">🎒 Qué hacer</button>
@@ -600,26 +637,80 @@
 
       <!-- ---------- ALERTAS ---------- -->
       <section class="seccion-info activa" data-seccion="alertas">
-        <p>El <strong>Servicio Meteorológico Nacional (SMN)</strong> usa un <strong>Sistema de Alerta Temprana</strong> por colores.
-          El color indica <strong>cuán peligroso</strong> puede ser el fenómeno para la zona. <strong>Tocá cada color</strong> para ver qué significa y qué hacer.</p>
+        <span class="lema-sat">«Si hay alerta, estate alerta»</span>
+        <p>El <strong>Servicio Meteorológico Nacional (SMN)</strong> informa a través del <strong>Sistema de Alerta Temprana (SAT)</strong>.
+          Las zonas bajo alerta se muestran sobre un mapa con un <strong>color según el grado de severidad</strong> de los fenómenos previstos.
+          Sin alertas, el mapa se ve verde. <strong>Tocá cada color</strong> para ver qué significa.</p>
+        <div class="modo-semaforo">
+          <button class="tab activa" data-modo="general">🌧️ Lluvias, tormentas, viento, Zonda, nevadas</button>
+          <button class="tab" data-modo="temperatura">🌡️ Temperaturas extremas</button>
+        </div>
         <div class="semaforo" id="semaforo"></div>
         <div class="detalle-nivel" id="detalle-nivel"></div>
+        <p class="suave" id="nota-modo" style="margin-top:8px"></p>
 
-        <h3>¿Alerta o aviso? Los productos del SMN</h3>
-        <div class="grid-info">
-          <div class="ficha"><strong>🔔 Alerta</strong>Se emite con anticipación (horas a días) para zonas concretas (partidos o departamentos) ante lluvias, tormentas, viento, viento Zonda, nevadas y otros fenómenos. Tiene nivel amarillo, naranja o rojo.</div>
-          <div class="ficha"><strong>⚡ Aviso a muy corto plazo</strong>Advierte sobre tormentas severas que ya se están desarrollando y pueden afectar un área en las <strong>próximas horas</strong>. Puede llegar sin una alerta previa: es para actuar <strong>ya</strong>.</div>
-          <div class="ficha"><strong>🌡️ Temperaturas extremas</strong>El calor y el frío extremos tienen su propio sistema de alerta, pensado según el <strong>efecto en la salud</strong> de las personas (como en los escenarios de ola de calor y de frío).</div>
-          <div class="ficha"><strong>📄 Informes especiales</strong>Describen con más detalle un evento relevante: cuándo empieza, cómo evoluciona y qué zonas afecta.</div>
+        <h3>¿Cómo se decide el color?</h3>
+        <p>El SMN combina tres criterios:</p>
+        <ul>
+          <li><strong>Intensidad del fenómeno</strong>, según <strong>umbrales</strong> definidos para cada región a partir de su climatología.</li>
+          <li><strong>Factor adverso</strong>: una situación no necesariamente meteorológica que aumenta el impacto (suelo saturado, movilización de población, sequía…).</li>
+          <li><strong>Probabilidad</strong>: cuanto más lejano el plazo del pronóstico (24, 48 o 72 h), mayor la incertidumbre.</li>
+        </ul>
+        <p>Tocá un casillero del esquema:</p>
+        <div class="scroll-x"><table class="matriz" id="matriz"></table></div>
+        <div class="matriz-explica" id="matriz-explica">👆 Elegí una combinación de intensidad y probabilidad.</div>
+        <div class="nota-oficial">📚 Fuente: SMN – Sistema de Alerta Temprana, <em>Módulo Preguntas frecuentes y definiciones</em> (2.ª edición, julio 2024).
+          Las recomendaciones marcadas como «Qué podés hacer» son una guía del juego. Consultá siempre las alertas vigentes en
+          <a href="https://www.smn.gob.ar/alertas" target="_blank" rel="noopener">smn.gob.ar/alertas</a> y seguí las indicaciones de Defensa Civil.</div>
+      </section>
+
+      <!-- ---------- PRODUCTOS: ALERTA · ACP · ADVERTENCIA ---------- -->
+      <section class="seccion-info" data-seccion="productos">
+        <p>El SAT <strong>unifica en un mismo mapa</strong> tres tipos de mensajes. Pueden estar vigentes <strong>al mismo tiempo</strong> en una zona y no se excluyen entre sí.</p>
+        <div class="scroll-x"><table class="tabla-cmp">
+          <tr><td></td><th style="color:#ffcc00">🔔 Alerta</th><th style="color:#ff1744">⚡ Aviso a muy corto plazo (ACP)</th><th style="color:#a59ee6">🟪 Advertencia</th></tr>
+          <tr><td>Qué es</td><td>Mensaje preventivo sobre fenómenos que podrían poner en riesgo la vida, los bienes o el ambiente.</td><td>Pronóstico <strong>inmediato</strong>: tormentas detectadas por el <strong>radar</strong> que muestran signos de severidad.</td><td>Fenómenos que dificultan el normal desarrollo de la vida social (sobre todo por <strong>reducción de visibilidad</strong>). Pueden ser generalizados en el territorio y/o persistir varios días.</td></tr>
+          <tr><td>Fenómenos</td><td>Lluvias, tormentas, vientos, Zonda, nevadas y temperaturas extremas.</td><td>Sólo tormentas fuertes o severas: lluvias intensas en poco tiempo, ráfagas y/o granizo.</td><td>Niebla, ceniza volcánica, polvo en suspensión y humo.</td></tr>
+          <tr><td>Anticipación</td><td>Generalmente 24, 48 o 72 h antes.</td><td>El fenómeno puede ocurrir desde pocos minutos hasta 3 h después.</td><td>—</td></tr>
+          <tr><td>Validez</td><td>12 h, con información para hasta 3 días.</td><td>1, 2 o 3 horas.</td><td>—</td></tr>
+          <tr><td>Actualización</td><td>Todos los días cerca de las 6 y las 18 h (y cuando haga falta).</td><td>En cualquier momento del día o de la noche.</td><td>Cerca de las 6 y las 18 h.</td></tr>
+          <tr><td>Territorio</td><td>Todo el país; zonas extensas (en general más de 200 mil km²).</td><td>Sólo zonas con radar; áreas chicas (unos 15 mil km² en promedio).</td><td>La zona que puede ser afectada (se marca en el mapa).</td></tr>
+          <tr><td>En el mapa</td><td>Amarillo, naranja o rojo.</td><td>Un <strong>polígono rojo</strong>.</td><td>Color <strong>violeta</strong>, sin niveles.</td></tr>
+        </table></div>
+        <p class="suave" style="margin-top:6px">Los alertas por temperaturas extremas se actualizan cerca de las 19 h y tienen validez de 24 h.</p>
+
+        <h3>La línea de tiempo</h3>
+        <p>Muestra cuándo empieza un evento, cuándo termina y cómo evoluciona en las próximas <strong>72 horas</strong>, en 4 franjas de 6 horas por día:
+          <strong>M</strong>adrugada (0–6 h), <strong>M</strong>añana (6–12 h), <strong>T</strong>arde (12–18 h) y <strong>N</strong>oche (18–24 h).</p>
+        <div class="scroll-x"><table class="linea-tiempo" id="linea-tiempo"></table></div>
+        <p class="suave">Ejemplo ilustrativo. Si en una zona hay varios alertas a la vez, el mapa muestra el <strong>nivel más alto</strong>
+          (por ejemplo, amarillo por viento + naranja por lluvia = naranja), y la línea de tiempo detalla todos.</p>
+
+        <h3>Fenómenos que se alertan</h3>
+        <div class="chips-fen">
+          <div><strong>🌧️ Lluvias</strong><br>Cuando las precipitaciones esperadas alcanzan o superan los umbrales de la región.</div>
+          <div><strong>⛈️ Tormentas</strong><br>Aisladas o generalizadas, con lluvias intensas, ráfagas y/o granizo.</div>
+          <div><strong>💨 Vientos</strong><br>Al menos 2 horas seguidas de vientos intensos o ráfagas sobre los umbrales.</div>
+          <div><strong>Ⓩ Zonda</strong><br>Cordillera, precordillera, puna y eventualmente llanos, desde los 38 °S hasta Bolivia (Cuyo y NOA).</div>
+          <div><strong>❄️ Nevadas</strong><br>Caída de nieve con acumulación por encima de los umbrales.</div>
+          <div><strong>🌡️ Temperaturas extremas</strong><br>Altas o bajas, cuando representan un riesgo para la salud.</div>
+        </div>
+        <h3>Fenómenos que se advierten (violeta)</h3>
+        <div class="chips-fen">
+          <div class="adv"><strong>🌫️ Niebla</strong><br>Reducción de visibilidad.</div>
+          <div class="adv"><strong>🌋 Ceniza volcánica</strong><br>Reducción de visibilidad por ceniza en el aire.</div>
+          <div class="adv"><strong>🟫 Polvo en suspensión</strong><br>Reducción de visibilidad por polvo.</div>
+          <div class="adv"><strong>💨 Humo</strong><br>Reducción de visibilidad por humo.</div>
         </div>
         <h3>Para recordar</h3>
         <ul>
-          <li>El color depende de la <strong>intensidad</strong> del fenómeno <strong>y</strong> de la zona: los mismos 60 mm no son igual de peligrosos en todos lados.</li>
-          <li>Las alertas se <strong>actualizan</strong>: consultalas más de una vez durante el día.</li>
-          <li>Informate sólo por <strong>canales oficiales</strong> y no reenvíes audios o mensajes sin fuente.</li>
+          <li>Cada alerta o advertencia tiene 4 partes: <strong>mapa</strong>, <strong>línea de tiempo</strong>, <strong>texto</strong> descriptivo y <strong>recomendaciones</strong>.</li>
+          <li>Las zonas de alerta no siempre coinciden con un partido completo: se definieron por geografía y condiciones meteorológicas parecidas.</li>
+          <li>El SAT funciona las 24 horas, los 365 días del año.</li>
+          <li>Informate por <strong>canales oficiales</strong> y no reenvíes mensajes sin fuente.</li>
         </ul>
-        <div class="nota-oficial">ℹ️ Información de referencia con fines educativos. Consultá siempre las alertas vigentes en
-          <a href="https://www.smn.gob.ar/alertas" target="_blank" rel="noopener">smn.gob.ar/alertas</a> y seguí las indicaciones de Defensa Civil de tu municipio.</div>
+        <div class="nota-oficial">📚 Fuente: SMN – Sistema de Alerta Temprana, <em>Módulo Preguntas frecuentes y definiciones</em> (2.ª edición, julio 2024).
+          <a href="https://www.smn.gob.ar/alertas" target="_blank" rel="noopener">smn.gob.ar/alertas</a></div>
       </section>
 
       <!-- ---------- MAPA DE RIESGO ---------- -->
@@ -648,6 +739,8 @@
 
       <!-- ---------- EMERGENCIAS ---------- -->
       <section class="seccion-info" data-seccion="emergencias">
+        <div class="aviso-informate"><span style="font-size:2rem">📱</span><span><strong>Mantenete informado</strong> por las autoridades de tu localidad.
+          <strong>Agendá</strong> los números locales de Protección Civil, Bomberos y Policía. <span class="suave">— Recomendación del SAT</span></span></div>
         <p>Números nacionales de emergencia en Argentina. <strong>Son gratuitos</strong> y se pueden marcar desde cualquier teléfono. En un celular, tocá el número para llamar.</p>
         <div class="grid-info" style="margin-top:12px">
           <a class="telefono" href="tel:911"><span class="num">911</span><span><strong>Emergencias</strong><br>Policía y emergencias en general.</span></a>
@@ -667,16 +760,29 @@
 
       <!-- ---------- QUÉ HACER ---------- -->
       <section class="seccion-info" data-seccion="hacer">
-        <p>Resumen de lo que aprendiste en el juego: qué hacer <strong>antes</strong>, <strong>durante</strong> y <strong>después</strong> de cada evento.</p>
-        <div id="guias"></div>
-        <h3>🎒 Mochila de emergencia</h3>
+        <h3 style="margin-top:4px">✅ Recomendaciones oficiales del SAT</h3>
+        <p>Elegí un fenómeno y un nivel. Mirá cómo <strong>las recomendaciones se vuelven más estrictas</strong> al subir el nivel:
+          las marcadas <span class="recos" style="display:inline"><span class="nuevo" style="display:inline-block">NUEVO</span></span> no estaban en el nivel amarillo.</p>
+        <div class="selector-fen" id="selector-fen"></div>
+        <div class="selector-nivel" id="selector-nivel"></div>
+        <ol class="recos" id="recos"></ol>
+        <div id="recos-extra"></div>
+
+        <h3>🎒 Kit de emergencia</h3>
+        <p>Lo que piden las recomendaciones oficiales:</p>
         <ul class="checklist">
-          <li>💧 Agua potable</li><li>🥫 Alimentos que no necesiten cocción</li>
-          <li>🔦 Linterna y pilas de repuesto</li><li>📻 Radio a pilas</li>
-          <li>🔋 Cargador portátil para el celular</li><li>🩹 Botiquín y medicamentos habituales</li>
-          <li>📄 Documentos en bolsa impermeable</li><li>🧥 Abrigo y ropa de repuesto</li>
-          <li>📝 Lista de teléfonos útiles en papel</li><li>🐕 Comida y correa para mascotas</li>
+          <li>💧 Agua potable</li><li>🥫 Alimentos no perecederos (para al menos 3 días)</li>
+          <li>🩹 Botiquín de primeros auxilios</li><li>💊 Los medicamentos que necesites</li>
+          <li>📻 Radio a pilas</li><li>🔦 Linterna y pilas adicionales</li>
+          <li>🔋 Celulares cargados con anticipación</li><li>🧯 Matafuego (por Zonda o riesgo de incendio)</li>
+          <li>🕯️ Velas y fósforos (cortes de energía)</li><li>🧣 Mantas térmicas (frío y nieve)</li>
         </ul>
+        <p class="suave">También conviene: documentos en una bolsa impermeable, una lista de teléfonos en papel y comida para mascotas.</p>
+
+        <h3>🎮 Lo que aprendiste en el juego</h3>
+        <div id="guias"></div>
+        <div class="nota-oficial">📚 Fuente de las recomendaciones: SAT – <em>Módulo Recomendaciones para alertas y advertencias</em>
+          (Agencia Federal de Emergencias, Servicio Meteorológico Nacional, Ministerio de Salud y otros).</div>
       </section>
     </div>
   </div>
@@ -916,7 +1022,7 @@ const ESCENARIOS = [
     ],
     capsula: "El Zonda se calienta y se seca al bajar la montaña (calentamiento adiabático: el aire se comprime al descender y sube su temperatura). Abrir las ventanas mete tierra y calor extremo a tu casa.",
     minijuego: "casa",
-    leccion: "Durante el Zonda la humedad puede caer por debajo del 10 %: la vegetación seca y los combustibles se encienden con una chispa y el viento propaga el fuego. Guardar combustibles y ramas, y proteger a personas y mascotas del polvo, reduce el riesgo."
+    leccion: "Durante el Zonda la humedad puede caer por debajo del 10 %: la vegetación seca y los combustibles se encienden con una chispa y el viento propaga el fuego. Guardar combustibles y ramas, y proteger a personas y mascotas del polvo, reduce el riesgo. Con alerta rojo por Zonda, el SAT recomienda «colgá paños húmedos en las ventanas» (¡la respuesta de la trivia!) y «no enciendas fuego». El SMN emite alertas por Zonda en cordillera, precordillera, puna y eventualmente los llanos, desde los 38 °S (norte de Neuquén) hasta Bolivia: Cuyo y el NOA."
   },
   {
     id: "helada", nombre: "Helada Radiativa", lugar: "Alto Valle / Mendoza", emoji: "❄️",
@@ -960,7 +1066,7 @@ const ESCENARIOS = [
     ],
     capsula: "Los colores rojos en el radar y las nubes tan altas indican tormentas severas con fuertes corrientes de aire (convección profunda), lo que significa ráfagas violentas y granizo de forma repentina.",
     minijuego: "radar",
-    leccion: "El radar mide la reflectividad (dBZ): cuánta señal rebota en gotas y granizo. Ecos de más de 50 dBZ suelen indicar granizo. Alertar a tiempo salva vidas, pero alertar por todo genera 'fatiga de alertas': la gente deja de creer en los avisos."
+    leccion: "El radar mide la reflectividad (dBZ): cuánta señal rebota en gotas y granizo. Ecos de más de 50 dBZ suelen indicar granizo. Cuando el radar detecta tormentas con signos de severidad, el SMN emite un Aviso a muy corto plazo (ACP): un polígono rojo sobre el mapa, válido por 1 a 3 horas. Alertar a tiempo salva vidas, pero alertar por todo genera 'fatiga de alertas': la gente deja de creer en los avisos."
   }
 ];
 
@@ -1044,15 +1150,15 @@ const BARRIO = [
     ],
     capsula: "¡La basura y las hojas tapan los sumideros! Las cloacas abiertas colapsan y devuelven agua contaminada a las casas.",
     minijuego: "destapar",
-    leccion: "El desagüe pluvial (sumideros y bocas de tormenta) y la cloaca son redes distintas. Una sola bolsa puede tapar una boca de tormenta. Sacá la basura sólo cuando no hay alerta, limpiá las canaletas antes de la temporada de tormentas y nunca camines por calles inundadas: puede haber tapas abiertas."
+    leccion: "El desagüe pluvial (sumideros y bocas de tormenta) y la cloaca son redes distintas. Una sola bolsa puede tapar una boca de tormenta. Sacá la basura sólo cuando no hay alerta, limpiá las canaletas antes de la temporada de tormentas y nunca camines por calles inundadas: puede haber tapas abiertas. Las recomendaciones oficiales del SAT ante alerta por lluvia empiezan justamente así: «No saques la basura» y «Limpiá desagües y sumideros»."
   },
   {
     id: "viento", nombre: "Vientos Fuertes y Zonda", lugar: "El patio de tu casa", emoji: "💨",
-    clima: ["⚠️ Aviso a corto plazo", "💨 Ráfagas de más de 80 km/h", "🪴 Patio con objetos sueltos"],
+    clima: ["🟠 Alerta naranja por vientos", "💨 Ráfagas de más de 80 km/h", "🪴 Patio con objetos sueltos"],
     escena: { cielo: "cielo-polvo", tipo: "patio", fenomeno: "viento" },
-    titulo: "Aviso a corto plazo: ráfagas destructivas",
-    numero: "80+ km/h", dato: "de ráfagas en los próximos minutos. Estás en el patio de tu casa.",
-    pregunta: "Se emitió un aviso a corto plazo por ráfagas destructivas de más de 80 km/h. Estás en el patio de tu casa. ¿Qué hacés?",
+    titulo: "Alerta naranja por vientos fuertes",
+    numero: "80+ km/h", dato: "de ráfagas previstas para las próximas horas. Estás en el patio de tu casa.",
+    pregunta: "Rige un alerta naranja por vientos fuertes, con ráfagas de más de 80 km/h. Estás en el patio de tu casa. ¿Qué hacés?",
     opciones: [
       { icono: "🪟", texto: "Dejar las ventanas abiertas para que el viento circule y no rompa los vidrios por la presión.",
         resultado: "fallo", efecto: "viento-danio", titulo: "¡Casa revuelta y vidrios rotos!",
@@ -1062,11 +1168,11 @@ const BARRIO = [
         consecuencia: "Mascotas adentro, ventanas cerradas y nada suelto: las ráfagas pasaron sin dejar proyectiles." },
       { icono: "🪜", texto: "Subir al techo rápido a clavar las chapas que estén flojas.",
         resultado: "fallo", efecto: "viento-danio", titulo: "¡Nunca al techo con viento!",
-        consecuencia: "Una ráfaga puede tirarte del techo, y una chapa que se suelta corta como una cuchilla. Las reparaciones se hacen ANTES del aviso o cuando el viento ya pasó." }
+        consecuencia: "Una ráfaga puede tirarte del techo, y una chapa que se suelta corta como una cuchilla. Las reparaciones se hacen ANTES del alerta o cuando el viento ya pasó." }
     ],
     capsula: "¡Nunca subas al techo con viento fuerte! Los objetos sueltos en el patio se convierten en proyectiles mortales con ráfagas severas.",
     minijuego: "patio",
-    leccion: "Con ráfagas de 80 km/h una silla de jardín o una maceta pueden volar decenas de metros, romper vidrios o herir a alguien. Lo que se puede mover se guarda; lo pesado (sombrillas, toldos, juegos) se cierra y se ata. Las chapas y techos se revisan con buen tiempo: con el aviso vigente NO se sube al techo, aunque veas una chapa floja. Entrá a las mascotas y quedate adentro, lejos de las ventanas."
+    leccion: "Con ráfagas de 80 km/h una silla de jardín o una maceta pueden volar decenas de metros, romper vidrios o herir a alguien. Lo que se puede mover se guarda; lo pesado (sombrillas, toldos, juegos) se cierra y se ata. Las chapas y techos se revisan con buen tiempo: con el aviso vigente NO se sube al techo, aunque veas una chapa floja. Entrá a las mascotas y quedate adentro, lejos de las ventanas. Dato del SMN: los «avisos a muy corto plazo» (ACP) son sólo para tormentas detectadas por radar; para viento y Zonda se emiten alertas, en general con 24 a 72 h de anticipación. Y una recomendación oficial clave: «No te refugies debajo de marquesinas, carteles publicitarios, árboles o postes»."
   },
   {
     id: "calor", nombre: "Ola de Calor Extrema", lugar: "La plaza del barrio", emoji: "🥵",
@@ -1088,7 +1194,7 @@ const BARRIO = [
     ],
     capsula: "El golpe de calor es silencioso pero letal. El agua fresca a la sombra salva tanto a mascotas callejeras como domésticas.",
     minijuego: "hidratacion",
-    leccion: "Los más vulnerables al calor extremo son bebés, adultos mayores, personas con enfermedades crónicas y animales. Señales de alarma: piel caliente y seca, confusión, mareos o jadeo excesivo en mascotas. Ante esos síntomas: sombra, agua fresca (no helada) y llamar a emergencias."
+    leccion: "Recomendaciones oficiales del SAT ante calor extremo: tomá agua sin esperar a tener sed, no te expongas al sol entre las 10 y las 16 h, reducí la actividad física y prestá atención a niños, bebés, embarazadas y personas mayores o con enfermedades crónicas (y a las mascotas: agua fresca, nunca helada). Ante sed intensa, piel seca, agotamiento, mareos, náuseas o dolor de cabeza: pedí asistencia médica, llevá a la persona a un lugar fresco, mojale la ropa y dale agua fresca. El alerta del SMN por temperaturas extremas se basa en el efecto en la salud: en amarillo ya es peligroso para los grupos de riesgo; en rojo puede afectar incluso a personas sanas.",
   },
   {
     id: "rayos", nombre: "Tormenta Eléctrica", lugar: "Un parque abierto", emoji: "⚡",
@@ -1119,9 +1225,9 @@ const BARRIO = [
       noticia: "Suspenden el recital al aire libre: una ráfaga arrancó el oso inflable gigante del escenario",
       bien: { titulo: "¡Decisión inteligente!", texto: "Te quedaste en casa. Minutos después, una ráfaga hizo volar el oso inflable y parte del escenario: el público tuvo que evacuar bajo la lluvia y los rayos." },
       mal:  { titulo: "¡Uf, qué susto!", texto: "Fuiste al recital... y una ráfaga arrancó el oso inflable gigante del escenario. Hubo que evacuar a miles de personas bajo la lluvia y los rayos." },
-      capsula: "Con alerta naranja, los eventos masivos al aire libre son muy riesgosos: escenarios, pantallas, carpas e inflables gigantes ofrecen mucha superficie al viento y pueden volar o derrumbarse. Además, una multitud en un predio abierto no tiene dónde refugiarse de los rayos. Antes de salir, revisá las alertas del Servicio Meteorológico Nacional."
+      capsula: "Con alerta naranja, los eventos masivos al aire libre son muy riesgosos: escenarios, pantallas, carpas e inflables gigantes ofrecen mucha superficie al viento y pueden volar o derrumbarse. Además, una multitud en un predio abierto no tiene dónde refugiarse de los rayos. Antes de salir, revisá las alertas del Servicio Meteorológico Nacional: ante alerta naranja, la recomendación oficial es «Salí solo si es necesario»."
     },
-    leccion: "Regla 30/30: si entre el relámpago y el trueno pasan menos de 30 segundos, el rayo está a menos de 10 km y ya hay peligro: buscá refugio. Esperá 30 minutos después del último trueno para salir. Un edificio cerrado o un auto con techo metálico son los mejores refugios; la posición en cuclillas es el último recurso."
+    leccion: "Regla 30/30: si entre el relámpago y el trueno pasan menos de 30 segundos, el rayo está a menos de 10 km y ya hay peligro: buscá refugio. Esperá 30 minutos después del último trueno para salir. Un edificio cerrado o un auto con techo metálico son los mejores refugios; la posición en cuclillas es el último recurso. Recomendación oficial del SAT ante alerta por tormentas: «Si estás al aire libre, buscá refugio inmediato en un edificio, casa o vehículo cerrado»."
   },
   {
     id: "frio", nombre: "Ola de Frío Polar", lugar: "Adentro de tu casa", emoji: "🥶",
@@ -1143,7 +1249,7 @@ const BARRIO = [
     ],
     capsula: "¡El monóxido de carbono es un asesino silencioso! Nunca uses el horno o braseros para calefaccionar en lugares cerrados. La ventilación cruzada salva vidas.",
     minijuego: "frio",
-    leccion: "El monóxido de carbono (CO) aparece cuando algo se quema con poco oxígeno: hornos, hornallas, braseros o estufas mal instaladas. No tiene color ni olor y provoca dolor de cabeza, mareos y sueño. Para prevenirlo: rendija de ventilación siempre, artefactos revisados por un gasista matriculado, llama azul (si es amarilla o anaranjada, hay mala combustión) y, si podés, un detector de CO. Nunca seques ropa sobre una estufa."
+    leccion: "El monóxido de carbono (CO) aparece cuando algo se quema con poco oxígeno: hornos, hornallas, braseros o estufas mal instaladas. No tiene color ni olor y provoca dolor de cabeza, mareos y sueño. Para prevenirlo: rendija de ventilación siempre, artefactos revisados por un gasista matriculado, llama azul (si es amarilla o anaranjada, hay mala combustión) y, si podés, un detector de CO. Nunca seques ropa sobre una estufa. El alerta del SMN por temperaturas extremas también incluye el frío extremo: se activa cuando las temperaturas quedan por debajo de las más bajas habituales del lugar (percentil 10). Y otra recomendación oficial que suma: «No fumes en ambientes cerrados»."
   },
   {
     id: "mapa", nombre: "Lluvias Persistentes y Mapa de Riesgo", lugar: "Tu ciudad, con arroyos entubados", emoji: "🗺️",
@@ -1165,7 +1271,7 @@ const BARRIO = [
     ],
     capsula: "¡El relieve de la ciudad es clave! Consultar un Mapa de Riesgo te permite identificar qué calles actúan como cuencas naturales de agua y cuáles son las zonas altas y seguras. En La Plata, por ejemplo, la Municipalidad publica el suyo en riesgo.laplata.gob.ar.",
     minijuego: "mapa",
-    leccion: "Muchas ciudades argentinas crecieron sobre arroyos que hoy corren entubados bajo las calles. Cuando llueve mucho, el agua vuelve a buscar su cauce natural y esas calles se inundan primero. Muchos municipios publican mapas de riesgo hídrico (en La Plata: riesgo.laplata.gob.ar): consultalos antes de mudarte o de salir con alerta. Y nunca cruces una calle anegada: 30 cm de agua en movimiento pueden arrastrar un auto."
+    leccion: "Muchas ciudades argentinas crecieron sobre arroyos que hoy corren entubados bajo las calles. Cuando llueve mucho, el agua vuelve a buscar su cauce natural y esas calles se inundan primero. Muchos municipios publican mapas de riesgo hídrico (en La Plata: riesgo.laplata.gob.ar): consultalos antes de mudarte o de salir con alerta. Y nunca cruces una calle anegada: 30 cm de agua en movimiento pueden arrastrar un auto. Para decidir el color del alerta, el SMN considera también el «factor adverso», como un suelo ya saturado por lluvias anteriores."
   }
 ];
 
@@ -1197,7 +1303,7 @@ const RANGOS_BARRIO = [
 
 const LECCION_CENTRO = {
   titulo: "🔑 La gran lección: el mismo fenómeno no es el mismo riesgo",
-  texto: "El riesgo depende del <strong>fenómeno</strong> (lluvia, viento, frío, tormenta) × la <strong>vulnerabilidad</strong> del territorio (suelo, relieve, urbanización, preparación). Por eso los servicios meteorológicos emiten <strong>alertas por región</strong> y cada lugar necesita su propia respuesta.",
+  texto: "El riesgo depende del <strong>fenómeno</strong> (lluvia, viento, frío, tormenta) × la <strong>vulnerabilidad</strong> del territorio (suelo, relieve, urbanización, preparación). Por eso el SMN define <strong>umbrales de alerta para cada región</strong>, según su climatología: los mismos 60 mm pueden ser alerta en un lugar y no en otro.",
   victoria: "¡El territorio está a salvo gracias a tus decisiones!"
 };
 
@@ -1206,7 +1312,7 @@ const MODOS = {
   barrio: {
     lista: BARRIO, rangos: RANGOS_BARRIO,
     leccion: {
-      titulo: "🔑 La gran lección: la prevención empieza en tu casa",
+      titulo: "🔑 La gran lección: la prevención empieza en tu casa · «Si hay alerta, estate alerta»",
       texto: "Los servicios meteorológicos avisan, pero el impacto final depende de lo que hacemos cada vecino: <strong>sumideros y canaletas limpios</strong>, <strong>objetos sueltos guardados</strong>, <strong>agua fresca y sombra</strong> para quien lo necesita y <strong>saber dónde refugiarse</strong>. Seguí siempre los avisos oficiales del Servicio Meteorológico Nacional y de Defensa Civil de tu municipio, y conocé el mapa de riesgo de tu ciudad (en La Plata: <a href=\"https://riesgo.laplata.gob.ar/mapa.php\" target=\"_blank\" rel=\"noopener\" style=\"color:var(--acento)\">riesgo.laplata.gob.ar</a>).",
       victoria: "¡Tu barrio está preparado gracias a vos!"
     }
@@ -3755,24 +3861,178 @@ function nuevaPartida(modo) {
    números de emergencia y qué hacer. Se oculta durante las pantallas
    con tiempo (trivia, minijuego, celular) para no servir de "machete".
    ===================================================================== */
-const NIVELES_ALERTA = [
-  { color: "#00e676", nombre: "Sin alerta", lema: "Normal",
-    desc: "No se esperan fenómenos meteorológicos peligrosos para la zona.",
-    hacer: ["Seguí con tus actividades.", "Si vas a estar al aire libre, mirá el pronóstico del día."],
-    ejemplo: "" },
-  { color: "#ffd600", nombre: "Alerta amarilla", lema: "Informate",
-    desc: "Fenómenos potencialmente peligrosos que pueden causar daños e interrupciones de forma aislada o localizada.",
-    hacer: ["Seguí la evolución del tiempo por canales oficiales.", "Revisá canaletas y guardá objetos sueltos.", "Evitá actividades al aire libre si el fenómeno se intensifica."],
-    ejemplo: "Ej.: tormentas fuertes aisladas o ráfagas intensas." },
-  { color: "#ff9100", nombre: "Alerta naranja", lema: "Preparate",
-    desc: "Fenómenos peligrosos con capacidad de provocar daños importantes y cortes de servicios (luz, agua, tránsito).",
-    hacer: ["Prepará la mochila de emergencia y cargá el celular.", "Reprogramá viajes y eventos al aire libre.", "Asegurá el patio y entrá a las mascotas."],
-    ejemplo: "En el juego: la invitación al recital con alerta naranja 🧸" },
-  { color: "#ff1744", nombre: "Alerta roja", lema: "Actuá",
-    desc: "Fenómenos excepcionales con gran capacidad de daño, que pueden poner en riesgo la vida.",
-    hacer: ["Seguí las indicaciones de Defensa Civil y de las autoridades.", "Quedate en un lugar seguro y no circules si no es imprescindible.", "Si te indican evacuar, hacelo sin demora y por zonas altas."],
-    ejemplo: "En el juego: lluvias intensas y el mapa de riesgo." }
+// Significados oficiales (SMN – SAT, Preguntas frecuentes y definiciones, 2.ª ed. 2024).
+// "hacer" es una guía del juego, no texto del SMN.
+const NIVELES = {
+  general: [
+    { color: "#00e676", nombre: "Verde", lema: "Tranquilidad",
+      desc: "No se esperan fenómenos que impliquen riesgos. El verde indica que no hay amenazas, y también se usa para mostrar el cese de una situación adversa.",
+      hacer: ["Seguí con tus actividades habituales.", "Si vas a estar al aire libre, consultá el pronóstico."] },
+    { color: "#ffd600", nombre: "Amarillo", lema: "Informate",
+      desc: "Posibles fenómenos con capacidad de daño. Riesgo de interrupción momentánea de las actividades cotidianas: la población debería estar atenta e informarse, porque el evento podría requerir alguna acción en el corto o mediano plazo.",
+      frecuencia: "Es el nivel más común: más del 90 % de los alertas.",
+      extra: "⚠️ Un alerta amarillo no significa que no pueda haber eventos severos, especialmente con tormentas.",
+      hacer: ["Seguí la evolución por canales oficiales.", "Revisá canaletas y guardá objetos sueltos.", "Evitá actividades al aire libre si el fenómeno se intensifica."],
+      ejemplo: "En el juego: la cápsula de «¿60 mm = 60 mm?» del Modo Express." },
+    { color: "#ff9100", nombre: "Naranja", lema: "Preparate",
+      desc: "Se esperan fenómenos meteorológicos peligrosos para la sociedad, la vida, los bienes y el ambiente: eventos particularmente intensos.",
+      frecuencia: "Menos del 10 % de los alertas.",
+      hacer: ["Prepará la mochila de emergencia y cargá el celular.", "Reprogramá viajes y eventos al aire libre.", "Asegurá el patio y entrá a las mascotas."],
+      ejemplo: "En el juego: el alerta por vientos del patio y la invitación al recital 🧸" },
+    { color: "#ff1744", nombre: "Rojo", lema: "Seguí instrucciones oficiales",
+      desc: "Se esperan fenómenos meteorológicos excepcionales con potencial de provocar emergencias o desastres: la intensidad estaría cerca de su máximo climatológico.",
+      frecuencia: "Reservado para situaciones muy particulares: el 1 % de los casos o menos.",
+      hacer: ["Seguí las indicaciones de Defensa Civil y de las autoridades.", "Quedate en un lugar seguro y no circules si no es imprescindible.", "Si te indican evacuar, hacelo sin demora y por zonas altas."],
+      ejemplo: "En el juego: las lluvias intensas y el mapa de riesgo." }
+  ],
+  temperatura: [
+    { color: "#00e676", nombre: "Verde", lema: "Sin efecto sobre la salud",
+      desc: "Sin peligro sobre la salud de la población.",
+      hacer: ["Seguí con tus actividades habituales."], oficial: true },
+    { color: "#ffd600", nombre: "Amarillo", lema: "Efecto leve a moderado",
+      desc: "Las temperaturas extremas pueden ser peligrosas, sobre todo para los grupos de riesgo: niños y niñas, personas mayores de 65 años y personas con enfermedades crónicas.",
+      hacer: ["Aumentá el consumo de agua sin esperar a tener sed.", "No te expongas al sol en las horas centrales del día (entre las 10 y las 16 horas).", "Prestá atención a niños, bebés, embarazadas y personas mayores o con enfermedades crónicas."], oficial: true },
+    { color: "#ff9100", nombre: "Naranja", lema: "Efecto moderado a alto",
+      desc: "Las temperaturas extremas pueden ser muy peligrosas, especialmente para los grupos de riesgo.",
+      hacer: ["Reducí la actividad física.", "Permanecé en espacios ventilados o acondicionados.", "Con frío: mantené la casa calefaccionada de forma segura y no fumes en ambientes cerrados."], oficial: true,
+      ejemplo: "En el juego: la Brigada de Hidratación y ¡Calor Seguro!" },
+    { color: "#ff1744", nombre: "Rojo", lema: "Efecto alto a extremo",
+      desc: "Las temperaturas extremas son muy peligrosas. Pueden afectar a todas las personas, incluso a las saludables.",
+      hacer: ["Ante mareos, agotamiento, náuseas, dolor de cabeza o piel seca, solicitá de inmediato asistencia médica.", "Llevá a la persona a un lugar fresco y tranquilo, mojale la ropa y dale de beber agua fresca."], oficial: true }
+  ]
+};
+const NOTA_MODO = {
+  general: "Los alertas de este grupo se actualizan todos los días cerca de las 6 y las 18 h.",
+  temperatura: "Los mismos colores tienen otro significado: indican el efecto en la salud. Se actualizan cerca de las 19 h con validez de 24 h. El calor extremo se define a partir del percentil 90 (P90) de las temperaturas del lugar (1961-2010) y el frío extremo a partir del percentil 10 (P10); los percentiles más extremos (P95/P99 y P5/P1) definen los niveles más altos."
+};
+let modoSemaforo = "general";
+
+// Esquema orientativo del SMN: probabilidad (filas) × intensidad + factor adverso (columnas) -> nivel 0..3
+const MATRIZ = {
+  columnas: ["Leve", "Moderado", "Alto", "Extremo"],
+  filas: [["Alta (24 h)", [0, 1, 2, 3]], ["Media (48 h)", [0, 1, 2, 2]], ["Baja (72 h)", [0, 0, 1, 2]]]
+};
+const COLOR_NIVEL = ["#00e676", "#ffd600", "#ff9100", "#ff1744"];
+const NOMBRE_NIVEL = ["verde", "amarillo", "naranja", "rojo"];
+
+// Ejemplo ilustrativo de línea de tiempo (3 días × 4 franjas). 0-3 = nivel de alerta, "v" = advertencia
+const LINEA_TIEMPO = [
+  ["💨 Viento",  [0,1,1,1, 1,1,2,1, 1,0,0,0]],
+  ["🌧️ Lluvia",  [0,0,0,1, 1,1,2,1, 1,0,0,0]],
+  ["⛈️ Tormenta",[0,0,0,0, 0,1,1,0, 0,0,0,0]],
+  ["❄️ Nevadas", [0,0,0,1, 0,1,1,2, 3,1,1,0]],
+  ["🌫️ Niebla",  ["v","v","v","v", "v","v","v",0, "v","v",0,0]]
 ];
+
+/* Recomendaciones oficiales del SAT por fenómeno y nivel
+   (Módulo «Recomendaciones para alertas y advertencias»). Frases repetidas en constantes. */
+const R = {
+  segui: "Seguí las instrucciones de las autoridades locales. La calma es fundamental en estas situaciones.",
+  kit: "Prepará un kit de emergencia con agua potable, alimentos, botiquín de primeros auxilios, radio a pilas y linterna. Cargá los celulares con anticipación.",
+  agenda: "Agendá los números locales de Protección Civil, Bomberos y Policía.",
+  ubica: "Ubicá las zonas seguras e identificá lugares a donde ir en caso de evacuación.",
+  comparti: "Compartí estas recomendaciones con tu familia: asegurate de que todos sepan qué hacer en caso de emergencia.",
+  objetos: "Retirá o asegurá objetos que puedan ser arrastrados por el viento, como macetas, sillas o toldos.",
+  puertas: "Cerrá y alejate de puertas y ventanas.",
+  marquesinas: "No te refugies debajo de marquesinas, carteles publicitarios, árboles o postes.",
+  basura: "No saques la basura.", desagues: "Limpiá desagües y sumideros.",
+  luz: "Cortá el suministro eléctrico si ingresa agua.",
+  electro: "Desconectá los electrodomésticos y cortá el suministro eléctrico si ingresa agua.",
+  anegadas: "Alejate de zonas inundables y no ingreses en calles anegadas.",
+  zondaOjos: "Hidratate y protegé tus ojos y nariz del polvo con anteojos y barbijo.",
+  fuego: "No enciendas fuego.",
+  nieveVeh: "Circulá solo con vehículos adecuados y preparados para hielo y nieve. Llevá siempre una pala.",
+  nieveKit: "Prepará un kit de emergencia que incluya linternas, pilas adicionales, velas, fósforos, mantas térmicas, un botiquín de primeros auxilios y cualquier medicamento necesario.",
+  co: "Ventilá para evitar acumulación de monóxido de carbono.",
+  infoAut: "Mantenete informado por las autoridades."
+};
+const nieveAlta = [R.segui, "Salí solo si es imprescindible.", R.nieveVeh,
+  "Revisá el estado de los techos, canaletas y desagües para asegurarte de que estén en buen estado y puedan soportar la acumulación de nieve. Retirá la nieve acumulada.",
+  R.co, "Asegurate de tener suficientes alimentos no perecederos, agua potable para al menos tres días y carga en el celular. Incluí alimentos fáciles de preparar en caso de que haya cortes de energía.",
+  R.nieveKit, "Compartí estas recomendaciones con tu familia: asegurate de que toda la familia sepa qué hacer en caso de emergencia.", R.agenda];
+const RECOMENDACIONES = {
+  lluvia: { emoji: "🌧️", nombre: "Lluvia", niveles: {
+    amarillo: ["Evitá salir.", R.basura, R.desagues, "Alejate de zonas inundables.", R.luz],
+    naranja: [R.segui, "Salí solo si es necesario.", R.basura, R.desagues, R.anegadas, "Conducí con precaución.", R.luz, "No te acerques a cables, postes o carteles con electricidad.", R.kit, R.agenda],
+    rojo: [R.segui, "Salí solo si es imprescindible.", R.basura, R.desagues, "Alejate de ríos, arroyos, zonas inundables y no ingreses en calles anegadas.", "Evitá conducir en calzadas resbaladizas y con visibilidad reducida.", R.luz, R.ubica, R.kit, R.comparti, R.agenda] } },
+  viento: { emoji: "💨", nombre: "Viento", niveles: {
+    amarillo: ["Evitá salir.", R.objetos, R.puertas, R.marquesinas, "Tené precaución al conducir."],
+    naranja: [R.segui, "Salí solo si es necesario.", R.objetos, R.puertas, R.marquesinas, "Con ráfagas intensas o reducción de visibilidad por tierra, buscá un lugar seguro para detenerte.", R.kit, R.agenda],
+    rojo: [R.segui, "No salgas y quedate en el interior de un lugar seguro.", "Alejate de carteles publicitarios, árboles o postes.", R.objetos, R.puertas, "Con ráfagas intensas o reducción de visibilidad por tierra, buscá un lugar seguro para detenerte.", R.kit, R.ubica, R.comparti, R.agenda] } },
+  zonda: { emoji: "Ⓩ", nombre: "Viento Zonda", niveles: {
+    amarillo: ["Evitá salir al momento del fenómeno.", "Cerrá puertas y ventanas para evitar la entrada de polvo y aire caliente.", R.objetos, R.marquesinas, "Conducí con precaución.", R.zondaOjos, R.fuego],
+    naranja: [R.segui, "Salí solo si es necesario.", R.puertas, R.objetos, R.marquesinas, "Evitá conducir si la visibilidad está reducida.", R.zondaOjos, R.fuego, R.kit, R.agenda],
+    rojo: [R.segui, "Salí solo si es imprescindible.", R.puertas, "Colgá paños húmedos en las ventanas, colocá recipientes con agua en el suelo o utilizá un humidificador.", R.objetos, R.marquesinas, "Evitá conducir si la visibilidad está reducida o hay fuego.", R.zondaOjos, R.fuego,
+      "Prepará un kit de emergencia con agua potable, alimentos, matafuego, botiquín de primeros auxilios, radio a pilas y linterna. Cargá los celulares con anticipación.",
+      "Compartí estas recomendaciones con tu familia: asegurate de que todos sepan qué hacer en caso de emergencia o incendios.", R.agenda] } },
+  tormenta: { emoji: "⛈️", nombre: "Tormenta", niveles: {
+    amarillo: ["Evitá salir.", "No saques la basura y limpiá desagües y sumideros.", R.electro, R.puertas, "Retirá o asegurá objetos que puedan ser arrastrados por el viento.", "Si estás al aire libre, buscá refugio inmediato en un edificio, casa o vehículo cerrado."],
+    naranja: [R.segui, "Salí solo si es necesario.", "Permanecé en construcciones cerradas como casas, escuelas, edificios públicos.", R.electro, R.puertas, R.anegadas, "Retirá o asegurá objetos que puedan ser volados por el viento.", R.kit, R.agenda],
+    rojo: [R.segui, "Salí solo si es imprescindible.", R.electro, R.puertas, R.anegadas, "Retirá o asegurá objetos que puedan ser arrastrados por el viento.", R.kit, R.ubica, R.comparti, R.agenda] } },
+  nieve: { emoji: "❄️", nombre: "Nieve", niveles: {
+    amarillo: ["Evitá salir.", "Circulá con vehículos adecuados y preparados para hielo y nieve. Llevá siempre una pala.",
+      "Revisá el estado de los techos, canaletas y desagües para asegurarte de que estén en buen estado y puedan soportar la acumulación de nieve.", R.co,
+      "Asegurate de tener suficientes alimentos no perecederos y agua potable para al menos tres días. Incluí alimentos fáciles de preparar en caso de que haya cortes de energía.", R.nieveKit],
+    naranja: nieveAlta, rojo: nieveAlta } },
+  calor: { emoji: "🥵", nombre: "Calor extremo", unico: true, lista: [
+    "Aumentá el consumo de agua (frecuencia e ingesta) sin esperar a tener sed para mantener una hidratación adecuada.",
+    "No te expongas al sol en exceso, ni en horas centrales del día (entre las 10 y las 16 horas).",
+    "Prestá atención a niños, bebés, embarazadas y personas mayores o con enfermedades crónicas.",
+    "Evitá las bebidas con cafeína, con alcohol o muy azucaradas y comidas muy abundantes.", "Ingerí frutas y verduras.", "Reducí la actividad física.",
+    "Usá ropa ligera, holgada y de colores claros; sombrero, anteojos oscuros.", "Permanecé en espacios ventilados o acondicionados."],
+    extra: "<strong>🚑 Ante sed intensa y sequedad en la boca, sudoración excesiva, sensación de calor sofocante, piel seca, agotamiento, mareos o desmayo, dolores de estómago, falta de apetito, náuseas o vómitos, dolores de cabeza:</strong> solicitá de inmediato asistencia médica; trasladá a la persona a un lugar fresco y tranquilo, intentá refrescarla, mojale la ropa y dale de beber agua fresca." },
+  frio: { emoji: "🥶", nombre: "Frío extremo", unico: true, lista: [
+    "Evitá exponerte por tiempo prolongado al frío en exteriores. En caso de tener que salir, abrigate con muchas capas de ropa liviana.",
+    "Generá más calor corporal mediante el movimiento (caminar, levantarse y sentarse, mover las extremidades, etc.).",
+    "Mantené la casa calefaccionada de forma segura.", "Evitá los cambios bruscos de temperatura.", "Tomá mucho líquido y evitá el consumo de bebidas alcohólicas.",
+    "Si estás afectado por el frío, no te automediques, y consultá con un médico o dirigite al centro de salud más cercano.",
+    "Si tenés medicación recetada mantené el plan de acción actualizado.", "No fumes en ambientes cerrados.",
+    "Prestá especial atención a niños, embarazadas y personas mayores o con enfermedades crónicas."] },
+  humo: { emoji: "💨", nombre: "Humo", advertencia: true, lista: ["Evitá actividades al aire libre.", "Protegete las vías respiratorias y oculares.",
+    "Intentá no circular pero, si tenés que hacerlo, tomá las precauciones en la ruta con baja visibilidad por humo. Conducí despacio, mantené la distancia y utilizá las luces bajas.", R.infoAut] },
+  polvo: { emoji: "🟫", nombre: "Polvo en suspensión", advertencia: true, lista: ["Evitá el uso de vehículos, pero en caso de hacerlo, conducí a una velocidad reducida.",
+    "Usá mascarilla que cubra las vías respiratorias. Protegé tus ojos mientras te encuentres en ambientes abiertos.",
+    "Niños, adultos mayores o personas con patologías respiratorias o cardíacas deben mantenerse en espacios cerrados."] },
+  ceniza: { emoji: "🌋", nombre: "Ceniza volcánica", advertencia: true, lista: ["Evitá actividades al aire libre.", "Asegurate de conocer las rutas de evacuación hacia zonas de seguridad.",
+    "Cubrí fuentes y depósitos de agua para evitar que se contaminen con cenizas.", "Asegurate de cerrar puertas y ventanas.",
+    "Recordá que las cenizas volcánicas pueden dañar el motor de tu vehículo.", R.infoAut] },
+  niebla: { emoji: "🌫️", nombre: "Niebla", advertencia: true, lista: ["Evitá circular.", "Si la niebla te sorprende durante la conducción, mantené distancia entre vehículos y no sobrepases a otros.",
+    "Encendé las luces bajas y las antiniebla.", "Reducí la velocidad.", "En cuanto puedas, estacioná en un lugar seguro. No lo hagas sobre banquinas o calzadas.", R.infoAut] }
+};
+let recoFen = "lluvia", recoNivel = "naranja";
+
+function armarRecomendaciones() {
+  const sf = $("selector-fen");
+  sf.innerHTML = Object.entries(RECOMENDACIONES).map(([k, f]) =>
+    `<button class="tab ${f.advertencia ? "adv" : ""}" data-fen="${k}">${f.emoji} ${f.nombre}${f.advertencia ? " · adv." : ""}</button>`).join("");
+  sf.querySelectorAll(".tab").forEach(b => b.addEventListener("click", () => { recoFen = b.dataset.fen; pintarRecomendaciones(); }));
+  pintarRecomendaciones();
+}
+
+function pintarRecomendaciones() {
+  const f = RECOMENDACIONES[recoFen];
+  document.querySelectorAll("#selector-fen .tab").forEach(b => b.classList.toggle("activa", b.dataset.fen === recoFen));
+  const sn = $("selector-nivel");
+  let lista, color;
+  if (f.niveles) {
+    sn.innerHTML = [["amarillo", "#ffd600"], ["naranja", "#ff9100"], ["rojo", "#ff1744"]].map(([n, c]) =>
+      `<button data-nivel="${n}" style="background:${c}" class="${n === recoNivel ? "elegido" : ""}">${n.toUpperCase()}</button>`).join("");
+    sn.querySelectorAll("button").forEach(b => b.addEventListener("click", () => { recoNivel = b.dataset.nivel; pintarRecomendaciones(); }));
+    lista = f.niveles[recoNivel];
+    color = { amarillo: "#ffd600", naranja: "#ff9100", rojo: "#ff1744" }[recoNivel];
+  } else {
+    sn.innerHTML = f.advertencia
+      ? `<button style="background:#8e88cc;cursor:default" class="elegido">ADVERTENCIA (VIOLETA)</button>`
+      : `<button style="background:#ffd600;cursor:default" class="elegido">MISMAS RECOMENDACIONES PARA TODOS LOS NIVELES</button>`;
+    lista = f.lista;
+    color = f.advertencia ? "#8e88cc" : "#ffd600";
+  }
+  const base = f.niveles ? new Set(f.niveles.amarillo) : null;
+  const ol = $("recos");
+  ol.style.setProperty("--color-reco", color);
+  ol.innerHTML = lista.map((t, i) => `<li style="animation-delay:${i * .03}s"><span>${t}</span>${base && recoNivel !== "amarillo" && !base.has(t) ? `<span class="nuevo">NUEVO</span>` : ""}</li>`).join("");
+  $("recos-extra").innerHTML = f.extra ? `<div class="nota-oficial" style="border-style:solid;color:var(--texto)">${f.extra}</div>` : "";
+}
 
 const GUIAS = [
   { emoji: "🌧️", titulo: "Lluvias intensas", antes: "Limpiá canaletas y sumideros; no saques la basura.", durante: "No camines ni manejes por calles anegadas.", despues: "No toques cables caídos; avisá de tapas o pozos abiertos." },
@@ -3787,33 +4047,66 @@ let consultorArmado = false;
 function armarConsultor() {
   if (consultorArmado) return;
   consultorArmado = true;
+  armarSemaforo();
+  document.querySelectorAll(".modo-semaforo .tab").forEach(b => b.addEventListener("click", () => {
+    modoSemaforo = b.dataset.modo;
+    document.querySelectorAll(".modo-semaforo .tab").forEach(x => x.classList.toggle("activa", x === b));
+    armarSemaforo();
+  }));
+  // Matriz interactiva
+  const m = $("matriz");
+  m.innerHTML = `<tr><th>Probabilidad ↓ / Intensidad →</th>${MATRIZ.columnas.map(c => `<th>${c}</th>`).join("")}</tr>` +
+    MATRIZ.filas.map(([f, niveles], i) => `<tr><th>${f}</th>${niveles.map((n, j) =>
+      `<td class="celda" data-f="${i}" data-c="${j}" style="background:${COLOR_NIVEL[n]}">${n}</td>`).join("")}</tr>`).join("");
+  m.querySelectorAll(".celda").forEach(td => td.addEventListener("click", () => {
+    const [f, niveles] = MATRIZ.filas[td.dataset.f], n = niveles[td.dataset.c];
+    m.querySelectorAll(".celda").forEach(x => x.classList.toggle("elegida", x === td));
+    $("matriz-explica").innerHTML = `Intensidad <strong>${MATRIZ.columnas[td.dataset.c].toLowerCase()}</strong> + probabilidad <strong>${f.toLowerCase()}</strong> → nivel <strong style="color:${COLOR_NIVEL[n]}">${NOMBRE_NIVEL[n]}</strong>.` +
+      (td.dataset.c === "3" && td.dataset.f !== "0" ? " Aunque el fenómeno sea extremo, si todavía falta mucho la incertidumbre es mayor y el color baja." : "");
+  }));
+  // Línea de tiempo de ejemplo
+  const lt = $("linea-tiempo");
+  lt.innerHTML = `<tr><th></th>${["Martes", "Miércoles", "Jueves"].map(d => `<th colspan="4">${d}</th>`).join("")}</tr>` +
+    `<tr><th></th>${"MMTN".repeat(3).split("").map(x => `<th>${x}</th>`).join("")}</tr>` +
+    LINEA_TIEMPO.map(([fen, v]) => `<tr><td class="fen">${fen}</td>${v.map(x => `<td class="f" style="background:${x === "v" ? "#8e88cc" : COLOR_NIVEL[x]}"></td>`).join("")}</tr>`).join("");
+  armarRecomendaciones();
+  // Guías de qué hacer (resumen del juego)
+  $("guias").innerHTML = `<div class="grid-info">` + GUIAS.map(g => `<div class="ficha"><strong>${g.emoji} ${g.titulo}</strong>
+      <div class="fase" style="margin-top:6px"><b>ANTES</b> ${g.antes}</div>
+      <div class="fase" style="margin-top:6px"><b>DURANTE</b> ${g.durante}</div>
+      <div class="fase" style="margin-top:6px"><b>DESPUÉS</b> ${g.despues}</div></div>`).join("") + `</div>`;
+}
+
+function armarSemaforo() {
   const sem = $("semaforo");
-  NIVELES_ALERTA.forEach((n, i) => {
+  sem.innerHTML = "";
+  NIVELES[modoSemaforo].forEach((n, i) => {
     const b = document.createElement("button");
     b.className = "nivel"; b.style.background = n.color;
     b.innerHTML = `${n.nombre}<small>${n.lema.toUpperCase()}</small>`;
     b.addEventListener("click", () => elegirNivel(i));
     sem.appendChild(b);
   });
-  $("guias").innerHTML = `<div class="grid-info">` + GUIAS.map(g => `<div class="ficha"><strong>${g.emoji} ${g.titulo}</strong>
-      <div class="fase" style="margin-top:6px"><b>ANTES</b> ${g.antes}</div>
-      <div class="fase" style="margin-top:6px"><b>DURANTE</b> ${g.durante}</div>
-      <div class="fase" style="margin-top:6px"><b>DESPUÉS</b> ${g.despues}</div></div>`).join("") + `</div>`;
-  elegirNivel(2);
+  $("nota-modo").textContent = NOTA_MODO[modoSemaforo];
+  elegirNivel(modoSemaforo === "general" ? 1 : 2);
 }
 
 function elegirNivel(i) {
-  const n = NIVELES_ALERTA[i];
+  const n = NIVELES[modoSemaforo][i];
   document.querySelectorAll("#semaforo .nivel").forEach((b, j) => b.classList.toggle("elegido", j === i));
   const d = $("detalle-nivel");
   d.style.borderLeftColor = n.color;
   d.innerHTML = `<h4 style="color:${n.color}">${n.nombre} · ${n.lema}</h4><p>${n.desc}</p>
-    <ul style="margin-top:8px">${n.hacer.map(h => `<li>${h}</li>`).join("")}</ul>
-    ${n.ejemplo ? `<div class="ejemplo">${n.ejemplo}</div>` : ""}`;
+    ${n.frecuencia ? `<span class="frecuencia">📊 ${n.frecuencia}</span>` : ""}
+    ${n.extra ? `<p style="margin-top:8px">${n.extra}</p>` : ""}
+    <div class="rotulo">${n.oficial ? "Recomendaciones oficiales del SAT (selección)" : "Qué podés hacer · guía del juego"}</div>
+    <ul style="margin-top:4px">${n.hacer.map(h => `<li>${h}</li>`).join("")}</ul>
+    ${n.ejemplo ? `<div class="ejemplo">${n.ejemplo}</div>` : ""}
+    <button class="tab" style="margin-top:10px" onclick="recoNivel='${["amarillo","amarillo","naranja","rojo"][i]}';recoFen='${modoSemaforo === "general" ? "lluvia" : "calor"}';mostrarTab('hacer');pintarRecomendaciones()">✅ Ver recomendaciones oficiales por fenómeno →</button>`;
 }
 
 function mostrarTab(nombre) {
-  document.querySelectorAll(".consultor .tab").forEach(t => t.classList.toggle("activa", t.dataset.tab === nombre));
+  document.querySelectorAll(".consultor-tabs .tab").forEach(t => t.classList.toggle("activa", t.dataset.tab === nombre));
   document.querySelectorAll(".seccion-info").forEach(sx => sx.classList.toggle("activa", sx.dataset.seccion === nombre));
   document.querySelector(".consultor-cuerpo").scrollTop = 0;
 }
@@ -3863,7 +4156,7 @@ $("btn-consultor").addEventListener("click", () => abrirConsultor());
 $("btn-consultor-portada").addEventListener("click", seguro(() => abrirConsultor()));
 $("btn-cerrar-consultor").addEventListener("click", cerrarConsultor);
 $("consultor").addEventListener("click", (e) => { if (e.target.id === "consultor") cerrarConsultor(); });   // tocar fuera del panel
-document.querySelectorAll(".consultor .tab").forEach(t => t.addEventListener("click", () => mostrarTab(t.dataset.tab)));
+document.querySelectorAll(".consultor-tabs .tab").forEach(t => t.addEventListener("click", () => mostrarTab(t.dataset.tab)));
 $("btn-sonido").addEventListener("click", () => {
   sonidoActivo = !sonidoActivo;
   $("btn-sonido").textContent = sonidoActivo ? "🔊" : "🔇";
