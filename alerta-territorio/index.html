@@ -38,9 +38,9 @@
   =====================================================================
 -->
 <style>
-  /* Fuentes: Barlow (texto), Teko (títulos y botones) y Share Tech Mono (sólo datos).
+  /* Fuentes: Rubik (texto), Teko (títulos y botones) y Share Tech Mono (sólo datos).
      Si no hay internet se usan las de respaldo y el juego funciona igual. @import debe ir PRIMERO. */
-  @import url('https://fonts.googleapis.com/css2?family=Barlow:wght@400;600;700&family=Share+Tech+Mono&family=Teko:wght@500;700&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;700&family=Share+Tech+Mono&family=Teko:wght@500;700&display=swap');
 
   /* ------------------------------------------------------------------
      1. VARIABLES DE DISEÑO
@@ -50,8 +50,8 @@
     --tarjeta: #121418;      /* Gris muy oscuro para las cajas */
     --tarjeta-2: #1a1d24;
     --borde: #ff4d00;        /* Naranja alerta internacional */
-    --texto: #e0e6ed;        /* Blanco crudo para legibilidad */
-    --texto-suave: #8892b0;  /* Gris técnico */
+    --texto: #e9eef5;        /* Blanco crudo para legibilidad */
+    --texto-suave: #b3bccf;  /* Gris técnico (con contraste suficiente sobre negro) */
     --acento: #ffcc00;       /* Amarillo advertencia */
     --exito: #00e676;        /* Verde flúor */
     --parcial: #ff9100;
@@ -59,7 +59,7 @@
     --radio: 4px;            /* Bordes casi rectos, industriales */
     --sombra: 0 4px 15px rgba(255, 77, 0, 0.15); /* Sombra naranja sutil */
     --titulos: 'Teko', 'Arial Narrow', Impact, sans-serif;   /* tipografía de impacto para títulos */
-    --fuente: 'Barlow', system-ui, 'Segoe UI', Roboto, Arial, sans-serif;   /* texto general: legible */
+    --fuente: 'Rubik', system-ui, 'Segoe UI', Roboto, Arial, sans-serif;    /* texto general: con cuerpo y legible */
     --mono: 'Share Tech Mono', 'Courier New', monospace;      /* sólo para datos de "consola" */
     --sistema: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;  /* la del celular */
   }
@@ -69,6 +69,7 @@
   body {
     min-height: 100vh;
     font-family: var(--fuente);
+    font-size: 17px; font-weight: 500;                /* texto con cuerpo: no se ve "plano" sobre el negro */
     /* Fondo de cuadrícula táctica (grid de centro de monitoreo) */
     background-color: var(--fondo);
     background-image:
@@ -135,7 +136,12 @@
   h1 { font-family: var(--titulos); font-size: clamp(3rem, 8vw, 5.4rem); line-height: .95; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; }
   h2 { font-family: var(--titulos); font-size: clamp(1.9rem, 4.2vw, 2.8rem); margin-bottom: 10px; line-height: 1; font-weight: 700; letter-spacing: .5px; }
   h3 { font-size: 1.25rem; margin-bottom: 8px; }
-  p  { line-height: 1.5; }
+  p  { line-height: 1.6; }
+  strong, b { font-weight: 700; }
+  /* Palabras clave resaltadas en la información (Consultor, cápsulas, portada) */
+  .consultor-cuerpo strong, .ensenanza strong, .intro strong, .detalle-nivel strong, .pregunta strong { color: var(--acento); }
+  .consultor-cuerpo .ficha > strong:first-child, .consultor-cuerpo .chips-fen strong:first-child,
+  .consultor-cuerpo .telefono strong, .consultor-cuerpo .leyenda-mapa strong { color: #fff; }   /* títulos en blanco: el amarillo queda para lo clave */
   .suave { color: var(--texto-suave); }
 
   .tarjeta {
@@ -550,6 +556,7 @@
   }
   .telefono .num { font-family: var(--titulos); font-size: 3rem; line-height: 1; color: var(--acento); min-width: 86px; text-align: center; }
   .telefono:hover { background: var(--tarjeta-2); }
+  .seccion-info a.telefono { color: var(--texto); }   /* la tarjeta es un link: sin esto heredaría el amarillo de los links */
   /* Leyenda del mapa de riesgo */
   .leyenda-mapa { display: grid; gap: 8px; margin-top: 8px; }
   .leyenda-mapa div { display: flex; align-items: center; gap: 12px; }
@@ -1928,7 +1935,7 @@ function emoji(e, x, y, tam, rot = 0) {
   ctx.restore();
 }
 function texto(t, x, y, tam, color = "#fff", alinear = "center", contorno = false) {
-  ctx.font = `700 ${tam}px Barlow, "Segoe UI", system-ui, sans-serif`;
+  ctx.font = `700 ${tam}px Rubik, "Segoe UI", system-ui, sans-serif`;
   ctx.textAlign = alinear; ctx.textBaseline = "middle";
   if (contorno) { ctx.lineWidth = 4; ctx.lineJoin = "round"; ctx.strokeStyle = "rgba(0,0,0,.7)"; ctx.strokeText(t, x, y); }   // round evita "pinchos" en las letras
   ctx.fillStyle = color;
