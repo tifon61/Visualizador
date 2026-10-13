@@ -936,7 +936,7 @@
 <header class="hud oculto" id="hud">
   <div class="hud-logo"><span class="logo-grupo logo-hud" role="img" aria-label="Logo del Grupo de Pronóstico FCAG-UNLP"></span><div>⚠️ Operativo <span>Alerta</span></div><button class="btn-menu" id="btn-menu" title="Volver al menú principal">🏠 Menú</button></div>
   <div class="hud-datos">
-    <div class="vidas" id="hud-vidas" title="Vidas / reputación"></div>
+    <div class="vidas" id="hud-vidas" title="Intentos que te quedan"></div>
     <div>🗺️ Nivel <span id="hud-nivel">1/4</span></div>
     <div>⭐ <span class="puntaje-num" id="hud-puntaje">0</span></div>
     <button class="btn-sonido" id="btn-sonido" aria-label="Activar o desactivar sonido">🔊</button>
@@ -954,7 +954,7 @@
           Las emergencias meteorológicas no se enfrentan sólo desde un centro de control:
           <strong>lo que hacés en tu casa y en tu barrio salva vidas</strong>. En cada situación vas a
           responder una <strong>trivia</strong> y superar un <strong>minijuego</strong> de 15 segundos.
-          Tenés <strong>3 vidas</strong>: cada error cuesta una.
+          Tenés <strong>3 intentos</strong>: cada error usa uno.
         </p>
         <div class="mapa-escenarios">
           <div>🌧️ Lluvias intensas</div>
@@ -1290,7 +1290,7 @@ const BARRIO = [
         consecuencia: "Canaletas libres y sumideros despejados: el agua corrió por donde debía y la calle sólo tuvo charcos." },
       { icono: "🕳️", texto: "Abrir las tapas de las cloacas de la calle para que el agua baje más rápido.",
         resultado: "fallo", efecto: "inundacion-sucia", titulo: "¡Agua cloacal en las casas!",
-        consecuencia: "La cloaca no está hecha para el agua de lluvia: colapsó y el agua contaminada volvió por rejillas e inodoros. Además, una tapa abierta bajo el agua es una trampa mortal." }
+        consecuencia: "La cloaca no está hecha para el agua de lluvia: colapsó y el agua contaminada volvió por rejillas e inodoros. Además, bajo el agua una tapa abierta no se ve: alguien puede caer adentro." }
     ],
     capsula: "¡La basura y las hojas tapan los sumideros! Las cloacas abiertas colapsan y devuelven agua contaminada a las casas.",
     minijuego: "destapar",
@@ -1312,9 +1312,9 @@ const BARRIO = [
         consecuencia: "Mascotas adentro, ventanas cerradas y nada suelto: las ráfagas pasaron sin dejar proyectiles." },
       { icono: "🪜", texto: "Subir al techo rápido a clavar las chapas que estén flojas.",
         resultado: "fallo", efecto: "viento-danio", titulo: "¡Nunca al techo con viento!",
-        consecuencia: "Una ráfaga puede tirarte del techo, y una chapa que se suelta corta como una cuchilla. Las reparaciones se hacen ANTES del alerta o cuando el viento ya pasó." }
+        consecuencia: "Con viento fuerte podés caerte del techo, y una chapa que se suelta puede lastimar a alguien. Las reparaciones se hacen ANTES del alerta o cuando el viento ya pasó." }
     ],
-    capsula: "¡Nunca subas al techo con viento fuerte! Los objetos sueltos en el patio se convierten en proyectiles mortales con ráfagas severas.",
+    capsula: "¡Nunca subas al techo con viento fuerte! Con ráfagas severas, los objetos sueltos del patio pueden volar y lastimar a alguien.",
     minijuego: "patio",
     leccion: "Con ráfagas de 80 km/h una silla de jardín o una maceta pueden volar decenas de metros, romper vidrios o herir a alguien. Lo que se puede mover se guarda; lo pesado (sombrillas, toldos, juegos) se cierra y se ata. Las chapas y techos se revisan con buen tiempo: con el aviso vigente NO se sube al techo, aunque veas una chapa floja. Entrá a las mascotas y quedate adentro, lejos de las ventanas. Dato del SMN: los «avisos a muy corto plazo» (ACP) son sólo para tormentas detectadas por radar; para viento y Zonda se emiten alertas, en general con 24 a 72 h de anticipación. Y una recomendación oficial clave: «No te refugies debajo de marquesinas, carteles publicitarios, árboles o postes»."
   },
@@ -1383,15 +1383,15 @@ const BARRIO = [
     opciones: [
       { icono: "🍳", texto: "Prender las hornallas y el horno de la cocina, cerrando todas las ventanas para que no entre frío.",
         resultado: "fallo", efecto: "co", titulo: "¡Monóxido de carbono!",
-        consecuencia: "El horno y las hornallas no están hechos para calefaccionar: consumen el oxígeno del ambiente cerrado y liberan monóxido de carbono. Dolor de cabeza, sueño… y peligro de muerte." },
+        consecuencia: "El horno y las hornallas no están hechos para calefaccionar: consumen el oxígeno del ambiente cerrado y liberan monóxido de carbono. Primero da dolor de cabeza y sueño, y es una intoxicación grave." },
       { icono: "🪟", texto: "Usar estufas seguras y dejar siempre una rendija de 5 cm abierta en una ventana para ventilar.",
         resultado: "exito", efecto: "calor-seguro", titulo: "¡Calor seguro!",
         consecuencia: "Estufas en buen estado y una rendija abierta: el aire se renueva y la casa se mantiene cálida sin riesgo." },
       { icono: "⛽", texto: "Si se corta la luz, prender el grupo electrógeno adentro de casa para que la estufa eléctrica siga andando.",
-        resultado: "fallo", efecto: "co", titulo: "¡Peligro mortal en silencio!",
+        resultado: "fallo", efecto: "co", titulo: "¡El escape va siempre afuera!",
         consecuencia: "Un grupo electrógeno quema nafta y larga monóxido de carbono por el escape. Adentro de la casa (o en un garaje cerrado) el gas se acumula en minutos: no tiene olor y la gente se duerme sin darse cuenta. Siempre va afuera, al aire libre y lejos de puertas y ventanas." }
     ],
-    capsula: "¡El monóxido de carbono es un asesino silencioso! Nunca uses el horno para calefaccionar ni prendas un grupo electrógeno en lugares cerrados. La ventilación cruzada salva vidas.",
+    capsula: "¡El monóxido de carbono no se ve ni tiene olor! Nunca uses el horno para calefaccionar ni prendas un grupo electrógeno en lugares cerrados. La ventilación cruzada salva vidas.",
     minijuego: "frio",
     leccion: "El monóxido de carbono (CO) aparece cuando algo se quema con poco oxígeno: hornos, hornallas, grupos electrógenos o estufas mal instaladas. No tiene color ni olor y provoca dolor de cabeza, mareos y sueño. Para prevenirlo: rendija de ventilación siempre, artefactos revisados por un gasista matriculado, llama azul (si es amarilla o anaranjada, hay mala combustión) y, si podés, un detector de CO. Nunca seques ropa sobre una estufa. El alerta del SMN por temperaturas extremas también incluye el frío extremo: se activa cuando las temperaturas quedan por debajo de las más bajas habituales del lugar (percentil 10). Y otra recomendación oficial que suma: «No fumes en ambientes cerrados»."
   },
@@ -1404,14 +1404,14 @@ const BARRIO = [
     pregunta: "Hay alerta roja por lluvias torrenciales y tenés que volver a tu casa o planificar una mudanza. ¿Cuál es tu mejor herramienta preventiva?",
     opciones: [
       { icono: "🛣️", texto: "Confiar en que el asfalto nuevo absorbe el agua y tomar el camino más corto.",
-        resultado: "fallo", efecto: "inundacion", titulo: "¡Atrapado en el agua!",
-        consecuencia: "El asfalto no absorbe agua: es impermeable. El camino más corto bajaba justo por el cauce del arroyo y el auto quedó atrapado." },
+        resultado: "fallo", efecto: "inundacion", titulo: "¡Esa calle no se cruza!",
+        consecuencia: "El asfalto no absorbe agua: es impermeable. El camino más corto bajaba justo por el cauce del arroyo, que es lo primero que se inunda." },
       { icono: "🗺️", texto: "Consultar el Mapa de Riesgo local para conocer las zonas inundables, arroyos entubados y corredores seguros.",
         resultado: "exito", efecto: "mapa-ok", titulo: "¡Ruta segura!",
         consecuencia: "Con el mapa evitaste las calles que se inundan primero y llegaste por las zonas altas." },
       { icono: "🚙", texto: "Guiarme por donde van los autos más grandes, ya que ellos conocen el camino.",
         resultado: "fallo", efecto: "inundacion", titulo: "¡Los grandes también se quedan!",
-        consecuencia: "Seguir a otros no es una estrategia: la camioneta se animó a cruzar la calle inundada… y vos detrás. Con 30 cm de agua en movimiento un auto puede ser arrastrado." }
+        consecuencia: "Seguir a otros no es una estrategia: que otro vehículo cruce una calle inundada no la hace segura. Con 30 cm de agua en movimiento un auto puede ser arrastrado." }
     ],
     capsula: "¡El relieve de la ciudad es clave! Consultar un Mapa de Riesgo te permite identificar qué calles actúan como cuencas naturales de agua y cuáles son las zonas altas y seguras. En La Plata, por ejemplo, la Municipalidad publica el suyo en riesgo.laplata.gob.ar.",
     minijuego: "mapa",
@@ -1513,7 +1513,7 @@ function actualizarHUD(perdioVida = false) {
   for (let i = 0; i < CONFIG.vidas; i++) {
     const viva = i < estado.vidas;
     const recienPerdida = perdioVida && i === estado.vidas;
-    corazones += `<span class="${viva ? "" : "perdida"} ${recienPerdida ? "latido" : ""}">❤️</span>`;
+    corazones += `<span class="${viva ? "" : "perdida"} ${recienPerdida ? "latido" : ""}">🎯</span>`;
   }
   $("hud-vidas").innerHTML = corazones;
   $("hud-nivel").textContent = `${Math.min(estado.indice + 1, estado.lista.length)}/${estado.lista.length}`;
@@ -1801,7 +1801,7 @@ function responderCelular(fue) {
     v.className = "veredicto " + (fue ? "fallo" : "exito");
     v.textContent = r.titulo;
     const pd = $("cel-puntos");
-    pd.textContent = fue ? (CONFIG.celularQuitaVida ? "−1 ❤️ vida" : "+0 ⭐") : `+${puntos} ⭐`;
+    pd.textContent = fue ? (CONFIG.celularQuitaVida ? "−1 🎯 intento" : "+0 ⭐") : `+${puntos} ⭐`;
     pd.style.color = fue ? "var(--fallo)" : "var(--exito)";
     $("cel-texto").textContent = r.texto;
     $("cel-capsula").textContent = c.capsula;
@@ -1873,7 +1873,7 @@ function mostrarCapsula(esc, op, puntos, porTiempo) {
   v.className = "veredicto " + op.resultado;
   v.textContent = (porTiempo ? "⏰ ¡Se acabó el tiempo! " : "") + op.titulo;
   const pd = $("cap-puntos");
-  pd.textContent = op.resultado === "fallo" ? "−1 ❤️ vida" : `+${puntos} ⭐`;
+  pd.textContent = op.resultado === "fallo" ? "−1 🎯 intento" : `+${puntos} ⭐`;
   pd.style.color = op.resultado === "fallo" ? "var(--fallo)" : "var(--exito)";
   $("cap-consecuencia").textContent = (porTiempo ? "No decidir también es una decisión. " : "") + op.consecuencia;
   $("cap-texto").textContent = esc.capsula;
@@ -2011,9 +2011,8 @@ function finalizarMinijuego() {
   $("mj-cuenta").textContent = "";
   $("mj-banner-wrap").innerHTML = M.resultado.exito
     ? `<div class="banner victoria">¡VICTORIA!</div>`
-    : `<div class="banner derrota">¡DERROTA!</div>`;
+    : `<div class="banner derrota">¡CASI!</div>`;
   sonido(M.resultado.exito ? "victoria" : "fallo");
-  if (!M.resultado.exito) sacudir();
 }
 
 /* --- Entrada: Pointer Events unifican mouse, lápiz y dedos (multitáctil) --- */
@@ -3104,7 +3103,7 @@ const MINIJUEGOS = {
       return {
         exito,
         puntos: s.critico ? 0 : (s.perro.adentro ? 50 : 0) + (s.sombrilla.atada ? 50 : 0) + ventanas * 20 + s.guardados * 25 + (exito ? 60 : 0),
-        resumen: s.critico ? "Subiste a la escalera con ráfagas de 80 km/h: una ráfaga puede tirarte del techo y la chapa suelta corta como una cuchilla. ¡Mirá cómo salió volando!"
+        resumen: s.critico ? "Con ráfagas de 80 km/h, subir al techo es muy peligroso: podés caerte y la chapa suelta puede lastimar. Mirá cómo se la llevó el viento. En la vida real, esperá a que pase y, si hay daños, llamá a Defensa Civil (103)."
           : exito ? "¡Patio asegurado! Perro adentro, ventanas cerradas, sombrilla atada y nada suelto… y no te subiste al techo."
           : "Faltó: " + falta.join(", ") + "."
       };
@@ -3144,7 +3143,7 @@ const MINIJUEGOS = {
         v.calor += v.ritmo * dt;
         if (v.calor >= 100) {
           v.colapso = true; v.calor = 100;
-          flotante("🥵 ¡Golpe de calor!", v.x, v.y - 60, "#ff4d6d", 20); sacudir(); sonido("fallo");
+          flotante("🚑 ¡Necesita ayuda ya!", v.x, v.y - 60, "#ff4d6d", 20); sonido("error");
         }
       });
     },
@@ -3152,7 +3151,7 @@ const MINIJUEGOS = {
     estado(s) {
       const animales = s.victimas.filter(v => v.tipo === "animal" && v.atendido).length;
       const abuelo = s.victimas.find(v => v.tipo === "abuelo");
-      return `🥣 Animales hidratados: ${animales}/3   ·   ⛱️ Abuelo: ${abuelo.atendido ? "a la sombra ✔" : abuelo.colapso ? "¡golpe de calor!" : "¡AL SOL!"}   ·   🌡️ ${s.temp.toFixed(1)} °C`;
+      return `🥣 Animales hidratados: ${animales}/3   ·   ⛱️ Abuelo: ${abuelo.atendido ? "a la sombra ✔" : abuelo.colapso ? "🚑 necesita ayuda" : "¡AL SOL!"}   ·   🌡️ ${s.temp.toFixed(1)} °C`;
     },
     abajo(s, x, y, id) {
       if (s.arr) return;
@@ -3212,7 +3211,7 @@ const MINIJUEGOS = {
         if (v.tipo === "abuelo" && v.atendido) { ctx.fillStyle = "rgba(0,0,0,.25)"; ctx.beginPath(); ctx.ellipse(v.x, v.y + 45, 70, 14, 0, 0, Math.PI * 2); ctx.fill(); }
         const jadeo = !v.atendido && !v.colapso ? Math.abs(Math.sin(t * 10 + v.fase)) * -5 : 0;
         ctx.globalAlpha = v.colapso ? .5 : 1;
-        emoji(v.e, v.x, v.y + jadeo, 48, v.colapso ? Math.PI / 2 : 0);
+        emoji(v.e, v.x, v.y + jadeo, 48);
         ctx.globalAlpha = 1;
         if (!v.atendido && !v.colapso) {
           emoji("💦", v.x + 26, v.y - 22 + (t * 30 + v.fase * 7) % 12, 14);
@@ -3221,7 +3220,7 @@ const MINIJUEGOS = {
           ctx.fillStyle = c < .5 ? "#ffcc33" : c < .8 ? "#ff8a3c" : "#ff2b2b"; rrect(v.x - 32, v.y - 48, 64 * c, 10, 5); ctx.fill();
         }
         if (v.atendido) texto("✔", v.x - 28, v.y - 30, 22, "#1a9e5f", "center", true);
-        if (v.colapso) emoji("😵", v.x, v.y - 45, 26);
+        if (v.colapso) emoji("🚑", v.x, v.y - 45, 26);
       });
       // Bandeja de recursos
       ctx.fillStyle = "rgba(0,0,0,.3)"; rrect(90, 22, 400, 80, 16); ctx.fill();
@@ -3250,7 +3249,7 @@ const MINIJUEGOS = {
         exito,
         puntos: Math.max(0, salvados * 40 + (exito ? 90 : 0) - s.errores * 20),
         resumen: (exito ? "¡Brigada exitosa! Los animales tienen agua fresca y el abuelo está a la sombra."
-          : `${colapsos} sufrieron un golpe de calor: cada segundo cuenta.`)
+          : `Faltó llevar sombra o agua a tiempo (${colapsos} de ${s.victimas.length} quedaron sin atender). Con calor extremo, cada minuto cuenta; ante un golpe de calor, llamá al 107.`)
           + (s.errores ? ` Usaste hielo ${s.errores} vez/veces: recordá que debe ser agua fresca, no helada.` : "")
       };
     }
@@ -3299,7 +3298,7 @@ const MINIJUEGOS = {
         } else {
           expuestas.forEach(p => { p.estado = "alcanzada"; s.alcanzados++; });
           D.descargar(s, expuestas[0].x, expuestas[0].y - 20);
-          flotante("⚡ ¡Quedó expuesta al rayo!", expuestas[0].x, expuestas[0].y - 70, "#ff4d6d", 20);
+          flotante("⚠️ ¡Estaba expuesta! Hay que ponerla a cubierto antes", expuestas[0].x, expuestas[0].y - 70, "#ff4d6d", 20);
         }
       }
     },
@@ -3373,7 +3372,7 @@ const MINIJUEGOS = {
       s.personas.forEach(p => {
         if (p.estado === "refugiada") return;
         if (p.estado === "agachada") { emoji("🧎", p.x, p.y, 46); return; }
-        if (p.estado === "alcanzada") { ctx.globalAlpha = .5; emoji("🧍", p.x, p.y, 48); ctx.globalAlpha = 1; emoji("⚡", p.x + 20, p.y - 30, 26); return; }
+        if (p.estado === "alcanzada") { ctx.globalAlpha = .5; emoji("🧍", p.x, p.y, 48); ctx.globalAlpha = 1; emoji("🚑", p.x + 20, p.y - 30, 24); return; }
         const grande = s.arr && s.arr.p === p;
         if (p.lejos) {
           ctx.strokeStyle = `rgba(255,204,51,${.5 + .5 * Math.sin(t * 9)})`; ctx.lineWidth = 4;
@@ -3441,7 +3440,7 @@ const MINIJUEGOS = {
       s.co = Math.max(0, s.co + (fuentes - (s.rendija ? 7 : 0)) * dt);
       if (s.co >= 100 && !s.critico) {
         s.critico = true; s.co = 100;
-        flotante("☠️ ¡Intoxicación por monóxido de carbono!", 400, 150, "#ff4d6d", 24); sacudir(); sonido("fallo");
+        flotante("⚠️ ¡Nivel de CO peligroso: hay que ventilar!", 400, 150, "#ff4d6d", 24); sonido("error");
       }
       // El detector pita cada vez más rápido
       if (s.co > 50) { s.beep -= dt; if (s.beep <= 0) { sonido("tic"); s.beep = s.co > 80 ? .25 : .6; } }
@@ -3618,7 +3617,7 @@ const MINIJUEGOS = {
       return {
         exito,
         puntos: s.critico ? n * 15 : n * 40 + (exito ? 50 : 0),
-        resumen: s.critico ? "El detector llegó al 100 %: intoxicación por monóxido de carbono. El CO no se ve ni tiene olor; por eso apagar las fuentes y ventilar es lo primero."
+        resumen: s.critico ? "El detector llegó al 100 %. El CO no se ve ni tiene olor: apagá las fuentes y ventilá primero. En la vida real, ante dolor de cabeza, mareos o sueño, abrí todo, salí al aire libre y llamá al 107."
           : exito ? "¡Casa cálida y segura! Sin fuentes de CO adentro, con ventilación, la ropa lejos de la estufa y el abuelo abrigado."
           : "Faltó: " + falta.join(", ") + "."
       };
@@ -3684,7 +3683,7 @@ const MINIJUEGOS = {
     enRojo(x, y, t) { const D = MINIJUEGOS.mapa; return D.rojasActivas(t).some(c => D.tocaRojo(x, y, c)); },
     hundir(s, msg) {
       s.hundido = true; s.tHundido = s.t; s.arr = null; s.objetivo = null;
-      flotante(msg, 400, 110, "#ff4d6d", 26); sacudir(); sonido("fallo");
+      flotante(msg, 400, 110, "#ff4d6d", 26); sonido("error");
     },
     // Avanza el auto hacia el objetivo, de a pasitos de 4 px, sólo por calles y con un límite de distancia
     avanzar(s, presupuesto) {
@@ -3725,7 +3724,7 @@ const MINIJUEGOS = {
         const f = D.INUNDACIONES[s.inundadas++];
         sonido("trueno");
         if (s.activo) flotante("🌊 ¡Se desbordó otra calle!", (f.seg[0] + f.seg[2]) / 2 + (f.seg[0] === f.seg[2] ? 120 : 0), (f.seg[1] + f.seg[3]) / 2 + (f.seg[0] === f.seg[2] ? 0 : 50), "#ff8da1", 18);
-        if (!s.hundido && !s.llego && D.tocaRojo(s.auto.x, s.auto.y, f.seg)) return D.hundir(s, "🌊 ¡La calle se desbordó con vos adentro!");
+        if (!s.hundido && !s.llego && D.tocaRojo(s.auto.x, s.auto.y, f.seg)) return D.hundir(s, "🌊 ¡Esa calle se inundó!");
       }
       if (s.objetivo && !s.hundido && !s.llego) D.avanzar(s, D.VELOCIDAD * dt);
     },
@@ -3835,7 +3834,7 @@ const MINIJUEGOS = {
       return {
         exito,
         puntos: (s.activo ? 50 : 0) + (exito ? 150 + Math.round(Math.max(0, 15 - t) * 4) : 0),
-        resumen: s.hundido ? (s.activo ? "Pasaste por una zona roja: el auto quedó atrapado en el agua del arroyo desbordado." : "Fuiste a ciegas sin activar el Mapa de Riesgo y caíste en una calle inundable.")
+        resumen: s.hundido ? (s.activo ? "El auto entró a una calle inundada. En la vida real: si el agua cubre el cordón, no circules y buscá otro camino." : "Sin el Mapa de Riesgo no se sabe qué calles se inundan. Consultalo antes de salir y, si el agua cubre el cordón, no circules.")
           : exito ? `¡Llegaste al Centro de Evacuación por el corredor seguro${s.activo ? " usando el Mapa de Riesgo" : ""}!`
           : "No llegaste a tiempo al Centro de Evacuación."
       };
@@ -3872,8 +3871,8 @@ function mostrarResultadoMinijuego(res) {
 
   const v = $("res-veredicto");
   v.className = "veredicto " + (res.exito ? "exito" : "fallo");
-  v.textContent = res.exito ? `🏆 ¡${MINIJUEGOS[esc.minijuego].titulo.replace(/[¡!]/g, "")} superado!` : "💥 ¡No alcanzó!";
-  $("res-puntos").textContent = `+${res.puntos} ⭐` + (res.exito ? "" : "   ·   −1 ❤️ vida");
+  v.textContent = res.exito ? `🏆 ¡${MINIJUEGOS[esc.minijuego].titulo.replace(/[¡!]/g, "")} superado!` : "🔁 ¡Esta vez no salió!";
+  $("res-puntos").textContent = `+${res.puntos} ⭐` + (res.exito ? "" : "   ·   −1 🎯 intento");
   $("res-puntos").style.color = res.exito ? "var(--exito)" : "var(--fallo)";
   $("res-resumen").textContent = res.resumen;
   $("res-leccion").textContent = esc.leccion;
@@ -3905,12 +3904,12 @@ function mostrarFinal() {
   $("fin-leccion-texto").innerHTML = modo.leccion.texto;
 
   $("fin-icono").textContent = gano ? "🏆" : "💥";
-  $("fin-titulo").textContent = gano ? "¡VICTORIA!" : "¡DERROTA!";
+  $("fin-titulo").textContent = gano ? "¡VICTORIA!" : "¡OPERATIVO TERMINADO!";
   $("fin-titulo").style.color = gano ? "var(--exito)" : "var(--fallo)";
   $("fin-rango").textContent = rango;
   $("fin-subtitulo").textContent = gano
-    ? `Terminaste con ${estado.vidas} ❤️. ${modo.leccion.victoria}`
-    : "Te quedaste sin vidas, pero lo importante es lo que aprendiste. ¡Repasemos!";
+    ? `Terminaste con ${estado.vidas} 🎯 de sobra. ${modo.leccion.victoria}`
+    : "Se terminaron los intentos, pero lo importante es lo que aprendiste. ¡Repasemos!";
 
   // Animación de conteo del puntaje
   const el = $("fin-puntaje"), objetivo = estado.puntaje, t0 = performance.now();
