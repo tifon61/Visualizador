@@ -1441,9 +1441,9 @@ const BARRIO = [
 /* Configuración general: cambiar acá para ajustar la dificultad */
 const CONFIG = {
   vidas: 3,
-  segundosTrivia: 20,
+  segundosTrivia: 40,
   puntosTrivia: { exito: 100, parcial: 50, fallo: 0 },
-  bonusPorSegundo: 5,          // puntos extra por cada segundo que sobra en la trivia
+  bonusPorSegundo: 2.5,        // puntos extra por cada segundo que sobra (40 s × 2,5 = 100: el máximo sigue en 200)
   maxTrivia: 200,              // para calcular el rango final
   maxMinijuego: 250,
   puntosCelular: 100,          // premio por NO ir al recital con alerta naranja
@@ -1878,7 +1878,7 @@ function responder(op, boton, porTiempo = false) {
   if (boton) boton.classList.add(op.resultado === "fallo" ? "incorrecta" : "correcta");
 
   let puntos = CONFIG.puntosTrivia[op.resultado];
-  if (op.resultado === "exito") puntos += estado.segundos * CONFIG.bonusPorSegundo;
+  if (op.resultado === "exito") puntos += Math.round(estado.segundos * CONFIG.bonusPorSegundo);
   estado.historial.push({ esc, trivia: op.resultado, triviaPuntos: puntos, porTiempo, mini: null });
 
   sonido(op.resultado);
