@@ -1387,13 +1387,13 @@ const BARRIO = [
       { icono: "🪟", texto: "Usar estufas seguras y dejar siempre una rendija de 5 cm abierta en una ventana para ventilar.",
         resultado: "exito", efecto: "calor-seguro", titulo: "¡Calor seguro!",
         consecuencia: "Estufas en buen estado y una rendija abierta: el aire se renueva y la casa se mantiene cálida sin riesgo." },
-      { icono: "🔥", texto: "Entrar un brasero con carbón encendido al dormitorio para mantener el calor toda la noche.",
-        resultado: "fallo", efecto: "co", titulo: "¡Peligro mortal mientras dormís!",
-        consecuencia: "Un brasero en un cuarto cerrado llena el aire de monóxido de carbono. Como no tiene olor, la persona se duerme y no se despierta. Es una de las intoxicaciones más frecuentes en invierno." }
+      { icono: "⛽", texto: "Si se corta la luz, prender el grupo electrógeno adentro de casa para que la estufa eléctrica siga andando.",
+        resultado: "fallo", efecto: "co", titulo: "¡Peligro mortal en silencio!",
+        consecuencia: "Un grupo electrógeno quema nafta y larga monóxido de carbono por el escape. Adentro de la casa (o en un garaje cerrado) el gas se acumula en minutos: no tiene olor y la gente se duerme sin darse cuenta. Siempre va afuera, al aire libre y lejos de puertas y ventanas." }
     ],
-    capsula: "¡El monóxido de carbono es un asesino silencioso! Nunca uses el horno o braseros para calefaccionar en lugares cerrados. La ventilación cruzada salva vidas.",
+    capsula: "¡El monóxido de carbono es un asesino silencioso! Nunca uses el horno para calefaccionar ni prendas un grupo electrógeno en lugares cerrados. La ventilación cruzada salva vidas.",
     minijuego: "frio",
-    leccion: "El monóxido de carbono (CO) aparece cuando algo se quema con poco oxígeno: hornos, hornallas, braseros o estufas mal instaladas. No tiene color ni olor y provoca dolor de cabeza, mareos y sueño. Para prevenirlo: rendija de ventilación siempre, artefactos revisados por un gasista matriculado, llama azul (si es amarilla o anaranjada, hay mala combustión) y, si podés, un detector de CO. Nunca seques ropa sobre una estufa. El alerta del SMN por temperaturas extremas también incluye el frío extremo: se activa cuando las temperaturas quedan por debajo de las más bajas habituales del lugar (percentil 10). Y otra recomendación oficial que suma: «No fumes en ambientes cerrados»."
+    leccion: "El monóxido de carbono (CO) aparece cuando algo se quema con poco oxígeno: hornos, hornallas, grupos electrógenos o estufas mal instaladas. No tiene color ni olor y provoca dolor de cabeza, mareos y sueño. Para prevenirlo: rendija de ventilación siempre, artefactos revisados por un gasista matriculado, llama azul (si es amarilla o anaranjada, hay mala combustión) y, si podés, un detector de CO. Nunca seques ropa sobre una estufa. El alerta del SMN por temperaturas extremas también incluye el frío extremo: se activa cuando las temperaturas quedan por debajo de las más bajas habituales del lugar (percentil 10). Y otra recomendación oficial que suma: «No fumes en ambientes cerrados»."
   },
   {
     id: "mapa", nombre: "Lluvias Persistentes y Mapa de Riesgo", lugar: "Tu ciudad, con arroyos entubados", emoji: "🗺️",
@@ -3415,7 +3415,7 @@ const MINIJUEGOS = {
   /* -------------------------------------------------------------------
      G9. ¡CALOR SEGURO! (Ola de frío polar)
      5 peligros domésticos y un detector de monóxido de carbono (CO):
-     el CO sube con el horno y el brasero encendidos adentro y baja al
+     el CO sube con el horno y el grupo electrógeno encendidos adentro y baja al
      abrir la rendija. Si llega a 100 % -> error crítico.
      ------------------------------------------------------------------- */
   frio: {
@@ -3423,13 +3423,13 @@ const MINIJUEGOS = {
     VENTANA: { x: 105, y: 140 }, HORNO: { x: 295, y: 305 }, ESTUFA: { x: 470, y: 352 },
     PUERTA: { x1: 712, x2: 798, y1: 150, y2: 395 }, ABUELO: { x: 610, y: 310 },
     instrucciones: [
-      ["🍳", "TOCÁ el horno abierto y encendido para apagarlo, y ARRASTRÁ el brasero 🔥 afuera por la PUERTA del patio."],
+      ["🍳", "TOCÁ el horno abierto y encendido para apagarlo, y ARRASTRÁ el grupo electrógeno ⛽ afuera por la PUERTA del patio."],
       ["👕", "ARRASTRÁ la ropa que se está secando sobre la estufa a otro lugar, y TOCÁ la ventana para abrir una rendija de ventilación."],
       ["🧓", "ARRASTRÁ la manta hasta el abuelo que tiembla. ¡Ojo con el detector de CO: no lo dejes llegar al 100 %!"]
     ],
     crear() {
       return {
-        co: 15, hornoOn: true, rendija: false, brasero: { x: 420, y: 412, afuera: false },
+        co: 15, hornoOn: true, rendija: false, generador: { x: 585, y: 410, afuera: false },
         ropa: { x: 470, y: 300, movida: false, quemada: false }, manta: { x: 130, y: 405, puesta: false },
         critico: false, arr: null, t: 0, beep: 0
       };
@@ -3437,7 +3437,7 @@ const MINIJUEGOS = {
     actualizar(s, dt, t) {
       s.t = t;
       // Fuentes de CO adentro de la casa, y la rendija que renueva el aire
-      const fuentes = (s.hornoOn ? 5 : 0) + (s.brasero.afuera ? 0 : 6);
+      const fuentes = (s.hornoOn ? 5 : 0) + (s.generador.afuera ? 0 : 6);
       s.co = Math.max(0, s.co + (fuentes - (s.rendija ? 7 : 0)) * dt);
       if (s.co >= 100 && !s.critico) {
         s.critico = true; s.co = 100;
@@ -3452,11 +3452,11 @@ const MINIJUEGOS = {
       }
     },
     hecho(s) {
-      return { horno: !s.hornoOn, brasero: s.brasero.afuera, ropa: s.ropa.movida, rendija: s.rendija, manta: s.manta.puesta };
+      return { horno: !s.hornoOn, generador: s.generador.afuera, ropa: s.ropa.movida, rendija: s.rendija, manta: s.manta.puesta };
     },
     terminado(s) {                            // termina antes si ya no queda nada por resolver
       const h = MINIJUEGOS.frio.hecho(s);
-      return s.critico || (h.horno && h.brasero && h.rendija && h.manta && (h.ropa || s.ropa.quemada));
+      return s.critico || (h.horno && h.generador && h.rendija && h.manta && (h.ropa || s.ropa.quemada));
     },
     estado(s) {
       const n = Object.values(MINIJUEGOS.frio.hecho(s)).filter(Boolean).length;
@@ -3473,7 +3473,7 @@ const MINIJUEGOS = {
         return;
       }
       if (s.arr) return;
-      if (!s.brasero.afuera && dist(x, y, s.brasero.x, s.brasero.y) < 42) { s.arr = { id, que: "brasero" }; sonido("tic"); return; }
+      if (!s.generador.afuera && dist(x, y, s.generador.x, s.generador.y) < 42) { s.arr = { id, que: "generador" }; sonido("tic"); return; }
       if (!s.ropa.movida && !s.ropa.quemada && dist(x, y, s.ropa.x, s.ropa.y) < 40) { s.arr = { id, que: "ropa" }; sonido("tic"); return; }
       if (!s.manta.puesta && dist(x, y, s.manta.x, s.manta.y) < 45) { s.arr = { id, que: "manta" }; sonido("tic"); }
     },
@@ -3485,11 +3485,11 @@ const MINIJUEGOS = {
       const D = MINIJUEGOS.frio;
       if (!s.arr || s.arr.id !== id) return;
       const que = s.arr.que; s.arr = null;
-      if (que === "brasero") {
+      if (que === "generador") {
         const P = D.PUERTA;
         if (x > P.x1 && x < P.x2 && y > P.y1 && y < P.y2) {
-          s.brasero.afuera = true; chispas(755, 280, "#2ee59d", 14); flotante("¡Afuera!", 755, 140, "#2ee59d"); sonido("ok");
-        } else { s.brasero.x = Math.min(690, x); s.brasero.y = Math.max(380, Math.min(425, y)); }
+          s.generador.afuera = true; chispas(755, 280, "#2ee59d", 14); flotante("¡Afuera!", 755, 140, "#2ee59d"); sonido("ok");
+        } else { s.generador.x = Math.min(690, x); s.generador.y = Math.max(380, Math.min(425, y)); }
       } else if (que === "ropa") {
         if (dist(x, y, D.ESTUFA.x, D.ESTUFA.y) > 110) { s.ropa.movida = true; chispas(x, y, "#2ee59d", 10); flotante("¡Lejos de la estufa!", x, y - 40, "#2ee59d"); sonido("ok"); }
         else { s.ropa.x = 470; s.ropa.y = 300; flotante("¡Más lejos de la estufa!", 470, 250, "#ffcc33", 18); }
@@ -3564,8 +3564,8 @@ const MINIJUEGOS = {
       ctx.fillStyle = "#6b4423"; ctx.fillRect(P.x1 + 6, P.y1, P.x2 - P.x1 - 6, 210);
       ctx.fillStyle = "#3a5f3a"; ctx.fillRect(P.x1 + 16, P.y1 + 12, P.x2 - P.x1 - 26, 80);
       texto("PATIO", (P.x1 + P.x2) / 2 + 3, P.y1 - 12, 12, "#333");
-      if (s.arr && s.arr.que === "brasero") { ctx.strokeStyle = `rgba(46,229,157,${.6 + .4 * Math.sin(t * 10)})`; ctx.lineWidth = 6; ctx.strokeRect(P.x1, P.y1 - 4, P.x2 - P.x1, 222); }
-      if (s.brasero.afuera) emoji("🔥", 755, 205, 22);
+      if (s.arr && s.arr.que === "generador") { ctx.strokeStyle = `rgba(46,229,157,${.6 + .4 * Math.sin(t * 10)})`; ctx.lineWidth = 6; ctx.strokeRect(P.x1, P.y1 - 4, P.x2 - P.x1, 222); }
+      if (s.generador.afuera) emoji("⛽", 755, 205, 22);
 
       // Abuelo en el sillón: tiembla de frío y se adormece con el CO
       const A = D.ABUELO;
@@ -3579,7 +3579,7 @@ const MINIJUEGOS = {
       } else texto("🥶 brrr…", A.x, A.y - 58, 13, "#1a4a7a");
       if (s.co > 60) texto("¡se está durmiendo!", A.x, A.y + 74, 12, "#c4002b");
 
-      // Manta (en un canasto) y brasero
+      // Manta (en un canasto) y grupo electrógeno
       if (!s.manta.puesta) {
         const ag = s.arr && s.arr.que === "manta";
         ctx.fillStyle = "#c0392b"; rrect(s.manta.x - 34, s.manta.y - 22, 68, 44, 8); ctx.fill();
@@ -3587,10 +3587,17 @@ const MINIJUEGOS = {
         for (let k = -20; k <= 20; k += 13) { ctx.beginPath(); ctx.moveTo(s.manta.x + k, s.manta.y - 22); ctx.lineTo(s.manta.x + k, s.manta.y + 22); ctx.stroke(); }
         texto("MANTA", s.manta.x, s.manta.y + (ag ? 0 : 36), 12, ag ? "#fff" : "#fff3", "center", true);
       }
-      if (!s.brasero.afuera) {
-        ctx.fillStyle = "#3b3b3b"; ctx.beginPath(); ctx.ellipse(s.brasero.x, s.brasero.y + 8, 30, 12, 0, 0, Math.PI * 2); ctx.fill();
-        emoji("🔥", s.brasero.x, s.brasero.y - 8, 40 + Math.sin(t * 13) * 3);
-        texto("BRASERO", s.brasero.x, s.brasero.y + 30, 11, "#fff", "center", true);
+      if (!s.generador.afuera) {
+        const g = s.generador, vib = Math.sin(t * 60) * 1.2;            // vibra porque está en marcha
+        ctx.fillStyle = "#1f1f1f"; ctx.fillRect(g.x - 34 + vib, g.y - 22, 68, 6);                   // marco
+        ctx.fillStyle = "#d9a400"; rrect(g.x - 32 + vib, g.y - 18, 64, 36, 6); ctx.fill();          // carcasa amarilla
+        ctx.fillStyle = "#333"; rrect(g.x - 22 + vib, g.y - 10, 26, 20, 3); ctx.fill();             // motor
+        emoji("⚡", g.x + 17 + vib, g.y, 16);
+        for (let k = 0; k < 3; k++) {                                     // humo del escape
+          const f = (t * .8 + k / 3) % 1;
+          ctx.fillStyle = `rgba(90,90,90,${.5 * (1 - f)})`; ctx.beginPath(); ctx.arc(g.x - 38 - f * 18, g.y - 14 - f * 40, 6 + f * 12, 0, Math.PI * 2); ctx.fill();
+        }
+        texto("GRUPO ELECTRÓGENO", g.x, g.y + 32, 11, "#fff", "center", true);
       }
 
       // Detector de monóxido de carbono
@@ -3605,7 +3612,7 @@ const MINIJUEGOS = {
       const h = MINIJUEGOS.frio.hecho(s), n = Object.values(h).filter(Boolean).length;
       const exito = !s.critico && !s.ropa.quemada && n === 5;
       const falta = [];
-      if (!h.horno) falta.push("el horno quedó prendido"); if (!h.brasero) falta.push("el brasero quedó adentro");
+      if (!h.horno) falta.push("el horno quedó prendido"); if (!h.generador) falta.push("el grupo electrógeno quedó adentro");
       if (s.ropa.quemada) falta.push("la ropa se prendió fuego"); else if (!h.ropa) falta.push("la ropa quedó sobre la estufa");
       if (!h.rendija) falta.push("no abriste la rendija"); if (!h.manta) falta.push("el abuelo sigue con frío");
       return {
@@ -3635,7 +3642,7 @@ const MINIJUEGOS = {
       [110, 318, 345, 102],          // la diagonal: el camino más corto… por el fondo del cauce
       [230, 260, 550, 260],
       [390, 260, 390, 355],
-      [550, 192, 550, 260],          // (empieza un poco abajo: la esquina 550,160 queda transitable)
+      [550, 200, 550, 260],          // (empieza un poco abajo: la esquina 550,160 queda transitable)
       [390, 355, 710, 355]
     ],
     calles() {                       // todas las calles transitables (se calculan una sola vez)
@@ -3666,7 +3673,15 @@ const MINIJUEGOS = {
       return D.ROJAS.concat(D.INUNDACIONES.filter(f => t >= f.t).map(f => f.seg));
     },
     // La zona roja cubre TODO el ancho de la calle (ANCHO + 2): no se puede pasar "pegado al borde"
-    enRojo(x, y, t) { const D = MINIJUEGOS.mapa; return D.rojasActivas(t).some(c => D.distSeg(x, y, c) <= D.ANCHO + 2); },
+    // Las calles rectas usan extremos CUADRADOS: así no queda la "esquinita" libre del cruce para colarse por el borde
+    tocaRojo(x, y, c) {
+      const D = MINIJUEGOS.mapa, r = D.ANCHO + 2;
+      if (c[0] !== c[2] && c[1] !== c[3]) return D.distSeg(x, y, c) <= r;     // diagonal
+      const dx = Math.max(Math.min(c[0], c[2]) - x, 0, x - Math.max(c[0], c[2]));
+      const dy = Math.max(Math.min(c[1], c[3]) - y, 0, y - Math.max(c[1], c[3]));
+      return Math.max(dx, dy) <= r;
+    },
+    enRojo(x, y, t) { const D = MINIJUEGOS.mapa; return D.rojasActivas(t).some(c => D.tocaRojo(x, y, c)); },
     hundir(s, msg) {
       s.hundido = true; s.tHundido = s.t; s.arr = null; s.objetivo = null;
       flotante(msg, 400, 110, "#ff4d6d", 26); sacudir(); sonido("fallo");
@@ -3710,7 +3725,7 @@ const MINIJUEGOS = {
         const f = D.INUNDACIONES[s.inundadas++];
         sonido("trueno");
         if (s.activo) flotante("🌊 ¡Se desbordó otra calle!", (f.seg[0] + f.seg[2]) / 2 + (f.seg[0] === f.seg[2] ? 120 : 0), (f.seg[1] + f.seg[3]) / 2 + (f.seg[0] === f.seg[2] ? 0 : 50), "#ff8da1", 18);
-        if (!s.hundido && !s.llego && D.distSeg(s.auto.x, s.auto.y, f.seg) <= D.ANCHO + 2) return D.hundir(s, "🌊 ¡La calle se desbordó con vos adentro!");
+        if (!s.hundido && !s.llego && D.tocaRojo(s.auto.x, s.auto.y, f.seg)) return D.hundir(s, "🌊 ¡La calle se desbordó con vos adentro!");
       }
       if (s.objetivo && !s.hundido && !s.llego) D.avanzar(s, D.VELOCIDAD * dt);
     },
@@ -3759,7 +3774,7 @@ const MINIJUEGOS = {
       D.calles().forEach(sg => trazo(sg, "#9aa3b2", 30));
       if (activo) {
         D.calles().forEach(sg => trazo(sg, "rgba(46,229,157,.75)", 30));
-        D.ROJAS.forEach(sg => trazo(sg, "rgba(255,50,70,.85)", 34));
+        c.lineCap = "square"; D.ROJAS.forEach(sg => trazo(sg, "rgba(255,50,70,.85)", 40)); c.lineCap = "round";
         c.setLineDash([10, 8]); D.ROJAS.forEach(sg => trazo(sg, "#7cc3ff", 4)); c.setLineDash([]);   // el arroyo entubado
         emo("📉", 300, 240, 22); txt("zona baja", 300, 216, 12, "#ffd0d6");
         emo("⛰️", 70, 30, 22); txt("zona alta", 115, 30, 12, "#c8ffe6", "left");
@@ -3773,13 +3788,13 @@ const MINIJUEGOS = {
       ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.drawImage(D.fondo(s.activo), 0, 0); ctx.restore();
       // Lo que cambia: calles que se desbordan y avisos (sólo con el mapa activo)
       if (s.activo) {
-        ctx.lineCap = "round";
+        ctx.lineCap = "square";                 // igual que la detección: el rojo tapa todo el cruce
         const trazo = (c, color, ancho) => { ctx.strokeStyle = color; ctx.lineWidth = ancho; ctx.beginPath(); ctx.moveTo(c[0], c[1]); ctx.lineTo(c[2], c[3]); ctx.stroke(); };
         D.INUNDACIONES.forEach(f => {
           const falta = f.t - s.t;
-          if (falta <= 0) return trazo(f.seg, "rgba(255,50,70,.85)", 34);               // ya desbordada
+          if (falta <= 0) return trazo(f.seg, "rgba(255,50,70,.85)", 40);               // ya desbordada
           if (falta > D.AVISO) return;
-          trazo(f.seg, `rgba(255,145,0,${.6 + .3 * Math.sin(t * 14)})`, 34);              // aviso de desborde
+          trazo(f.seg, `rgba(255,145,0,${.6 + .3 * Math.sin(t * 14)})`, 40);              // aviso de desborde
           texto(`⚠️ se desborda en ${falta.toFixed(1)} s`, (f.seg[0] + f.seg[2]) / 2 + (f.seg[0] === f.seg[2] ? 90 : 0), (f.seg[1] + f.seg[3]) / 2 + (f.seg[0] === f.seg[2] ? 0 : 40), 15, "#ffcc00", "center", true);
         });
         ctx.lineCap = "butt";
@@ -4231,7 +4246,7 @@ const GUIAS = [
   { emoji: "💨", titulo: "Viento fuerte", antes: "Guardá o atá objetos sueltos; revisá techos con buen tiempo.", durante: "Quedate adentro, lejos de ventanas. Nunca subas al techo.", despues: "Cuidado con árboles, ramas y cables caídos." },
   { emoji: "🥵", titulo: "Ola de calor", antes: "Planificá actividades para la mañana temprano o la noche.", durante: "Agua fresca, sombra, ropa liviana; agua para los animales.", despues: "Preguntá cómo están los vecinos mayores." },
   { emoji: "⚡", titulo: "Rayos", antes: "Regla 30/30: si el trueno llega en menos de 30 s, refugiate.", durante: "Edificio cerrado o auto con techo metálico. Nunca bajo un árbol.", despues: "Esperá 30 minutos desde el último trueno para salir." },
-  { emoji: "🥶", titulo: "Ola de frío", antes: "Hacé revisar estufas y calefactores por un gasista matriculado.", durante: "Siempre una rendija abierta. Nunca horno ni brasero para calefaccionar.", despues: "Ante dolor de cabeza, mareos o sueño: aire libre y llamá al 107." },
+  { emoji: "🥶", titulo: "Ola de frío", antes: "Hacé revisar estufas y calefactores por un gasista matriculado.", durante: "Siempre una rendija abierta. Nunca horno para calefaccionar ni grupo electrógeno adentro.", despues: "Ante dolor de cabeza, mareos o sueño: aire libre y llamá al 107." },
   { emoji: "🗺️", titulo: "Inundación", antes: "Conocé el mapa de riesgo y tu ruta a la zona alta.", durante: "Desconectá la electricidad si entra agua; subí a lugares altos.", despues: "No consumas alimentos ni agua que hayan tenido contacto con la inundación." }
 ];
 
