@@ -18,7 +18,7 @@
   MODOS DE JUEGO
     • "Prepará tu Barrio" (principal): 4 emergencias desde el punto de
       vista del vecino. Cada una = TRIVIA -> MINIJUEGO (Canvas) -> CÁPSULA.
-      La tormenta eléctrica arranca con un celular: invitación a un
+      El escenario de rayos arranca con un celular: invitación a un
       recital con alerta naranja... y un oso inflable gigante que vuela.
     • "Centro de Alertas" (experto): Sudestada, Zonda, Helada y Sistema
       convectivo, desde el punto de vista del meteorólogo.
@@ -115,6 +115,19 @@
   .puntaje-num { color: var(--acento); display: inline-block; }
   .puntaje-num.salta { animation: saltar .5s; }
   @keyframes saltar { 40% { transform: scale(1.4); color: var(--exito); } }
+  .btn-menu {
+    font-family: var(--titulos); font-size: 1.25rem; letter-spacing: .5px; line-height: 1;
+    padding: 8px 12px; min-height: 42px; cursor: pointer; color: var(--texto);
+    background: transparent; border: 1px solid var(--borde); border-radius: var(--radio);
+  }
+  .confirmar { position: fixed; inset: 0; z-index: 65; display: none; place-items: center; background: rgba(0,0,0,.8); }
+  .confirmar.abierto { display: grid; animation: aparecer .15s; }
+  .confirmar-caja {
+    width: min(520px, 92vw); padding: 24px; text-align: center; background: var(--tarjeta);
+    border: 2px solid var(--borde); border-radius: var(--radio); box-shadow: 0 0 40px rgba(255,77,0,.25);
+    animation: deslizar .25s cubic-bezier(.2,.8,.2,1);
+  }
+  .confirmar-caja .acciones { justify-content: center; }
   .btn-sonido {
     font-family: inherit; background: none; border: 1px solid var(--borde); color: var(--texto);
     border-radius: var(--radio); padding: 6px 12px; font-size: 1.2rem; cursor: pointer;
@@ -689,6 +702,7 @@
     .btn-consultor:hover { transform: translateY(-4px) rotate(-2deg); box-shadow: 0 0 0 3px var(--acento), 0 0 30px rgba(255,204,0,.6); }
     .btn-cerrar:hover { background: var(--fallo); border-color: var(--fallo); transform: rotate(90deg); }
     .btn-sonido:hover { border-color: var(--acento); transform: scale(1.1); }
+    .btn-menu:hover { border-color: var(--acento); color: var(--acento); transform: translateY(-2px); }
     .logo-portada:hover { animation: none; transform: rotate(360deg) scale(1.06); transition: transform .9s cubic-bezier(.2,.8,.2,1); }
     .hud-logo:hover .logo-hud { transform: rotate(-20deg) scale(1.15); transition: transform .3s; }
     .inicio h1:hover { text-shadow: 0 0 18px rgba(255,204,0,.45), 0 0 2px #fff; }
@@ -905,9 +919,22 @@
   </div>
 </div>
 
+<!-- ===================== CONFIRMAR VOLVER AL MENÚ ===================== -->
+<div class="confirmar" id="confirmar" role="dialog" aria-modal="true" aria-labelledby="confirmar-titulo">
+  <div class="confirmar-caja">
+    <div style="font-size:3rem">🏠</div>
+    <h2 id="confirmar-titulo">¿Volver al menú principal?</h2>
+    <p class="suave">Se va a perder la partida en curso. Mientras decidís, el reloj está en pausa.</p>
+    <div class="acciones">
+      <button class="btn" id="btn-conf-si">🏠 Sí, ir al menú</button>
+      <button class="btn secundario" id="btn-conf-no">▶ Seguir jugando</button>
+    </div>
+  </div>
+</div>
+
 <!-- ===================== HUD ===================== -->
 <header class="hud oculto" id="hud">
-  <div class="hud-logo"><span class="logo-grupo logo-hud" role="img" aria-label="Logo del Grupo de Pronóstico FCAG-UNLP"></span><div>⚠️ Operativo <span>Alerta</span></div></div>
+  <div class="hud-logo"><span class="logo-grupo logo-hud" role="img" aria-label="Logo del Grupo de Pronóstico FCAG-UNLP"></span><div>⚠️ Operativo <span>Alerta</span></div><button class="btn-menu" id="btn-menu" title="Volver al menú principal">🏠 Menú</button></div>
   <div class="hud-datos">
     <div class="vidas" id="hud-vidas" title="Vidas / reputación"></div>
     <div>🗺️ Nivel <span id="hud-nivel">1/4</span></div>
@@ -933,7 +960,7 @@
           <div>🌧️ Lluvias intensas</div>
           <div>💨 Vientos fuertes</div>
           <div>🥵 Ola de calor</div>
-          <div>⚡ Tormenta eléctrica</div>
+          <div>⚡ Rayos</div>
           <div>🥶 Ola de frío</div>
           <div>🗺️ Mapa de riesgo</div>
         </div>
@@ -1133,7 +1160,7 @@ const ESCENARIOS = [
       { icono: "🏠", texto: "Encerrarse, sellar ventanas con trapos húmedos y suspender toda actividad al aire libre por riesgo extremo de incendios y caída de árboles.",
         resultado: "exito", efecto: "sellado", titulo: "¡Prevención correcta!",
         consecuencia: "Casas selladas, actividades suspendidas: nadie quedó expuesto a ramas caídas ni a focos de incendio." },
-      { icono: "⚡", texto: "Preparar pararrayos, porque el Zonda siempre termina en una tormenta eléctrica severa e inmediata.",
+      { icono: "⚡", texto: "Preparar pararrayos, porque el Zonda siempre termina en una tormenta severa e inmediata.",
         resultado: "fallo", efecto: "polvo", titulo: "¡Peligro equivocado!",
         consecuencia: "El Zonda es un viento SECO: no trae tormenta inmediata. Mientras tanto, cayeron árboles y el polvo entró a las casas." }
     ],
@@ -1314,12 +1341,12 @@ const BARRIO = [
     leccion: "Recomendaciones oficiales del SAT ante calor extremo: tomá agua sin esperar a tener sed, no te expongas al sol entre las 10 y las 16 h, reducí la actividad física y prestá atención a niños, bebés, embarazadas y personas mayores o con enfermedades crónicas (y a las mascotas: agua fresca, nunca helada). Ante sed intensa, piel seca, agotamiento, mareos, náuseas o dolor de cabeza: pedí asistencia médica, llevá a la persona a un lugar fresco, mojale la ropa y dale agua fresca. El alerta del SMN por temperaturas extremas se basa en el efecto en la salud: en amarillo ya es peligroso para los grupos de riesgo; en rojo puede afectar incluso a personas sanas.",
   },
   {
-    id: "rayos", nombre: "Tormenta Eléctrica", lugar: "Un parque abierto", emoji: "⚡",
+    id: "rayos", nombre: "Caída de Rayos", lugar: "Un parque abierto", emoji: "⚡",
     clima: ["⛈️ Nubes de tormenta", "⚡ Rayos cercanos", "🌳 Parque amplio y abierto"],
     escena: { cielo: "cielo-tormenta", tipo: "parque", fenomeno: "lluvia" },
     titulo: "¡Rayos cerca del parque!",
     numero: "⚡ 3 s", dato: "entre el relámpago y el trueno: el rayo cayó a sólo 1 km (el sonido recorre unos 340 m por segundo).",
-    pregunta: "Estás en un descampado o parque y empieza una tormenta eléctrica severa. Caen rayos cerca. ¿Dónde te refugiás?",
+    pregunta: "Estás en un descampado o parque y empieza una tormenta fuerte y caen rayos cerca. ¿Dónde te refugiás?",
     opciones: [
       { icono: "🌳", texto: "Debajo del árbol más grande y frondoso que encuentre.",
         resultado: "fallo", efecto: "rayo", titulo: "¡El rayo cayó en el árbol!",
@@ -1794,18 +1821,22 @@ function mezclar(arr) {
   return arr;
 }
 
+function pintarTimerTrivia() {
+  $("tr-timer-barra").style.width = (estado.segundos / CONFIG.segundosTrivia * 100) + "%";
+  $("tr-timer-num").textContent = estado.segundos;
+  $("tr-timer").classList.toggle("urgente", estado.segundos <= 5);
+}
 function arrancarTimerTrivia() {
-  clearInterval(estado.timer);
   estado.segundos = CONFIG.segundosTrivia;
-  const pintar = () => {
-    $("tr-timer-barra").style.width = (estado.segundos / CONFIG.segundosTrivia * 100) + "%";
-    $("tr-timer-num").textContent = estado.segundos;
-    $("tr-timer").classList.toggle("urgente", estado.segundos <= 5);
-  };
-  pintar();
+  correrTimerTrivia();
+}
+// Corre el reloj desde los segundos que queden (sirve también para reanudar después de una pausa)
+function correrTimerTrivia() {
+  clearInterval(estado.timer);
+  pintarTimerTrivia();
   estado.timer = setInterval(() => {
     estado.segundos--;
-    pintar();
+    pintarTimerTrivia();
     if (estado.segundos > 0 && estado.segundos <= 5) sonido("tic");
     if (estado.segundos <= 0) {
       clearInterval(estado.timer);
@@ -1916,6 +1947,7 @@ function bucle(ahora) {
   if (!M) return;
   const dt = Math.min(0.05, (ahora - M.ultimo) / 1000);   // limitamos dt por si la pestaña se pausa
   M.ultimo = ahora;
+  if (M.enPausa) { requestAnimationFrame(bucle); return; }  // pausado (p. ej. preguntando si volver al menú)
 
   if (M.pausa > 0) {                    // cuenta regresiva 3-2-1
     M.pausa -= dt;
@@ -1989,7 +2021,7 @@ function coordenadas(e) {
   const r = lienzo.getBoundingClientRect();
   return [(e.clientX - r.left) / r.width * W, (e.clientY - r.top) / r.height * H];
 }
-const puedeJugar = () => M && !M.terminado && M.pausa <= 0;
+const puedeJugar = () => M && !M.terminado && M.pausa <= 0 && !M.enPausa;
 lienzo.addEventListener("pointerdown", (e) => {
   if (!puedeJugar()) return;
   e.preventDefault();
@@ -2235,14 +2267,14 @@ const MINIJUEGOS = {
   /* -------------------------------------------------------------------
      G2. ¡SELLAR LA CASA! (Zonda)
      Cerrar 3 ventanas (tocar), llevar 2 mascotas a la puerta y guardar
-     el bidón y las ramas en el cobertizo (arrastrar).
+     el bidón y las ramas en el galpón (arrastrar).
      ------------------------------------------------------------------- */
   casa: {
     titulo: "¡Sellar la Casa!", icono: "🏠", duracion: 15,
     instrucciones: [
       ["🪟", "TOCÁ las 3 ventanas abiertas para cerrarlas."],
       ["🐶", "ARRASTRÁ al perro y al gato hasta la PUERTA de la casa."],
-      ["⛽", "ARRASTRÁ el bidón de combustible y las ramas secas al COBERTIZO para evitar incendios."]
+      ["⛽", "ARRASTRÁ el bidón de combustible y las ramas secas al GALPÓN para evitar incendios."]
     ],
     crear() {
       const polvo = [];
@@ -2289,13 +2321,13 @@ const MINIJUEGOS = {
       if (!s.arr || s.arr.id !== id) return;
       const o = s.arr.o; s.arr = null;
       const enPuerta = o.x > 345 && o.x < 455 && o.y > 265 && o.y < 400;
-      const enCobertizo = o.x > 612 && o.x < 798 && o.y > 205 && o.y < 385;
+      const enGalpon = o.x > 612 && o.x < 798 && o.y > 205 && o.y < 385;
       if (o.tipo === "mascota" && enPuerta) {
         o.listo = true; chispas(400, 330, "#ff7eb6", 14); flotante("❤️ ¡A salvo!", 400, 270, "#ff7eb6"); sonido("ok");
-      } else if (o.tipo === "peligro" && enCobertizo) {
+      } else if (o.tipo === "peligro" && enGalpon) {
         o.listo = true; chispas(705, 320, "#ffcc33", 14); flotante("¡Guardado!", 705, 220, "#2ee59d"); sonido("ok");
       } else {
-        if (enPuerta || enCobertizo) { flotante(o.tipo === "mascota" ? "¡A la casa!" : "¡Al cobertizo!", x, y - 40, "#ff4d6d"); sonido("error"); }
+        if (enPuerta || enGalpon) { flotante(o.tipo === "mascota" ? "¡A la casa!" : "¡Al galpón!", x, y - 40, "#ff4d6d"); sonido("error"); }
         o.x = o.bx; o.y = o.by;
       }
     },
@@ -2313,11 +2345,11 @@ const MINIJUEGOS = {
       ctx.fillStyle = "#a8773f"; ctx.fillRect(0, 380, W, 70);
 
       const arr = s.arr && s.arr.o;
-      // Cobertizo
+      // Galpón
       ctx.fillStyle = "#7b6a58"; ctx.fillRect(630, 260, 150, 120);
       ctx.fillStyle = "#5a4a3a"; ctx.beginPath(); ctx.moveTo(620, 262); ctx.lineTo(705, 212); ctx.lineTo(790, 262); ctx.fill();
       ctx.fillStyle = "#3b2f25"; ctx.fillRect(680, 300, 50, 80);
-      texto("COBERTIZO", 705, 245, 13, "#fff");
+      texto("GALPÓN", 705, 245, 14, "#fff");
       if (arr && arr.tipo === "peligro") { ctx.strokeStyle = `rgba(46,229,157,${.6 + .4 * Math.sin(t * 10)})`; ctx.lineWidth = 6; ctx.strokeRect(625, 215, 160, 168); }
       const guardados = s.objetos.filter(o => o.tipo === "peligro" && o.listo);
       guardados.forEach((o, i) => emoji(o.e, 690 + i * 30, 360, 22));
@@ -2816,7 +2848,7 @@ const MINIJUEGOS = {
        🐕 perro asustado que corre -> atraparlo y llevarlo a la puerta
        ⛱️ sombrilla pesada         -> MANTENER apretado para atarla
        🪟 ventanas                  -> tocar para cerrar
-       🪴🪑 objetos chicos          -> arrastrar al cobertizo
+       🪴🪑 objetos chicos          -> arrastrar al galpón
        🪜 escalera al techo         -> ¡TRAMPA! Subir con viento = error crítico
      A los 8 s la chapa floja sale volando sola: por eso no se sube.
      ------------------------------------------------------------------- */
@@ -2829,7 +2861,7 @@ const MINIJUEGOS = {
     instrucciones: [
       ["🐕", "¡El perro está asustado y corre! ATRAPALO y llevalo hasta la PUERTA de la casa."],
       ["⛱️", "La sombrilla es muy pesada para moverla: MANTENÉ APRETADO sobre ella para cerrarla y atarla."],
-      ["🪟", "TOCÁ las 2 ventanas para cerrarlas y ARRASTRÁ la maceta y la silla al COBERTIZO. ¿Y la chapa floja del techo? Acordate de la trivia… 🤔"]
+      ["🪟", "TOCÁ las 2 ventanas para cerrarlas y ARRASTRÁ la maceta y la silla al GALPÓN. ¿Y la chapa floja del techo? Acordate de la trivia… 🤔"]
     ],
     crear() {
       const objetos = [["🪴", 255, 10], ["🪑", 335, 22]]
@@ -2965,11 +2997,11 @@ const MINIJUEGOS = {
       ctx.fillStyle = "#6b8f3a"; ctx.fillRect(0, 380, W, 70);
       const arrastrando = s.arr ? s.arr.tipo : null;
 
-      // Cobertizo
+      // Galpón
       ctx.fillStyle = "#7b6a58"; ctx.fillRect(20, 240, 160, 140);
       ctx.fillStyle = "#5a4a3a"; ctx.beginPath(); ctx.moveTo(10, 242); ctx.lineTo(100, 195); ctx.lineTo(190, 242); ctx.fill();
       ctx.fillStyle = "#2b221a"; ctx.fillRect(65, 285, 70, 95);
-      texto("COBERTIZO", 100, 228, 13, "#fff");
+      texto("GALPÓN", 100, 228, 14, "#fff");
       s.objetos.filter(o => o.estado === "guardado").forEach((o, i) => emoji(o.e, 85 + i * 30, 350, 22));
       if (arrastrando === "objeto") { ctx.strokeStyle = `rgba(46,229,157,${.6 + .4 * Math.sin(t * 10)})`; ctx.lineWidth = 6; ctx.strokeRect(14, 192, 172, 194); }
 
@@ -3225,7 +3257,7 @@ const MINIJUEGOS = {
   },
 
   /* -------------------------------------------------------------------
-     G8. ¡A CUBIERTO! (Tormenta eléctrica)
+     G8. ¡A CUBIERTO! (Caída de rayos)
      Arrastrar 2 personas al auto o a la casa; tocar a la que está lejos
      para que se agache. Rayos a los 4,5 / 9 / 13,5 s. El árbol = error
      crítico (termina el minijuego).
@@ -3374,7 +3406,7 @@ const MINIJUEGOS = {
       return {
         exito,
         puntos: s.critico ? 0 : refugiadas * 60 + (agachada ? 60 : 0) + (exito ? 70 : 0),
-        resumen: s.critico ? "Llevaste a alguien debajo del árbol: es el lugar más peligroso durante una tormenta eléctrica."
+        resumen: s.critico ? "Llevaste a alguien debajo del árbol: es el lugar más peligroso cuando caen rayos."
           : exito ? "¡Todos a salvo! Dos personas a cubierto y la tercera en posición de seguridad."
           : `${refugiadas} de 2 personas a cubierto` + (agachada ? "" : " y la persona lejana quedó de pie en el descampado") + "."
       };
@@ -4198,7 +4230,7 @@ const GUIAS = [
   { emoji: "🌧️", titulo: "Lluvias intensas", antes: "Limpiá canaletas y sumideros; no saques la basura.", durante: "No camines ni manejes por calles anegadas.", despues: "No toques cables caídos; avisá de tapas o pozos abiertos." },
   { emoji: "💨", titulo: "Viento fuerte", antes: "Guardá o atá objetos sueltos; revisá techos con buen tiempo.", durante: "Quedate adentro, lejos de ventanas. Nunca subas al techo.", despues: "Cuidado con árboles, ramas y cables caídos." },
   { emoji: "🥵", titulo: "Ola de calor", antes: "Planificá actividades para la mañana temprano o la noche.", durante: "Agua fresca, sombra, ropa liviana; agua para los animales.", despues: "Preguntá cómo están los vecinos mayores." },
-  { emoji: "⚡", titulo: "Tormenta eléctrica", antes: "Regla 30/30: si el trueno llega en menos de 30 s, refugiate.", durante: "Edificio cerrado o auto con techo metálico. Nunca bajo un árbol.", despues: "Esperá 30 minutos desde el último trueno para salir." },
+  { emoji: "⚡", titulo: "Rayos", antes: "Regla 30/30: si el trueno llega en menos de 30 s, refugiate.", durante: "Edificio cerrado o auto con techo metálico. Nunca bajo un árbol.", despues: "Esperá 30 minutos desde el último trueno para salir." },
   { emoji: "🥶", titulo: "Ola de frío", antes: "Hacé revisar estufas y calefactores por un gasista matriculado.", durante: "Siempre una rendija abierta. Nunca horno ni brasero para calefaccionar.", despues: "Ante dolor de cabeza, mareos o sueño: aire libre y llamá al 107." },
   { emoji: "🗺️", titulo: "Inundación", antes: "Conocé el mapa de riesgo y tu ruta a la zona alta.", durante: "Desconectá la electricidad si entra agua; subí a lugares altos.", despues: "No consumas alimentos ni agua que hayan tenido contacto con la inundación." }
 ];
@@ -4323,7 +4355,33 @@ function actualizarBotonConsultor(id) {
   if (conTiempo) cerrarConsultor();
 }
 
+/* =====================================================================
+   L) VOLVER AL MENÚ DESDE CUALQUIER PANTALLA
+   Si hay una partida en curso pregunta antes, y pausa los relojes.
+   ===================================================================== */
+const PANTALLAS_PARTIDA = ["p-trivia", "p-capsula", "p-instrucciones", "p-minijuego", "p-resultado", "p-celular"];
+const confirmarAbierto = () => $("confirmar").classList.contains("abierto");
+function pausarJuego() {
+  if (pantallaActiva("p-trivia") && !estado.respondido) clearInterval(estado.timer);
+  if (M) M.enPausa = true;
+}
+function reanudarJuego() {
+  if (pantallaActiva("p-trivia") && !estado.respondido && estado.segundos > 0) correrTimerTrivia();
+  if (M) M.enPausa = false;
+}
+function pedirMenu() {
+  if (!PANTALLAS_PARTIDA.some(pantallaActiva)) return volverAlInicio();   // sin partida en curso: directo
+  pausarJuego();
+  $("confirmar").classList.add("abierto");
+  $("btn-conf-no").focus();
+}
+function cancelarMenu() {
+  $("confirmar").classList.remove("abierto");
+  reanudarJuego();
+}
+
 function volverAlInicio() {
+  $("confirmar").classList.remove("abierto");
   cerrarConsultor();
   if (estado) clearInterval(estado.timer);
   limpiarConfeti();
@@ -4354,6 +4412,10 @@ $("btn-cargar-mapa").addEventListener("click", cargarMapaRiesgo);
 $("btn-mapa-grande").addEventListener("click", agrandarMapa);
 $("consultor").addEventListener("click", (e) => { if (e.target.id === "consultor") cerrarConsultor(); });   // tocar fuera del panel
 document.querySelectorAll(".consultor-tabs .tab").forEach(t => t.addEventListener("click", () => mostrarTab(t.dataset.tab)));
+$("btn-menu").addEventListener("click", pedirMenu);
+$("btn-conf-si").addEventListener("click", volverAlInicio);
+$("btn-conf-no").addEventListener("click", cancelarMenu);
+$("confirmar").addEventListener("click", (e) => { if (e.target.id === "confirmar") cancelarMenu(); });   // tocar afuera = seguir jugando
 $("btn-sonido").addEventListener("click", () => {
   sonidoActivo = !sonidoActivo;
   $("btn-sonido").textContent = sonidoActivo ? "🔊" : "🔇";
@@ -4373,6 +4435,7 @@ document.addEventListener("pointerdown", (e) => {
 
 // Teclado: 1/2/3 (o A/B/C) en la trivia; Enter para el botón principal de cada pantalla
 document.addEventListener("keydown", (e) => {
+  if (confirmarAbierto()) { if (e.key === "Escape") cancelarMenu(); return; }   // la pregunta tiene prioridad
   if (consultorAbierto()) {
     if (e.key === "Escape") { if ($("mapa-embebido").classList.contains("grande")) agrandarMapa(); else cerrarConsultor(); }
     return;
@@ -4394,7 +4457,7 @@ let temporizadorInactividad;
 function reiniciarInactividad() {
   clearTimeout(temporizadorInactividad);
   temporizadorInactividad = setTimeout(() => {
-    if (consultorAbierto() || (!pantallaActiva("p-inicio") && !pantallaActiva("p-trivia") && !pantallaActiva("p-minijuego"))) volverAlInicio();
+    if (confirmarAbierto() || consultorAbierto() || (!pantallaActiva("p-inicio") && !pantallaActiva("p-trivia") && !pantallaActiva("p-minijuego"))) volverAlInicio();
     else reiniciarInactividad();
   }, CONFIG.inactividadMs);
 }
