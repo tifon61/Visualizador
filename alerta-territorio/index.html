@@ -20,8 +20,8 @@
       vista del vecino. Cada una = TRIVIA -> MINIJUEGO (Canvas) -> CÁPSULA.
       El escenario de rayos arranca con un celular: invitación a un
       recital con alerta naranja... y un oso inflable gigante que vuela.
-    • "Centro de Alertas" (experto): Sudestada, Zonda, Helada y Sistema
-      convectivo, desde el punto de vista del meteorólogo.
+    • "Centro de Alertas" (experto): Sudestada, Zonda, Niebla en la
+      autopista y Sistema convectivo, desde el punto de vista del meteorólogo.
     • Modo Express: las 3 regiones de la versión 1 como trivias rápidas.
 
   MAPA DEL CÓDIGO (buscá estos títulos con Ctrl+F)
@@ -206,6 +206,16 @@
   .escena.cielo-calmo    { background: linear-gradient(#3d8ee0, #a9d8ff); }
   .escena.cielo-polvo    { background: linear-gradient(#6b3f1f, #c8955a); }
   .escena.cielo-noche    { background: linear-gradient(#050a1f, #1c2b55); }
+  .escena.cielo-niebla   { background: linear-gradient(#4f5b6e, #aeb8c4); }
+  .suelo.carriles { background: repeating-linear-gradient(90deg, #f0f0f0 0 28px, transparent 28px 60px) 0 48% / 100% 4px no-repeat, #3a3f4a; }
+  .banco-niebla { position: absolute; left: -30%; width: 160%; height: 34%; z-index: 6; pointer-events: none;
+    background: radial-gradient(ellipse at center, rgba(235, 238, 242, .8), rgba(235, 238, 242, 0) 70%);
+    animation: derivaNiebla 9s ease-in-out infinite alternate; }
+  @keyframes derivaNiebla { from { transform: translateX(-6%); } to { transform: translateX(6%); } }
+  .objeto.prudente::after { content: ""; position: absolute; left: -6px;   /* el auto está espejado: "left" queda adelante */ top: 40%; width: 18px; height: 10px; border-radius: 50%;
+    background: radial-gradient(#fff6b0, rgba(255, 246, 176, 0) 70%); }
+  .cartel-led { background: #111; color: #ffb000; font-family: var(--mono); font-size: 1.1rem; padding: .3em .6em;
+    border: 2px solid #333; border-radius: 6px; text-shadow: 0 0 6px rgba(255, 176, 0, .8); white-space: nowrap; }
   .escena.cielo-interior { background: linear-gradient(#e3d6bd, #cbbb9c); }
   .ventana-fria { position: absolute; left: 6%; top: 12%; width: 22%; height: 42%; z-index: 1; background: #cfe8ff; border: 6px solid #5b3a22; display: grid; place-items: center; font-size: 1.6rem; }
   .mapa-mini { position: absolute; inset: 0; z-index: 1; background:
@@ -1169,26 +1179,26 @@ const ESCENARIOS = [
     leccion: "Durante el Zonda la humedad puede caer por debajo del 10 %: la vegetación seca y los combustibles se encienden con una chispa y el viento propaga el fuego. Guardar combustibles y ramas, y proteger a personas y mascotas del polvo, reduce el riesgo. Con alerta rojo por Zonda, el SAT recomienda «colgá paños húmedos en las ventanas» (¡la respuesta de la trivia!) y «no enciendas fuego». El SMN emite alertas por Zonda en cordillera, precordillera, puna y eventualmente los llanos, desde los 38 °S (norte de Neuquén) hasta Bolivia: Cuyo y el NOA."
   },
   {
-    id: "helada", nombre: "Helada Radiativa", lugar: "Alto Valle / Mendoza", emoji: "❄️",
-    clima: ["🌌 Noche despejada", "🍃 Sin viento", "🌸 Frutales en flor"],
-    escena: { cielo: "cielo-noche", tipo: "frutales", fenomeno: "ninguno" },
-    titulo: "Helada en plena floración",
-    numero: "−2 °C", dato: "a ras del suelo, en una noche de primavera despejada y sin viento.",
-    pregunta: "Noche de primavera despejada y sin una gota de viento. Los termómetros a ras del suelo marcan −2 °C y los frutales están en flor. ¿Cómo salvás la cosecha antes de que amanezca?",
+    id: "niebla", nombre: "Niebla en la Autopista", lugar: "La Plata – Buenos Aires", emoji: "🌫️",
+    clima: ["🌙 Madrugada de otoño", "🍃 Viento calmo", "💧 Humedad del 98 %"],
+    escena: { cielo: "cielo-niebla", tipo: "autopista", fenomeno: "niebla" },
+    titulo: "Niebla cerrada al amanecer",
+    numero: "< 100 m", dato: "de visibilidad en la autopista, justo cuando empieza el tránsito hacia Buenos Aires.",
+    pregunta: "Son las 5 de la mañana de un día de otoño. La noche estuvo despejada, no hay viento y la humedad llega al 98 %. En la autopista la visibilidad cae por debajo de 100 m y empieza el tránsito hacia Buenos Aires. Desde el Centro de Alertas, ¿qué recomendás?",
     opciones: [
-      { icono: "🧣", texto: "Cubrir la base de los troncos de los árboles con mantas térmicas gruesas.",
-        resultado: "fallo", efecto: "escarcha", titulo: "¡La manta no llega a las flores!",
-        consecuencia: "Las flores están arriba, en las ramas: una manta en el tronco no las protege del aire helado." },
-      { icono: "🌀", texto: "Encender grandes ventiladores (hélices) en el campo para mezclar el aire o activar riego por aspersión sobre las plantas.",
-        resultado: "exito", efecto: "calor", titulo: "¡Buena estrategia!",
-        consecuencia: "En una helada radiativa el aire de arriba está más tibio: las hélices lo bajan hacia el cultivo, y el riego mantiene las flores cerca de 0 °C." },
-      { icono: "🧪", texto: "Rociar los árboles con anticongelante químico para motores.",
-        resultado: "fallo", efecto: "escarcha", titulo: "¡Peor que la helada!",
-        consecuencia: "El anticongelante es tóxico: quema las flores, contamina el suelo y la fruta ya no se puede vender." }
+      { icono: "🔦", texto: "Que los autos circulen con luces altas para ver más lejos y balizas encendidas para que los vean.",
+        resultado: "fallo", efecto: "niebla-densa", titulo: "¡Las luces altas encandilan!",
+        consecuencia: "Con niebla, la luz alta rebota en las gotitas y forma una pared blanca: se ve menos. Y las balizas se usan con el auto detenido; en movimiento confunden a los demás. Lo que corresponde son luces bajas y antiniebla." },
+      { icono: "📢", texto: "Emitir un aviso: reducir la velocidad, usar luces bajas y antiniebla, aumentar la distancia y, si se puede, postergar el viaje.",
+        resultado: "exito", efecto: "niebla-ok", titulo: "¡Aviso correcto!",
+        consecuencia: "Con menos de 100 m de visibilidad, a 120 km/h no hay distancia suficiente para frenar ante algo que aparece de golpe. Bajar la velocidad, usar luces bajas y separarse del auto de adelante evita los choques en cadena." },
+      { icono: "☀️", texto: "Esperar: la niebla es sólo humedad, no es peligrosa y se levanta sola cuando sale el sol.",
+        resultado: "fallo", efecto: "niebla-densa", titulo: "¡La niebla no es inofensiva!",
+        consecuencia: "Es cierto que suele disiparse cuando el sol calienta el suelo, pero hasta entonces la visibilidad es casi nula, y es justo el horario de más tránsito. Las nieblas densas son una causa frecuente de choques en cadena en las rutas." }
     ],
-    capsula: "En noches calmas y despejadas el suelo pierde calor por radiación y el aire frío se estanca pegado al suelo (inversión térmica). Las hélices mezclan ese aire con el aire más cálido de arriba, y el riego libera calor latente al congelarse, salvando los brotes.",
-    minijuego: "helada",
-    leccion: "En una inversión térmica, el aire a 10–15 m de altura puede estar varios grados más cálido que a ras del suelo: los ventiladores antiheladas aprovechan esa diferencia. El riego funciona porque el agua, al congelarse, libera calor y mantiene la flor cerca de 0 °C."
+    capsula: "La niebla es una nube apoyada en el suelo. En noches despejadas y sin viento, el suelo pierde calor y enfría el aire que está en contacto con él (niebla de radiación). Cuando la temperatura baja hasta el punto de rocío, el vapor se condensa en millones de gotitas que flotan y tapan la vista.",
+    minijuego: "niebla",
+    leccion: "Se habla de niebla cuando la visibilidad es menor a 1 km. Se forma cuando el aire se enfría hasta su punto de rocío y el vapor se condensa en gotitas. Las nieblas de radiación, típicas del otoño y el invierno en la llanura pampeana, aparecen en madrugadas despejadas y calmas, son más densas en las zonas bajas y cerca de bañados y ríos, y se disipan cuando el sol calienta el suelo. Recomendaciones del SMN: evitá circular; si la niebla te sorprende, encendé las luces bajas y las antiniebla, reducí la velocidad, mantené distancia y no sobrepases; en cuanto puedas, estacioná en un lugar seguro, nunca sobre la banquina o la calzada."
   },
   {
     id: "convectivo", nombre: "Sistema Convectivo", lugar: "Litoral / Mesopotamia", emoji: "⛈️",
@@ -1393,7 +1403,7 @@ const BARRIO = [
     ],
     capsula: "¡El monóxido de carbono no se ve ni tiene olor! Nunca uses el horno para calefaccionar ni prendas un grupo electrógeno en lugares cerrados. La ventilación cruzada salva vidas.",
     minijuego: "frio",
-    leccion: "El monóxido de carbono (CO) aparece cuando algo se quema con poco oxígeno: hornos, hornallas, grupos electrógenos o estufas mal instaladas. No tiene color ni olor y provoca dolor de cabeza, mareos y sueño. Para prevenirlo: rendija de ventilación siempre, artefactos revisados por un gasista matriculado, llama azul (si es amarilla o anaranjada, hay mala combustión) y, si podés, un detector de CO. Nunca seques ropa sobre una estufa. El alerta del SMN por temperaturas extremas también incluye el frío extremo: se activa cuando las temperaturas quedan por debajo de las más bajas habituales del lugar (percentil 10). Y otra recomendación oficial que suma: «No fumes en ambientes cerrados»."
+    leccion: "El monóxido de carbono (CO) aparece cuando algo se quema con poco oxígeno: hornos, hornallas, grupos electrógenos o estufas mal instaladas. No tiene color ni olor y provoca dolor de cabeza, mareos y sueño. Para prevenirlo: rendija de ventilación siempre, artefactos revisados por un gasista matriculado, llama azul (si es amarilla o anaranjada, hay mala combustión) y, si podés, un detector de CO. Nunca seques ropa sobre una estufa. Prestá especial atención a las personas mayores, a bebés y a quienes tienen enfermedades crónicas: pierden calor más rápido y a veces no notan el frío. Abrigalos en capas y preguntales cómo están. El alerta del SMN por temperaturas extremas también incluye el frío extremo: se activa cuando las temperaturas quedan por debajo de las más bajas habituales del lugar (percentil 10). Y otra recomendación oficial que suma: «No fumes en ambientes cerrados»."
   },
   {
     id: "mapa", nombre: "Lluvias Persistentes y Mapa de Riesgo", lugar: "Tu ciudad, con arroyos entubados", emoji: "🗺️",
@@ -1567,10 +1577,13 @@ function construirEscena(cont, esc) {
         <div class="objeto" style="left:10%;bottom:22%" data-cae>🌲</div><div class="objeto" style="left:30%;bottom:22%" data-cae>🪧</div>
         <div class="objeto" style="left:55%;bottom:8%" data-cae>🚛</div><div class="objeto" style="left:80%;bottom:22%" data-cae>🌲</div>`;
       break;
-    case "frutales":
-      h += `<div class="estrellas"></div><div class="objeto" style="right:8%;top:10%;font-size:2.6rem">🌙</div><div class="suelo campo" style="height:38%"></div>`;
-      for (let i = 0; i < 6; i++) h += `<div class="objeto" style="left:${4 + i * 16}%;bottom:${18 + (i % 2) * 6}%">🌳</div><div class="objeto" style="left:${9 + i * 16}%;bottom:${30 + (i % 2) * 6}%;font-size:1.1rem">🌸</div>`;
-      h += `<div class="objeto" style="left:3%;top:10%;font-size:2rem">🌡️</div>`;
+    case "autopista":
+      h += `<div class="suelo asfalto carriles"></div>
+        <div class="objeto" style="left:6%;bottom:30%;font-size:1.3rem" data-autopista>🪧</div>
+        <div class="objeto" style="left:14%;bottom:7%;transform:scaleX(-1)" data-auto>🚗</div>
+        <div class="objeto" style="left:46%;bottom:15%;transform:scaleX(-1)" data-auto>🚙</div>
+        <div class="objeto" style="left:76%;bottom:7%;transform:scaleX(-1)" data-auto>🚐</div>
+        <div class="objeto" style="right:4%;bottom:30%;font-size:1.8rem">🌾</div>`;
       break;
     case "vereda":
       h += `<div class="suelo asfalto"></div>
@@ -1622,6 +1635,7 @@ function construirEscena(cont, esc) {
   if (e.fenomeno === "lluvia") h += lluvia(60);
   if (e.fenomeno === "viento") h += rafagas(10, "");
   if (e.fenomeno === "polvo")  h += rafagas(14, "polvo");
+  if (e.fenomeno === "niebla") h += `<div class="banco-niebla" style="bottom:4%"></div><div class="banco-niebla" style="bottom:26%;animation-delay:-4s"></div>`;
   h += `<div class="agua"></div><div class="aluvion"></div><div class="velo"></div><div class="sello-escena"></div>`;
   cont.innerHTML = h;
 }
@@ -1675,13 +1689,11 @@ function animarEfecto(cont, efecto, resultado) {
         cont.querySelectorAll("[data-tiembla]").forEach(o => o.classList.add("cayendo")); break;
       case "sellado":
         agregar(`<div class="objeto" style="left:50%;bottom:34%;z-index:9">🔒</div><div class="objeto" style="left:30%;bottom:34%;z-index:9">🪟</div>`); break;
-      case "escarcha":
-        velo.style.background = "rgba(200, 230, 255, .5)"; velo.style.opacity = 1;
-        for (let i = 0; i < 6; i++) agregar(`<div class="objeto" style="left:${6 + i * 16}%;bottom:${26 + (i % 2) * 6}%;z-index:9">❄️</div>`);
-        break;
-      case "calor":
-        velo.style.background = "radial-gradient(circle at 50% 80%, rgba(255,170,60,.45), transparent 70%)"; velo.style.opacity = 1;
-        agregar(`<div class="objeto" style="left:24%;bottom:42%;z-index:9">🌀</div><div class="objeto" style="left:66%;bottom:42%;z-index:9">💧</div>`); break;
+      case "niebla-densa":
+        velo.style.background = "rgba(228, 232, 238, .9)"; velo.style.opacity = 1; break;
+      case "niebla-ok":
+        cont.querySelectorAll("[data-auto]").forEach(o => o.classList.add("prudente"));
+        agregar(`<div class="objeto cartel-led" style="left:30%;top:10%;z-index:9">⚠️ NIEBLA · 40 km/h</div>`); break;
       case "granizo":
         for (let i = 0; i < 30; i++)
           agregar(`<span class="piedra" style="left:${Math.random() * 100}%;animation-duration:${.7 + Math.random() * .5}s;animation-delay:-${Math.random()}s">🧊</span>`);
@@ -2408,144 +2420,208 @@ const MINIJUEGOS = {
   },
 
   /* -------------------------------------------------------------------
-     G3. ¡PROTECCIÓN TÉRMICA! (Helada)
-     Comprar y ubicar ventiladores y aspersores con $100 para proteger
-     al menos el 80 % de los árboles. Las mantas no sirven (trampa).
-     Radios ajustados con una simulación: sin ventilador no se llega.
+     G3. ¡MANEJÁ EN LA NIEBLA! (Niebla en la autopista)
+     Vista desde arriba: tu auto sigue a un camión lento mientras la
+     niebla se cierra. Hay que: encender luces bajas y antiniebla (las
+     altas encandilan), mantener apretado FRENAR para que la velocidad
+     se adapte a lo que se ve, no sobrepasar y, al final, entrar a la
+     estación de servicio (nunca parar en la banquina).
      ------------------------------------------------------------------- */
-  helada: {
-    titulo: "¡Protección Térmica!", icono: "🌀", duracion: 15,
+  niebla: {
+    titulo: "¡Manejá en la Niebla!", icono: "🚗", duracion: 18,
     instrucciones: [
-      ["🛒", "Tenés $100. ARRASTRÁ equipos desde la barra de compra hasta el campo."],
-      ["🌀", "Ventilador $40 (protege un área grande) · 🚿 Aspersor $30 (área mediana). Podés moverlos después."],
-      ["🎯", "Protegé al menos el 80 % de los frutales antes de que la temperatura llegue a −2 °C. ¡Ojo con las mantas!"]
+      ["💡", "Encendé las LUCES BAJAS y las ANTINIEBLA. Las altas, no: con niebla encandilan."],
+      ["🛑", "MANTENÉ apretado FRENAR para que la velocidad vaya con lo que se ve, y dejá distancia con el camión. ¡No lo sobrepases!"],
+      ["⛽", "Cuando la niebla se cierre, ENTRÁ a la estación de servicio. Nunca pares en la banquina."]
     ],
-    TIENDA: [
-      { tipo: "ventilador", e: "🌀", nombre: "Ventilador", costo: 40, r: 165, x: 100, color: "255,190,80" },
-      { tipo: "aspersor",   e: "🚿", nombre: "Aspersor",   costo: 30, r: 110, x: 280, color: "100,180,255" },
-      { tipo: "manta",      e: "🧣", nombre: "Manta tronco", costo: 10, r: 0, x: 460, color: "255,77,109" }
+    // Visibilidad en metros a lo largo del juego: [segundo, metros]
+    VIS: [[0, 400], [4, 200], [8, 90], [12, 45], [14, 15], [18, 15]],
+    PX: 3,                              // píxeles por metro
+    AUTO_X: 130, CARRIL: 238, CARRIL_IZQ: 168,
+    BOTONES: [
+      { id: "bajas", x: 8, w: 88, e: "💡", l: ["Luces", "bajas"] },
+      { id: "antiniebla", x: 100, w: 88, e: "🌫️", l: ["Anti-", "niebla"] },
+      { id: "altas", x: 192, w: 88, e: "🔦", l: ["Luces", "altas"] },
+      { id: "sobrepasar", x: 292, w: 88, e: "⏩", l: ["Sobre-", "pasar"] },
+      { id: "banquina", x: 384, w: 88, e: "⚠️", l: ["Parar en", "banquina"] },
+      { id: "estacion", x: 476, w: 104, e: "⛽", l: ["Entrar a la", "estación"] },
+      { id: "frenar", x: 592, w: 200, e: "🛑", l: ["FRENAR", "(mantené)"] }
     ],
+    // Distancia de detención ≈ reacción (v/10 × 3) + frenado ((v/10)²), en metros. A 100 km/h: 30 + 100 = 130 m.
+    frenado: (v) => v / 10 * 3 + (v / 10) ** 2,
+    visibilidad(t) {
+      const k = MINIJUEGOS.niebla.VIS;
+      for (let i = 1; i < k.length; i++) if (t <= k[i][0]) {
+        const [t0, v0] = k[i - 1], [t1, v1] = k[i];
+        return v0 + (v1 - v0) * (t - t0) / (t1 - t0);
+      }
+      return k[k.length - 1][1];
+    },
     crear() {
-      const arboles = [];
-      for (let f = 0; f < 4; f++) for (let c = 0; c < 8; c++) arboles.push({ x: 105 + c * 84, y: 100 + f * 65, protegido: false });
-      return { arboles, equipos: [], dinero: 100, arr: null, listo: false, temp: 4 };
+      return { v: 90, camion: { gap: 110, v: 80, freno: 0 }, luces: { bajas: false, antiniebla: false, altas: false },
+        frenando: null, vis: 400, riesgo: 0, errores: 0, rapido: 0, estacion: null, estacionado: false,
+        banquina: false, choque: false, critico: false, aviso: 0, avisoCierre: false, recorrido: 0, t: 0 };
     },
     actualizar(s, dt, t) {
-      s.temp = 4 - 6 * Math.min(1, t / 15);
-      s.arboles.forEach(a => a.protegido = s.equipos.some(e => e.r > 0 && dist(a.x, a.y, e.x, e.y) <= e.r));
+      const D = MINIJUEGOS.niebla;
+      s.t = t; s.vis = D.visibilidad(t);
+      if (s.critico || s.estacionado) { s.v = Math.max(0, s.v - 60 * dt); return; }
+      // Tu auto: acelera solo hasta 100 km/h; mientras mantenés FRENAR, baja
+      s.v = s.frenando !== null ? Math.max(0, s.v - 34 * dt) : Math.min(100, s.v + 9 * dt);
+      // El camión va cada vez más despacio y a los 7 s frena de golpe
+      const c = s.camion;
+      if (t > 7 && t < 8.6) { c.freno = 1; c.v = Math.max(25, c.v - 40 * dt); }
+      else { c.freno = 0; c.v += ((t < 7 ? 75 : 45) - c.v) * Math.min(1, dt); }
+      c.gap += (c.v - s.v) / 3.6 * dt;
+      s.recorrido += s.v / 3.6 * dt;
+      if (c.gap < 6) {
+        s.choque = s.critico = true; c.gap = 6;
+        flotante("⚠️ ¡Frenada de emergencia!", 400, 120, "#ff4d6d", 26); sonido("fallo"); return;
+      }
+      // Riesgo: ir más rápido de lo que se ve, ir sin luces, encandilar con las altas
+      const visEf = s.luces.altas ? s.vis * .5 : s.vis;
+      const rapido = D.frenado(s.v) > visEf;
+      if (rapido) { s.riesgo += 16 * dt; s.rapido += dt; }
+      const faltanLuces = t > 2.5 && (!s.luces.bajas || !s.luces.antiniebla);
+      if (faltanLuces) s.riesgo += 5 * dt;
+      if (s.luces.altas) s.riesgo += 8 * dt;
+      if ((s.aviso -= dt) <= 0 && (rapido || faltanLuces || s.luces.altas)) {
+        s.aviso = 1.6;
+        const msg = s.luces.altas ? "🔦 ¡Las altas encandilan: se ve menos!" : faltanLuces ? "💡 ¡Encendé luces bajas y antiniebla!" : "🛑 ¡Muy rápido para lo que se ve!";
+        flotante(msg, 400, 70, "#ffb000", 20); sonido("error");
+      }
+      // Cuando la niebla se cierra aparece una estación de servicio
+      if (t >= 10 && !s.estacion) { s.estacion = { d: 85 }; }
+      if (s.estacion) s.estacion.d -= s.v / 3.6 * dt;
+      if (t >= 10 && !s.avisoCierre) { s.avisoCierre = true; flotante("🌫️ Se cierra la niebla: ¡buscá un lugar seguro para parar!", 400, 100, "#ffb000", 19); }
+      if (s.riesgo >= 100) { s.riesgo = 100; s.critico = true; flotante("⚠️ ¡Manejaste sin ver!", 400, 120, "#ff4d6d", 26); sonido("fallo"); }
     },
-    porcentaje: (s) => Math.round(s.arboles.filter(a => a.protegido).length / s.arboles.length * 100),
-    terminado: (s) => s.listo,
-    estado(s) { return `🌳 Cultivo protegido: ${MINIJUEGOS.helada.porcentaje(s)} % (meta 80 %)   ·   💰 $${s.dinero}`; },
+    puedeEntrar(s) { return !!s.estacion && s.estacion.d < 45 && s.estacion.d > -12 && s.v <= 45; },
+    terminado: (s) => s.critico || s.banquina || (s.estacionado && s.v === 0),
+    estado(s) {
+      const l = s.luces, luces = l.altas ? "🔦 altas ✖" : `${l.bajas ? "💡" : "·"}${l.antiniebla ? "🌫️" : "·"}`;
+      return `🚗 ${Math.round(s.v)} km/h   ·   👁️ Se ve: ${Math.round(s.vis)} m   ·   Luces: ${luces}   ·   ⚠️ Riesgo: ${Math.round(s.riesgo)} %`;
+    },
     abajo(s, x, y, id) {
-      if (x > 610 && y > 365) { s.listo = true; sonido("ok"); return; }        // botón ¡Listo!
-      if (s.arr) return;
-      if (y > 355) {                                                          // barra de compra
-        const item = MINIJUEGOS.helada.TIENDA.find(it => Math.abs(x - it.x) < 80);
-        if (!item) return;
-        if (item.costo > s.dinero) { flotante("¡Sin presupuesto!", item.x, 340, "#ff4d6d"); sonido("error"); return; }
-        s.arr = { id, nuevo: true, item, x, y };
-        sonido("tic");
+      const D = MINIJUEGOS.niebla;
+      if (y < 336 || s.critico || s.estacionado || s.banquina) return;
+      const b = D.BOTONES.find(b => x >= b.x && x <= b.x + b.w);
+      if (!b) return;
+      if (b.id === "frenar") { s.frenando = id; return; }
+      if (b.id === "bajas" || b.id === "antiniebla" || b.id === "altas") {
+        s.luces[b.id] = !s.luces[b.id];
+        if (b.id === "altas" && s.luces.altas) { s.errores++; s.aviso = 1.8; flotante("🔦 ¡Con niebla las altas rebotan y encandilan!", 400, 70, "#ff4d6d", 20); sonido("error"); }
+        else sonido(s.luces[b.id] ? "ok" : "tic");
         return;
       }
-      const eq = s.equipos.find(e => dist(x, y, e.x, e.y) < 32);                // mover uno ya colocado
-      if (eq) s.arr = { id, nuevo: false, eq, x, y };
+      if (b.id === "sobrepasar") {
+        s.errores++; s.riesgo = Math.min(99, s.riesgo + 30); s.sobrepaso = .9; s.aviso = 1.8;
+        flotante("❌ ¡Con niebla no se sobrepasa: no ves lo que viene!", 400, 70, "#ff4d6d", 20); sonido("error");
+        return;
+      }
+      if (b.id === "banquina") {
+        s.banquina = true; s.v = 0;
+        flotante("⚠️ ¡En la banquina no te ven los que vienen atrás!", 400, 100, "#ff4d6d", 21); sonido("fallo");
+        return;
+      }
+      if (b.id === "estacion") {
+        if (D.puedeEntrar(s)) { s.estacionado = true; chispas(D.AUTO_X + 40, 300, "#2ee59d", 16); flotante("✅ ¡A salvo en la estación!", 400, 100, "#2ee59d", 24); sonido("ok"); }
+        else { flotante(!s.estacion ? "Todavía no hay dónde parar: seguí con cuidado" : s.v > 45 ? "🛑 ¡Frená para poder entrar!" : "Acercate un poco más", 400, 70, "#ffb000", 18); sonido("tic"); }
+      }
     },
-    mover(s, x, y, id) {
-      if (!s.arr || s.arr.id !== id) return;
-      s.arr.x = x; s.arr.y = y;
-      if (!s.arr.nuevo) { s.arr.eq.x = Math.max(70, Math.min(730, x)); s.arr.eq.y = Math.max(70, Math.min(330, y)); }
-    },
-    arriba(s, x, y, id) {
-      if (!s.arr || s.arr.id !== id) return;
-      const a = s.arr; s.arr = null;
-      if (!a.nuevo) return;
-      if (y > 345 || y < 55) return;                                          // soltado fuera del campo: se cancela
-      const it = a.item;
-      s.dinero -= it.costo;
-      s.equipos.push({ tipo: it.tipo, e: it.e, r: it.r, color: it.color, x: Math.max(70, Math.min(730, x)), y: Math.max(70, Math.min(330, y)) });
-      if (it.tipo === "manta") {
-        flotante("🧣 ¡Las mantas no protegen las flores!", 400, 200, "#ff8da1", 22); sonido("error"); sacudir();
-      } else { chispas(x, y, `rgb(${it.color})`, 14); sonido("ok"); }
-    },
+    arriba(s, x, y, id) { if (s.frenando === id) s.frenando = null; },
     dibujar(ctx, s, t) {
-      const H_ = MINIJUEGOS.helada;
-      ctx.fillStyle = "#0a1330"; ctx.fillRect(0, 0, W, H);
-      // Cabecera: termómetro, avance de la helada y presupuesto
-      const frio = s.temp < 0;
-      texto(`🌡️ ${s.temp.toFixed(1)} °C`, 20, 28, 24, frio ? "#9fd8ff" : "#fff", "left");
-      const pct = H_.porcentaje(s);
-      texto(`Protegido: ${pct} % / 80 %`, 400, 28, 22, pct >= 80 ? "#2ee59d" : "#ffcc33");
-      texto(`💰 $${s.dinero}`, 780, 28, 24, "#ffcc33", "right");
-      ctx.fillStyle = "#1b2c4f"; ctx.fillRect(0, 50, W, 7);
-      ctx.fillStyle = "#9fd8ff"; ctx.fillRect(0, 50, W * Math.min(1, t / 15), 7);
-      emoji("❄️", Math.min(W - 12, W * Math.min(1, t / 15)), 53, 16);
+      const D = MINIJUEGOS.niebla, PX = D.PX, AX = D.AUTO_X;
+      // Paisaje desde arriba: pasto, banquina y dos carriles hacia Buenos Aires
+      ctx.fillStyle = "#4d6b4a"; ctx.fillRect(0, 0, W, 330);
+      ctx.fillStyle = "#3a3e45"; ctx.fillRect(0, 130, W, 142);
+      ctx.fillStyle = "#555a62"; ctx.fillRect(0, 272, W, 22);                                       // banquina
+      ctx.fillStyle = "#eee"; ctx.fillRect(0, 130, W, 3); ctx.fillRect(0, 270, W, 3);
+      const off = (s.recorrido * PX * 2) % 60;
+      ctx.fillStyle = "rgba(255,255,255,.8)";
+      for (let x = -off; x < W; x += 60) ctx.fillRect(x, 201, 30, 4);
+      texto("BANQUINA", 760, 284, 11, "rgba(255,255,255,.6)", "right");
+      // Estación de servicio (del lado de la banquina)
+      if (s.estacion) {
+        const ex = AX + s.estacion.d * PX;
+        if (ex > -120 && ex < W + 150) {
+          ctx.fillStyle = "#6b7280"; ctx.fillRect(ex - 30, 294, 150, 36);
+          ctx.fillStyle = "#e5e7eb"; ctx.fillRect(ex - 10, 298, 110, 30);
+          emoji("⛽", ex + 20, 313, 24); emoji("🏪", ex + 70, 313, 24);
+          if (D.puedeEntrar(s) && !s.estacionado) { ctx.strokeStyle = `rgba(46,229,157,${.6 + .4 * Math.sin(t * 10)})`; ctx.lineWidth = 4; ctx.strokeRect(ex - 34, 290, 158, 42); }
+        }
+      }
+      // Camión de adelante (con luces de freno)
+      const c = s.camion, cx = AX + c.gap * PX;
+      const dibujarVehiculo = (e, x, y, tam) => { ctx.save(); ctx.translate(x, y); ctx.scale(-1, 1); emoji(e, 0, 0, tam); ctx.restore(); };
+      if (cx < W + 60) {
+        dibujarVehiculo("🚚", cx, D.CARRIL, 46);
+        ctx.fillStyle = c.freno ? "#ff2020" : "#7a1010";
+        ctx.beginPath(); ctx.arc(cx - 26, D.CARRIL - 10, c.freno ? 6 : 3, 0, Math.PI * 2); ctx.arc(cx - 26, D.CARRIL + 12, c.freno ? 6 : 3, 0, Math.PI * 2); ctx.fill();
+      }
+      // Tu auto (si intentás sobrepasar, asoma un momento al otro carril)
+      if (s.sobrepaso) s.sobrepaso = Math.max(0, s.sobrepaso - 1 / 60);
+      const ay = s.estacionado ? Math.min(312, D.CARRIL + (t - (s.tEst ??= t)) * 60) : D.CARRIL - (s.sobrepaso ? 70 * Math.sin(Math.PI * s.sobrepaso / .9) : 0);
+      dibujarVehiculo("🚗", AX, ay, 40);
 
-      // Campo
-      ctx.fillStyle = "#173a22"; rrect(55, 64, 690, 280, 18); ctx.fill();
-      ctx.save(); rrect(55, 64, 690, 280, 18); ctx.clip();
-      ctx.strokeStyle = "rgba(0,0,0,.25)"; ctx.lineWidth = 18;
-      for (let f = 0; f < 4; f++) { ctx.beginPath(); ctx.moveTo(55, 100 + f * 65 + 16); ctx.lineTo(745, 100 + f * 65 + 16); ctx.stroke(); }
-      // Áreas de influencia
-      const dibujarArea = (x, y, r, color) => {
-        ctx.fillStyle = `rgba(${color},.17)`; ctx.strokeStyle = `rgba(${color},.8)`; ctx.lineWidth = 3; ctx.setLineDash([8, 6]);
-        ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill(); ctx.stroke(); ctx.setLineDash([]);
-      };
-      s.equipos.forEach(e => e.r > 0 && dibujarArea(e.x, e.y, e.r, e.color));
-      if (s.arr && s.arr.nuevo && s.arr.item.r > 0) dibujarArea(s.arr.x, s.arr.y, s.arr.item.r, s.arr.item.color);
-      ctx.restore();
+      // Niebla: desde donde termina la visibilidad, todo blanco
+      const visEf = s.luces.altas ? s.vis * .5 : s.vis, borde = AX + 18 + visEf * PX;
+      ctx.fillStyle = `rgba(222,227,234,${.18 + .3 * (1 - s.vis / 400)})`; ctx.fillRect(0, 0, W, 330);
+      const g = ctx.createLinearGradient(borde - 70, 0, borde + 40, 0);
+      g.addColorStop(0, "rgba(228,232,238,0)"); g.addColorStop(1, "rgba(228,232,238,.97)");
+      ctx.fillStyle = g; ctx.fillRect(Math.max(0, borde - 70), 0, W, 330);
+      for (let k = 0; k < 4; k++) {                                                             // bancos que se mueven
+        const bx = W - ((t * 40 + k * 230) % (W + 300)), by = 150 + (k % 2) * 90;
+        ctx.fillStyle = "rgba(240,243,247,.35)"; ctx.beginPath(); ctx.ellipse(bx, by, 140, 34, 0, 0, Math.PI * 2); ctx.fill();
+      }
+      // Luces de tu auto (encima de la niebla: se ven aunque el resto no)
+      if (s.luces.bajas) { ctx.fillStyle = "rgba(255,244,170,.35)"; ctx.beginPath(); ctx.moveTo(AX + 20, ay - 8); ctx.lineTo(AX + 20 + Math.min(140, visEf * PX), ay - 26); ctx.lineTo(AX + 20 + Math.min(140, visEf * PX), ay + 26); ctx.lineTo(AX + 20, ay + 8); ctx.fill(); }
+      if (s.luces.antiniebla) { ctx.fillStyle = "rgba(255,220,120,.4)"; ctx.beginPath(); ctx.ellipse(AX + 50, ay + 4, 40, 22, 0, 0, Math.PI * 2); ctx.fill(); }
+      if (s.luces.altas) { ctx.fillStyle = `rgba(255,255,255,${.45 + .1 * Math.sin(t * 20)})`; ctx.fillRect(0, 0, W, 330); texto("🔦 ¡ENCANDILADO!", 400, 150, 30, "#c4002b"); }
 
-      // Árboles
-      s.arboles.forEach(a => {
-        const congelado = s.fin && !a.protegido;
-        if (a.protegido) { ctx.fillStyle = "rgba(255,170,60,.35)"; ctx.beginPath(); ctx.arc(a.x, a.y, 24, 0, Math.PI * 2); ctx.fill(); }
-        else if (s.temp < 1.5) { ctx.fillStyle = "rgba(160,210,255,.3)"; ctx.beginPath(); ctx.arc(a.x, a.y, 22, 0, Math.PI * 2); ctx.fill(); }
-        ctx.globalAlpha = congelado ? .45 : 1;
-        emoji("🌳", a.x, a.y, 30);
-        if (!congelado) emoji("🌸", a.x + 10, a.y - 10, 13);
-        ctx.globalAlpha = 1;
-        if (congelado || (!a.protegido && s.temp < 0)) emoji("❄️", a.x, a.y, congelado ? 28 : 16);
+      // Cabecera: velocímetro, visibilidad y riesgo
+      ctx.fillStyle = "rgba(10,14,24,.75)"; ctx.fillRect(0, 0, W, 40);
+      const rapido = D.frenado(s.v) > visEf;
+      texto(`🚗 ${Math.round(s.v)} km/h`, 14, 21, 20, rapido ? "#ff6b6b" : "#fff", "left");
+      texto(`🛑 Frena en ${Math.round(D.frenado(s.v))} m  ·  👁️ Se ve ${Math.round(visEf)} m`, 330, 21, 17, rapido ? "#ff6b6b" : "#2ee59d");
+      ctx.fillStyle = "rgba(255,255,255,.15)"; rrect(560, 12, 160, 18, 9); ctx.fill();
+      const r = s.riesgo / 100;
+      ctx.fillStyle = r < .4 ? "#2ee59d" : r < .7 ? "#ffb23e" : "#ff2b2b"; rrect(560, 12, Math.max(18, 160 * r), 18, 9); ctx.fill();
+      texto("⚠️", 545, 21, 16); texto(`${Math.round(s.riesgo)}%`, 790, 21, 15, "#fff", "right");
+
+      // Tablero de botones
+      ctx.fillStyle = "#0f1a30"; ctx.fillRect(0, 330, W, 120);
+      D.BOTONES.forEach(b => {
+        const on = b.id === "frenar" ? s.frenando !== null : b.id === "estacion" ? D.puedeEntrar(s) && !s.estacionado : !!s.luces[b.id];
+        const malo = b.id === "altas" || b.id === "sobrepasar" || b.id === "banquina";
+        ctx.fillStyle = on ? (b.id === "altas" ? "#5a1d1d" : b.id === "frenar" ? "#7a1f1f" : "#1d5a3c") : "#1b2c4f";
+        ctx.strokeStyle = b.id === "estacion" && on ? `rgba(46,229,157,${.6 + .4 * Math.sin(t * 10)})` : on ? "#fff" : malo ? "#3a4a6b" : "#5a7ab0";
+        ctx.lineWidth = 3; rrect(b.x, 340, b.w, 102, 12); ctx.fill(); ctx.stroke();
+        emoji(b.e, b.x + b.w / 2, 374, b.id === "frenar" ? 38 : 30);
+        texto(b.l[0], b.x + b.w / 2, 410, b.id === "frenar" ? 22 : 13, "#fff");
+        texto(b.l[1], b.x + b.w / 2, 428, b.id === "frenar" ? 14 : 13, "#cfd8e6");
       });
-
-      // Equipos colocados
-      s.equipos.forEach(e => {
-        if (e.tipo === "ventilador") emoji("🌀", e.x, e.y, 40, t * 10);
-        else if (e.tipo === "aspersor") {
-          ctx.fillStyle = "#7cc3ff";
-          for (let k = 0; k < 8; k++) {
-            const ang = k * Math.PI / 4 + t * 2, rr = ((t * 60 + k * 7) % 40) + 14;
-            ctx.beginPath(); ctx.arc(e.x + Math.cos(ang) * rr, e.y + Math.sin(ang) * rr, 3, 0, Math.PI * 2); ctx.fill();
-          }
-          emoji("🚿", e.x, e.y, 34);
-        } else { emoji("🧣", e.x, e.y, 32); texto("✖", e.x + 16, e.y - 16, 20, "#ff4d6d", "center", true); }
-      });
-      if (!s.equipos.length && !s.arr) texto("⬇ Arrastrá equipos desde abajo al campo ⬆", 400, 205, 22, `rgba(255,255,255,${.6 + .4 * Math.sin(t * 5)})`, "center", true);
-
-      // Barra de compra
-      ctx.fillStyle = "#0f1a30"; ctx.fillRect(0, 352, W, 98);
-      H_.TIENDA.forEach(it => {
-        ctx.globalAlpha = it.costo <= s.dinero ? 1 : .35;
-        ctx.fillStyle = "#1b2c4f"; ctx.strokeStyle = `rgb(${it.color})`; ctx.lineWidth = 3;
-        rrect(it.x - 80, 362, 160, 78, 14); ctx.fill(); ctx.stroke();
-        emoji(it.e, it.x - 46, 401, 38);
-        texto(it.nombre, it.x + 22, 388, 14, "#fff");
-        texto(`$${it.costo}`, it.x + 22, 415, 22, "#ffcc33");
-        ctx.globalAlpha = 1;
-      });
-      ctx.fillStyle = "#2ee59d"; rrect(612, 365, 172, 72, 16); ctx.fill();
-      texto("✅ ¡LISTO!", 698, 401, 24, "#062b1d");
-
-      // Equipo que se está arrastrando desde la tienda
-      if (s.arr && s.arr.nuevo) emoji(s.arr.item.e, s.arr.x, s.arr.y, 46);
+      if (s.estacion && s.estacion.d > 3 && !s.estacionado)                                             // cartel de la ruta
+        texto(`⛽ Estación de servicio a ${Math.round(s.estacion.d)} m${D.puedeEntrar(s) ? " · ¡ENTRÁ!" : s.v > 45 ? " · frená para entrar" : ""}`, 400, 312, 17, D.puedeEntrar(s) ? "#2ee59d" : "#ffcc33", "center", true);
+      if (t < 3 && !s.luces.bajas) texto("👆 Empezá por las luces", 140, 318, 16, `rgba(255,255,255,${.6 + .4 * Math.sin(t * 5)})`, "center", true);
+      if (s.critico || s.banquina) { ctx.fillStyle = "rgba(60,60,70,.45)"; ctx.fillRect(0, 0, W, H); }
     },
     evaluar(s) {
-      const pct = MINIJUEGOS.helada.porcentaje(s), exito = pct >= 80;
-      const mantas = s.equipos.filter(e => e.tipo === "manta").length;
+      const riesgo = Math.round(s.riesgo), l = s.luces, lucesOk = l.bajas && l.antiniebla && !l.altas;
+      const exito = s.estacionado && !s.critico;
+      const notas = [];
+      if (!lucesOk) notas.push("faltó dejar luces bajas y antiniebla (sin las altas)");
+      if (s.errores) notas.push(`cometiste ${s.errores} error(es) de manejo (altas o sobrepaso)`);
+      if (s.rapido > 1) notas.push(`fuiste más rápido de lo que se veía durante ${Math.round(s.rapido)} s`);
       return {
         exito,
-        puntos: exito ? 100 + pct + s.dinero : pct,
-        resumen: (exito ? `¡Protegiste el ${pct} % del cultivo y te sobraron $${s.dinero}!` : `Protegiste sólo el ${pct} % del cultivo: el resto se congeló.`)
-          + (mantas ? ` Gastaste $${mantas * 10} en mantas, que no protegen las flores.` : "")
+        puntos: exito ? 120 + (100 - riesgo) + (lucesOk ? 30 : 0) + (s.errores ? 0 : 30) : 0,
+        resumen: exito
+          ? "¡Llegaste a salvo a la estación de servicio!" + (notas.length ? " Para la próxima: " + notas.join("; ") + "." : " Luces bajas y antiniebla, velocidad según lo que se veía, sin sobrepasar y parando en un lugar seguro.")
+          : s.banquina ? "Con niebla, parar en la banquina es muy peligroso: quienes vienen atrás no te ven. Se para en un lugar seguro, como una estación de servicio."
+          : s.choque ? "El camión frenó y no alcanzó la distancia: con niebla, más distancia y menos velocidad, porque lo de adelante aparece de golpe."
+          : s.critico ? "Manejaste más rápido de lo que se veía o sin las luces correctas. Con niebla: luces bajas y antiniebla, poca velocidad y nada de sobrepasos."
+          : "La niebla se cerró y seguiste de largo: con visibilidad casi nula, lo más seguro es estacionar en un lugar seguro y esperar."
       };
     }
   },
@@ -3424,7 +3500,7 @@ const MINIJUEGOS = {
     instrucciones: [
       ["🍳", "TOCÁ el horno abierto y encendido para apagarlo, y ARRASTRÁ el grupo electrógeno ⛽ afuera por la PUERTA del patio."],
       ["👕", "ARRASTRÁ la ropa que se está secando sobre la estufa a otro lugar, y TOCÁ la ventana para abrir una rendija de ventilación."],
-      ["🧓", "ARRASTRÁ la manta hasta el abuelo que tiembla. ¡Ojo con el detector de CO: no lo dejes llegar al 100 %!"]
+      ["🧓", "Cuidá a las personas mayores del frío: les cuesta más mantener el calor del cuerpo y corren más riesgo. ARRASTRÁ la manta hasta el abuelo. ¡Ojo con el detector de CO: no lo dejes llegar al 100 %!"]
     ],
     crear() {
       return {
@@ -3613,7 +3689,7 @@ const MINIJUEGOS = {
       const falta = [];
       if (!h.horno) falta.push("el horno quedó prendido"); if (!h.generador) falta.push("el grupo electrógeno quedó adentro");
       if (s.ropa.quemada) falta.push("la ropa se prendió fuego"); else if (!h.ropa) falta.push("la ropa quedó sobre la estufa");
-      if (!h.rendija) falta.push("no abriste la rendija"); if (!h.manta) falta.push("el abuelo sigue con frío");
+      if (!h.rendija) falta.push("no abriste la rendija"); if (!h.manta) falta.push("el abuelo sigue con frío (las personas mayores corren más riesgo)");
       return {
         exito,
         puntos: s.critico ? n * 15 : n * 40 + (exito ? 50 : 0),
