@@ -1441,9 +1441,9 @@ const BARRIO = [
 /* Configuración general: cambiar acá para ajustar la dificultad */
 const CONFIG = {
   vidas: 3,
-  segundosTrivia: 40,
+  segundosTrivia: 60,
   puntosTrivia: { exito: 100, parcial: 50, fallo: 0 },
-  bonusPorSegundo: 2.5,        // puntos extra por cada segundo que sobra (40 s × 2,5 = 100: el máximo sigue en 200)
+  bonusPorSegundo: 100 / 60,   // puntos extra por cada segundo que sobra (60 s × 100/60 = 100: el máximo sigue en 200)
   maxTrivia: 200,              // para calcular el rango final
   maxMinijuego: 250,
   puntosCelular: 100,          // premio por NO ir al recital con alerta naranja
