@@ -19,7 +19,8 @@
     • "Prepará tu Barrio" (principal): 4 emergencias desde el punto de
       vista del vecino. Cada una = TRIVIA -> MINIJUEGO (Canvas) -> CÁPSULA.
       El escenario de rayos arranca con un celular: invitación a un
-      recital con alerta naranja... y un oso inflable gigante que vuela.
+      recital con alerta naranja; al responder, las ráfagas dañan el predio
+      y un oso inflable gigante sale volando.
     • "Centro de Alertas" (experto): Sudestada, Zonda, Niebla en la
       autopista y Sistema convectivo, desde el punto de vista del meteorólogo.
     • Modo Express: las 3 regiones de la versión 1 como trivias rápidas.
@@ -1368,17 +1369,17 @@ const BARRIO = [
         resultado: "fallo", efecto: "rayo", titulo: "¡Corriente por el suelo!",
         consecuencia: "Cuando un rayo cae cerca, la corriente se expande por el suelo. Acostado, tu cuerpo ocupa más superficie y la corriente te atraviesa." }
     ],
-    capsula: "¡El auto actúa como Jaula de Faraday y te protege! Si estás al aire libre, acostarse aumenta el riesgo: hay que adoptar la \"posición de rayo\" (en cuclillas, tocando el piso sólo con los pies).",
+    capsula: "¡El auto actúa como Jaula de Faraday y te protege! Si estás al aire libre, acostarse aumenta el riesgo: hay que adoptar la \"posición de seguridad\" (en cuclillas, tocando el piso sólo con los pies).",
     minijuego: "cubierto",
     // Antes de la trivia aparece un celular. Para usarlo en otro escenario, mové este bloque.
     celular: {
       notificacion: "🟠 SMN · ALERTA NARANJA por tormentas fuertes: ráfagas de más de 90 km/h, actividad eléctrica y granizo para esta noche.",
       contacto: "Caro 🎸",
       mensajes: ["¡Conseguí entradas para el recital de esta noche, al aire libre en el parque! 🎶",
-                 "Hay escenario gigante y un oso inflable ENORME 🧸 ¿Vamos?"],
-      noticia: "Suspenden el recital al aire libre: una ráfaga arrancó el oso inflable gigante del escenario",
-      bien: { titulo: "¡Decisión inteligente!", texto: "Te quedaste en casa. Minutos después, una ráfaga hizo volar el oso inflable y parte del escenario: el público tuvo que evacuar bajo la lluvia y los rayos." },
-      mal:  { titulo: "¡Uf, qué susto!", texto: "Fuiste al recital... y una ráfaga arrancó el oso inflable gigante del escenario. Hubo que evacuar a miles de personas bajo la lluvia y los rayos." },
+                 "¡Va a estar buenísimo! 🔥 Tocan un montón de bandas y hay patio de comidas. ¿Vamos?"],
+      noticia: "Suspenden el recital al aire libre: las ráfagas dañaron el escenario y hasta hicieron volar un oso inflable gigante",
+      bien: { titulo: "¡Decisión inteligente!", texto: "Te quedaste en casa. Minutos después, las ráfagas causaron daños en el predio: rompieron parte del escenario, tiraron pantallas y carpas, y hasta se llevaron el oso inflable gigante de la decoración. El público tuvo que evacuar bajo la lluvia y los rayos." },
+      mal:  { titulo: "¡Uf, qué susto!", texto: "Fuiste al recital... y las ráfagas causaron daños en el predio: rompieron parte del escenario, tiraron pantallas y carpas, y hasta se llevaron el oso inflable gigante de la decoración. Hubo que evacuar a miles de personas bajo la lluvia y los rayos." },
       capsula: "Con alerta naranja, los eventos masivos al aire libre son muy riesgosos: escenarios, pantallas, carpas e inflables gigantes ofrecen mucha superficie al viento y pueden volar o derrumbarse. Además, una multitud en un predio abierto no tiene dónde refugiarse de los rayos. Antes de salir, revisá las alertas del Servicio Meteorológico Nacional: ante alerta naranja, la recomendación oficial es «Salí solo si es necesario»."
     },
     leccion: "Regla 30/30: si entre el relámpago y el trueno pasan menos de 30 segundos, el rayo está a menos de 10 km y ya hay peligro: buscá refugio. Esperá 30 minutos después del último trueno para salir. Un edificio cerrado o un auto con techo metálico son los mejores refugios; la posición en cuclillas es el último recurso. Recomendación oficial del SAT ante alerta por tormentas: «Si estás al aire libre, buscá refugio inmediato en un edificio, casa o vehículo cerrado»."
@@ -1792,12 +1793,12 @@ function responderCelular(fue) {
   const c = escActual().celular, r = fue ? c.mal : c.bien;
   estado.recital = { fue };
 
-  // Sea cual sea la respuesta... ¡el oso inflable gigante sale volando!
+  // Sea cual sea la respuesta... las ráfagas dañan el escenario y ¡el oso inflable gigante sale volando!
   const capa = document.createElement("div");
   capa.className = "oso-capa";
   let html = "";
   for (let i = 0; i < 8; i++) html += `<span class="rafaga-oso" style="top:${8 + i * 11}%;animation-delay:-${(i * .13).toFixed(2)}s"></span>`;
-  html += ["🎤", "🎸", "🪧", "🎈", "🥁"].map((e, i) => `<div class="escombro" style="top:${i * 9}%;animation-delay:${(.2 + i * .35).toFixed(2)}s">${e}</div>`).join("");
+  html += ["📺", "🎤", "⛺", "🪧", "🎸", "🥁"].map((e, i) => `<div class="escombro" style="top:${i * 9}%;animation-delay:${(.1 + i * .28).toFixed(2)}s">${e}</div>`).join("");
   html += `<div class="oso">🧸</div><div class="noticia"><span class="cintillo">🔴 ÚLTIMO MOMENTO</span><strong>${c.noticia}</strong></div>`;
   capa.innerHTML = html;
   document.body.appendChild(capa);
