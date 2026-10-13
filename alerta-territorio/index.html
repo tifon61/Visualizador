@@ -1393,7 +1393,7 @@ const BARRIO = [
     ],
     capsula: "¡El monóxido de carbono no se ve ni tiene olor! Nunca uses el horno para calefaccionar ni prendas un grupo electrógeno en lugares cerrados. La ventilación cruzada salva vidas.",
     minijuego: "frio",
-    leccion: "El monóxido de carbono (CO) aparece cuando algo se quema con poco oxígeno: hornos, hornallas, grupos electrógenos o estufas mal instaladas. No tiene color ni olor y provoca dolor de cabeza, mareos y sueño. Para prevenirlo: rendija de ventilación siempre, artefactos revisados por un gasista matriculado, llama azul (si es amarilla o anaranjada, hay mala combustión) y, si podés, un detector de CO. Nunca seques ropa sobre una estufa. El alerta del SMN por temperaturas extremas también incluye el frío extremo: se activa cuando las temperaturas quedan por debajo de las más bajas habituales del lugar (percentil 10). Y otra recomendación oficial que suma: «No fumes en ambientes cerrados»."
+    leccion: "El monóxido de carbono (CO) aparece cuando algo se quema con poco oxígeno: hornos, hornallas, grupos electrógenos o estufas mal instaladas. No tiene color ni olor y provoca dolor de cabeza, mareos y sueño. Para prevenirlo: rendija de ventilación siempre, artefactos revisados por un gasista matriculado, llama azul (si es amarilla o anaranjada, hay mala combustión) y, si podés, un detector de CO. Nunca seques ropa sobre una estufa. Prestá especial atención a las personas mayores, a bebés y a quienes tienen enfermedades crónicas: pierden calor más rápido y a veces no notan el frío. Abrigalos en capas y preguntales cómo están. El alerta del SMN por temperaturas extremas también incluye el frío extremo: se activa cuando las temperaturas quedan por debajo de las más bajas habituales del lugar (percentil 10). Y otra recomendación oficial que suma: «No fumes en ambientes cerrados»."
   },
   {
     id: "mapa", nombre: "Lluvias Persistentes y Mapa de Riesgo", lugar: "Tu ciudad, con arroyos entubados", emoji: "🗺️",
@@ -3424,7 +3424,7 @@ const MINIJUEGOS = {
     instrucciones: [
       ["🍳", "TOCÁ el horno abierto y encendido para apagarlo, y ARRASTRÁ el grupo electrógeno ⛽ afuera por la PUERTA del patio."],
       ["👕", "ARRASTRÁ la ropa que se está secando sobre la estufa a otro lugar, y TOCÁ la ventana para abrir una rendija de ventilación."],
-      ["🧓", "ARRASTRÁ la manta hasta el abuelo que tiembla. ¡Ojo con el detector de CO: no lo dejes llegar al 100 %!"]
+      ["🧓", "Cuidá a las personas mayores del frío: les cuesta más mantener el calor del cuerpo y corren más riesgo. ARRASTRÁ la manta hasta el abuelo. ¡Ojo con el detector de CO: no lo dejes llegar al 100 %!"]
     ],
     crear() {
       return {
@@ -3613,7 +3613,7 @@ const MINIJUEGOS = {
       const falta = [];
       if (!h.horno) falta.push("el horno quedó prendido"); if (!h.generador) falta.push("el grupo electrógeno quedó adentro");
       if (s.ropa.quemada) falta.push("la ropa se prendió fuego"); else if (!h.ropa) falta.push("la ropa quedó sobre la estufa");
-      if (!h.rendija) falta.push("no abriste la rendija"); if (!h.manta) falta.push("el abuelo sigue con frío");
+      if (!h.rendija) falta.push("no abriste la rendija"); if (!h.manta) falta.push("el abuelo sigue con frío (las personas mayores corren más riesgo)");
       return {
         exito,
         puntos: s.critico ? n * 15 : n * 40 + (exito ? 50 : 0),
