@@ -2689,13 +2689,13 @@ const MINIJUEGOS = {
      =================================================================== */
 
   /* -------------------------------------------------------------------
-     G5. ¡DESTAPA EL BARRIO! (Lluvias intensas)
+     G5. ¡DESAGÜES LIBRES! (Lluvias intensas)
      Tocar las hojas de la canaleta (siguen cayendo del árbol) y arrastrar
      las bolsas que la correntada lleva hacia la boca de tormenta hasta
      el contenedor alto.
      ------------------------------------------------------------------- */
   destapar: {
-    titulo: "¡Destapa el Barrio!", icono: "🍂", duracion: 15,
+    titulo: "¡Desagües Libres!", icono: "🍂", duracion: 15,
     SUMIDERO: 575,
     instrucciones: [
       ["🍂", "TOCÁ las hojas de la canaleta del techo para limpiarla (¡siguen cayendo del árbol!)."],
@@ -2834,7 +2834,7 @@ const MINIJUEGOS = {
       return {
         exito,
         puntos: s.limpiadas * 6 + s.guardadas * 30 + (exito ? 100 : 0),
-        resumen: exito ? `¡Barrio destapado! Limpiaste ${s.limpiadas} hojas y guardaste ${s.guardadas} bolsas en el contenedor.`
+        resumen: exito ? `¡Desagües libres! Limpiaste ${s.limpiadas} hojas y guardaste ${s.guardadas} bolsas en el contenedor.`
           : s.tapones ? `${s.tapones} bolsa(s) taparon la boca de tormenta y la calle se inundó.`
           : `Quedaron ${s.hojas.length} hojas en la canaleta: el agua desborda y cae contra la pared de la casa.`
       };
