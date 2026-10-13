@@ -1133,14 +1133,14 @@ const ESCENARIOS = [
     pregunta: "¡Atención! El Río de la Plata creció 3 metros por el viento y, al mismo tiempo, está lloviendo torrencialmente sobre la ciudad. ¿Cuál es tu orden inmediata para evitar que se inunde?",
     opciones: [
       { icono: "🚪", texto: "Abrir al máximo todas las compuertas de los canales pluviales para que el agua de lluvia desagote rápido hacia el río.",
-        resultado: "fallo", efecto: "inundacion", titulo: "¡El río entró a la ciudad!",
-        consecuencia: "Con el río más alto que los desagües, el agua no salió: ¡entró por los conductos!" },
+        resultado: "fallo", efecto: "inundacion", titulo: "¡Así entra el río!",
+        consecuencia: "Con el río más alto que los desagües, abrir las compuertas deja que el agua del río entre a la ciudad por los conductos." },
       { icono: "⚙️", texto: "Cerrar las compuertas costeras y encender estaciones de bombeo para expulsar el agua de lluvia por la fuerza.",
         resultado: "exito", efecto: "drenaje", titulo: "¡Orden correcta!",
-        consecuencia: "Compuertas cerradas al río y bombas sacando la lluvia: la ciudad se mantiene seca." },
+        consecuencia: "Primero se cierran las compuertas para que el río no entre, y después se encienden las bombas para sacar la lluvia por encima del nivel del río." },
       { icono: "🏃", texto: "Evacuar la ciudad porque se acerca un tsunami impulsado por el viento.",
-        resultado: "fallo", efecto: "inundacion", titulo: "¡No era un tsunami!",
-        consecuencia: "Los tsunamis los provocan terremotos, no el viento. Mientras tanto nadie operó las compuertas y la ciudad se inundó." }
+        resultado: "fallo", efecto: "inundacion", titulo: "¡No es un tsunami!",
+        consecuencia: "Los tsunamis los provocan terremotos, no el viento. Mientras se piensa en el peligro equivocado, nadie opera las compuertas." }
     ],
     capsula: "¡Si abrís las compuertas con el río alto, el agua entra a la ciudad! En una sudestada, los desagües naturales se bloquean (taponamiento) y hay que bombear el agua de lluvia hacia afuera.",
     minijuego: "compuertas",
@@ -1155,14 +1155,14 @@ const ESCENARIOS = [
     pregunta: "Ráfagas de 80 km/h bajan de la montaña. El aire quema (35 °C), la humedad cayó al 5 % y el cielo está marrón por el polvo. ¿Qué prevención ordenás?",
     opciones: [
       { icono: "🪟", texto: "Abrir todas las puertas y ventanas para ventilar las casas y aprovechar el viento para refrescar.",
-        resultado: "fallo", efecto: "polvo", titulo: "¡Casa llena de tierra!",
-        consecuencia: "El viento no refresca: es caliente y seco. Entró polvo y calor extremo a todas las casas." },
+        resultado: "fallo", efecto: "polvo", titulo: "¡El Zonda no refresca!",
+        consecuencia: "Es un viento caliente y seco: con las ventanas abiertas entran polvo y calor a toda la casa." },
       { icono: "🏠", texto: "Encerrarse, sellar ventanas con trapos húmedos y suspender toda actividad al aire libre por riesgo extremo de incendios y caída de árboles.",
         resultado: "exito", efecto: "sellado", titulo: "¡Prevención correcta!",
-        consecuencia: "Casas selladas, actividades suspendidas: nadie quedó expuesto a ramas caídas ni a focos de incendio." },
+        consecuencia: "Sellar las casas y suspender las actividades al aire libre evita quedar expuesto a ramas que caen y a focos de incendio." },
       { icono: "⚡", texto: "Preparar pararrayos, porque el Zonda siempre termina en una tormenta severa e inmediata.",
         resultado: "fallo", efecto: "polvo", titulo: "¡Peligro equivocado!",
-        consecuencia: "El Zonda es un viento SECO: no trae tormenta inmediata. Mientras tanto, cayeron árboles y el polvo entró a las casas." }
+        consecuencia: "El Zonda es un viento SECO: no trae tormenta inmediata. El riesgo real son las ráfagas, los árboles que caen y el polvo." }
     ],
     capsula: "El Zonda se calienta y se seca al bajar la montaña (calentamiento adiabático: el aire se comprime al descender y sube su temperatura). Abrir las ventanas mete tierra y calor extremo a tu casa.",
     minijuego: "casa",
@@ -1177,14 +1177,14 @@ const ESCENARIOS = [
     pregunta: "Noche de primavera despejada y sin una gota de viento. Los termómetros a ras del suelo marcan −2 °C y los frutales están en flor. ¿Cómo salvás la cosecha antes de que amanezca?",
     opciones: [
       { icono: "🧣", texto: "Cubrir la base de los troncos de los árboles con mantas térmicas gruesas.",
-        resultado: "fallo", efecto: "escarcha", titulo: "¡Se congelaron las flores!",
-        consecuencia: "Las flores están arriba, en las ramas: las mantas en el tronco no las protegieron del aire helado." },
+        resultado: "fallo", efecto: "escarcha", titulo: "¡La manta no llega a las flores!",
+        consecuencia: "Las flores están arriba, en las ramas: una manta en el tronco no las protege del aire helado." },
       { icono: "🌀", texto: "Encender grandes ventiladores (hélices) en el campo para mezclar el aire o activar riego por aspersión sobre las plantas.",
-        resultado: "exito", efecto: "calor", titulo: "¡Cosecha salvada!",
-        consecuencia: "Las hélices trajeron aire más tibio de arriba y el riego mantuvo las flores cerca de 0 °C." },
+        resultado: "exito", efecto: "calor", titulo: "¡Buena estrategia!",
+        consecuencia: "En una helada radiativa el aire de arriba está más tibio: las hélices lo bajan hacia el cultivo, y el riego mantiene las flores cerca de 0 °C." },
       { icono: "🧪", texto: "Rociar los árboles con anticongelante químico para motores.",
         resultado: "fallo", efecto: "escarcha", titulo: "¡Peor que la helada!",
-        consecuencia: "El anticongelante es tóxico: quemó las flores, contaminó el suelo y la fruta no se puede vender." }
+        consecuencia: "El anticongelante es tóxico: quema las flores, contamina el suelo y la fruta ya no se puede vender." }
     ],
     capsula: "En noches calmas y despejadas el suelo pierde calor por radiación y el aire frío se estanca pegado al suelo (inversión térmica). Las hélices mezclan ese aire con el aire más cálido de arriba, y el riego libera calor latente al congelarse, salvando los brotes.",
     minijuego: "helada",
@@ -1199,14 +1199,14 @@ const ESCENARIOS = [
     pregunta: "El radar meteorológico muestra manchas rojas e intensas acercándose a gran velocidad. Los topes de las nubes superan los 15 km de altura. ¿Qué peligro inminente le comunicás a Defensa Civil?",
     opciones: [
       { icono: "🌦️", texto: "Una llovizna suave pero persistente que durará varios días y causará la crecida lenta de los ríos.",
-        resultado: "fallo", efecto: "granizo", titulo: "¡Granizo sin aviso!",
-        consecuencia: "Los ecos rojos no son llovizna: el granizo y las ráfagas sorprendieron a la gente en la calle." },
+        resultado: "fallo", efecto: "granizo", titulo: "¡No es llovizna!",
+        consecuencia: "Los ecos rojos indican granizo y ráfagas. Sin alerta, la gente queda en la calle sin protección." },
       { icono: "🧊", texto: "Posible caída de granizo grande, ráfagas de viento destructivas (corrientes descendentes) y actividad eléctrica severa en los próximos minutos.",
-        resultado: "exito", efecto: "alerta-ok", titulo: "¡Alerta precisa!",
-        consecuencia: "La población se resguardó a tiempo: autos bajo techo y nadie a la intemperie cuando cayó el granizo." },
+        resultado: "exito", efecto: "alerta-ok", titulo: "¡Bien leído!",
+        consecuencia: "Los ecos rojos intensos indican granizo: alertar a tiempo permite guardar los autos y que nadie quede a la intemperie." },
       { icono: "🌀", texto: "La formación inminente de un huracán categoría 3 sobre el río Paraná.",
         resultado: "fallo", efecto: "granizo", titulo: "¡No hay huracanes en el Paraná!",
-        consecuencia: "Los huracanes se forman sobre océanos tropicales cálidos. La alerta equivocada confundió a todos y el granizo los encontró desprevenidos." }
+        consecuencia: "Los huracanes se forman sobre océanos tropicales cálidos. Una alerta equivocada confunde a la gente y no la prepara para el granizo." }
     ],
     capsula: "Los colores rojos en el radar y las nubes tan altas indican tormentas severas con fuertes corrientes de aire (convección profunda), lo que significa ráfagas violentas y granizo de forma repentina.",
     minijuego: "radar",
@@ -1284,13 +1284,13 @@ const BARRIO = [
     opciones: [
       { icono: "🛍️", texto: "Sacar la basura a la vereda para que la lluvia lave los tachos.",
         resultado: "fallo", efecto: "inundacion", titulo: "¡Bolsas en la boca de tormenta!",
-        consecuencia: "La correntada arrastró las bolsas hasta el sumidero, lo tapó y la calle se inundó en minutos." },
+        consecuencia: "Con la lluvia, la correntada arrastra las bolsas hasta el sumidero, lo tapa y la calle se inunda en minutos." },
       { icono: "🧹", texto: "Limpiar las canaletas del techo, barrer las hojas y asegurarte de no dejar bolsas de basura cerca de las bocas de tormenta.",
-        resultado: "exito", efecto: "drenaje", titulo: "¡Barrio preparado!",
-        consecuencia: "Canaletas libres y sumideros despejados: el agua corrió por donde debía y la calle sólo tuvo charcos." },
+        resultado: "exito", efecto: "drenaje", titulo: "¡Buena decisión!",
+        consecuencia: "Con las canaletas libres y los sumideros despejados, el agua de lluvia corre por donde debe y no se acumula en la calle." },
       { icono: "🕳️", texto: "Abrir las tapas de las cloacas de la calle para que el agua baje más rápido.",
         resultado: "fallo", efecto: "inundacion-sucia", titulo: "¡Agua cloacal en las casas!",
-        consecuencia: "La cloaca no está hecha para el agua de lluvia: colapsó y el agua contaminada volvió por rejillas e inodoros. Además, bajo el agua una tapa abierta no se ve: alguien puede caer adentro." }
+        consecuencia: "La cloaca no está hecha para el agua de lluvia: colapsa y el agua contaminada vuelve por rejillas e inodoros. Además, bajo el agua una tapa abierta no se ve: alguien puede caer adentro." }
     ],
     capsula: "¡La basura y las hojas tapan los sumideros! Las cloacas abiertas colapsan y devuelven agua contaminada a las casas.",
     minijuego: "destapar",
@@ -1305,11 +1305,11 @@ const BARRIO = [
     pregunta: "Rige un alerta naranja por vientos fuertes, con ráfagas de más de 80 km/h. Estás en el patio de tu casa. ¿Qué hacés?",
     opciones: [
       { icono: "🪟", texto: "Dejar las ventanas abiertas para que el viento circule y no rompa los vidrios por la presión.",
-        resultado: "fallo", efecto: "viento-danio", titulo: "¡Casa revuelta y vidrios rotos!",
-        consecuencia: "Es un mito peligroso: con las ventanas abiertas el viento entra, empuja el techo desde adentro y arrastra objetos." },
+        resultado: "fallo", efecto: "viento-danio", titulo: "¡Es un mito!",
+        consecuencia: "Con las ventanas abiertas el viento entra, empuja el techo desde adentro y arrastra objetos. Las ventanas van cerradas." },
       { icono: "🐕", texto: "Entrar a las mascotas, cerrar todo herméticamente y guardar o atar cualquier objeto suelto del patio.",
-        resultado: "exito", efecto: "patio-ok", titulo: "¡Patio asegurado!",
-        consecuencia: "Mascotas adentro, ventanas cerradas y nada suelto: las ráfagas pasaron sin dejar proyectiles." },
+        resultado: "exito", efecto: "patio-ok", titulo: "¡Bien pensado!",
+        consecuencia: "Mascotas adentro, ventanas cerradas y nada suelto: así las ráfagas no tienen qué levantar ni convertir en proyectil." },
       { icono: "🪜", texto: "Subir al techo rápido a clavar las chapas que estén flojas.",
         resultado: "fallo", efecto: "viento-danio", titulo: "¡Nunca al techo con viento!",
         consecuencia: "Con viento fuerte podés caerte del techo, y una chapa que se suelta puede lastimar a alguien. Las reparaciones se hacen ANTES del alerta o cuando el viento ya pasó." }
@@ -1330,7 +1330,7 @@ const BARRIO = [
         resultado: "fallo", efecto: "golpe-calor", titulo: "¡Shock térmico!",
         consecuencia: "El agua helada contrae los vasos sanguíneos de la piel y el cuerpo retiene el calor adentro. Para refrescar a un animal se usa agua fresca, no helada." },
       { icono: "🥣", texto: "Dejar recipientes con agua fresca a la sombra para los animales y chequear que adultos mayores estén en lugares frescos.",
-        resultado: "exito", efecto: "sombra-ok", titulo: "¡Barrio hidratado!",
+        resultado: "exito", efecto: "sombra-ok", titulo: "¡Buena decisión!",
         consecuencia: "Agua fresca a la sombra para los animales y un vecino que pregunta \"¿cómo estás?\": así se previenen los golpes de calor." },
       { icono: "🏃", texto: "Hacer ejercicio al mediodía para transpirar y regular la temperatura del cuerpo.",
         resultado: "fallo", efecto: "golpe-calor", titulo: "¡Golpe de calor!",
@@ -1349,11 +1349,11 @@ const BARRIO = [
     pregunta: "Estás en un descampado o parque y empieza una tormenta fuerte y caen rayos cerca. ¿Dónde te refugiás?",
     opciones: [
       { icono: "🌳", texto: "Debajo del árbol más grande y frondoso que encuentre.",
-        resultado: "fallo", efecto: "rayo", titulo: "¡El rayo cayó en el árbol!",
+        resultado: "fallo", efecto: "rayo", titulo: "¡Nunca bajo un árbol!",
         consecuencia: "Los rayos tienden a caer en lo más alto: un árbol aislado es el peor refugio. La descarga puede saltar del tronco a quien está debajo." },
       { icono: "🚗", texto: "Dentro de un auto cerrado sin tocar las partes metálicas, o si no hay refugio, agacharme abrazando mis rodillas.",
-        resultado: "exito", efecto: "refugio-ok", titulo: "¡A salvo!",
-        consecuencia: "El auto cerrado te protegió: la corriente del rayo viaja por la carrocería metálica y baja a tierra sin atravesarte." },
+        resultado: "exito", efecto: "refugio-ok", titulo: "¡Buen refugio!",
+        consecuencia: "Un auto cerrado protege: la corriente del rayo viaja por la carrocería metálica y baja a tierra sin atravesar a quienes están adentro." },
       { icono: "🛌", texto: "Me acuesto completamente plano en el piso para estar lo más bajo posible.",
         resultado: "fallo", efecto: "rayo", titulo: "¡Corriente por el suelo!",
         consecuencia: "Cuando un rayo cae cerca, la corriente se expande por el suelo. Acostado, tu cuerpo ocupa más superficie y la corriente te atraviesa." }
@@ -1374,19 +1374,19 @@ const BARRIO = [
     leccion: "Regla 30/30: si entre el relámpago y el trueno pasan menos de 30 segundos, el rayo está a menos de 10 km y ya hay peligro: buscá refugio. Esperá 30 minutos después del último trueno para salir. Un edificio cerrado o un auto con techo metálico son los mejores refugios; la posición en cuclillas es el último recurso. Recomendación oficial del SAT ante alerta por tormentas: «Si estás al aire libre, buscá refugio inmediato en un edificio, casa o vehículo cerrado»."
   },
   {
-    id: "frio", nombre: "Ola de Frío Polar", lugar: "Adentro de tu casa", emoji: "🥶",
+    id: "frio", nombre: "Ola de Frío", lugar: "Adentro de tu casa", emoji: "🥶",
     clima: ["🥶 Alerta por frío extremo", "🏠 Casa helada", "🔥 Calefacción y CO"],
     escena: { cielo: "cielo-interior", tipo: "interior", fenomeno: "ninguno" },
-    titulo: "Alerta por ola de frío polar",
+    titulo: "Alerta por ola de frío",
     numero: "−5 °C", dato: "de temperatura mínima, con varios días seguidos de frío intenso.",
-    pregunta: "Hay alerta por ola de frío polar. Tu casa está helada. ¿Cuál de estas acciones es segura para calefaccionar tu hogar?",
+    pregunta: "Hay alerta por ola de frío. Tu casa está helada. ¿Cuál de estas acciones es segura para calefaccionar tu hogar?",
     opciones: [
       { icono: "🍳", texto: "Prender las hornallas y el horno de la cocina, cerrando todas las ventanas para que no entre frío.",
         resultado: "fallo", efecto: "co", titulo: "¡Monóxido de carbono!",
         consecuencia: "El horno y las hornallas no están hechos para calefaccionar: consumen el oxígeno del ambiente cerrado y liberan monóxido de carbono. Primero da dolor de cabeza y sueño, y es una intoxicación grave." },
       { icono: "🪟", texto: "Usar estufas seguras y dejar siempre una rendija de 5 cm abierta en una ventana para ventilar.",
-        resultado: "exito", efecto: "calor-seguro", titulo: "¡Calor seguro!",
-        consecuencia: "Estufas en buen estado y una rendija abierta: el aire se renueva y la casa se mantiene cálida sin riesgo." },
+        resultado: "exito", efecto: "calor-seguro", titulo: "¡Buena decisión!",
+        consecuencia: "Estufas en buen estado y una rendija abierta: el aire se renueva y la casa se calefacciona sin riesgo de monóxido de carbono." },
       { icono: "⛽", texto: "Si se corta la luz, prender el grupo electrógeno adentro de casa para que la estufa eléctrica siga andando.",
         resultado: "fallo", efecto: "co", titulo: "¡El escape va siempre afuera!",
         consecuencia: "Un grupo electrógeno quema nafta y larga monóxido de carbono por el escape. Adentro de la casa (o en un garaje cerrado) el gas se acumula en minutos: no tiene olor y la gente se duerme sin darse cuenta. Siempre va afuera, al aire libre y lejos de puertas y ventanas." }
@@ -1405,10 +1405,10 @@ const BARRIO = [
     opciones: [
       { icono: "🛣️", texto: "Confiar en que el asfalto nuevo absorbe el agua y tomar el camino más corto.",
         resultado: "fallo", efecto: "inundacion", titulo: "¡Esa calle no se cruza!",
-        consecuencia: "El asfalto no absorbe agua: es impermeable. El camino más corto bajaba justo por el cauce del arroyo, que es lo primero que se inunda." },
+        consecuencia: "El asfalto no absorbe agua: es impermeable. El camino más corto baja justo por el cauce del arroyo, que es lo primero que se inunda." },
       { icono: "🗺️", texto: "Consultar el Mapa de Riesgo local para conocer las zonas inundables, arroyos entubados y corredores seguros.",
-        resultado: "exito", efecto: "mapa-ok", titulo: "¡Ruta segura!",
-        consecuencia: "Con el mapa evitaste las calles que se inundan primero y llegaste por las zonas altas." },
+        resultado: "exito", efecto: "mapa-ok", titulo: "¡Buena decisión!",
+        consecuencia: "El Mapa de Riesgo muestra qué calles se inundan primero y dónde están las zonas altas: con esa información se elige el camino antes de salir." },
       { icono: "🚙", texto: "Guiarme por donde van los autos más grandes, ya que ellos conocen el camino.",
         resultado: "fallo", efecto: "inundacion", titulo: "¡Los grandes también se quedan!",
         consecuencia: "Seguir a otros no es una estrategia: que otro vehículo cruce una calle inundada no la hace segura. Con 30 cm de agua en movimiento un auto puede ser arrastrado." }
@@ -3412,7 +3412,7 @@ const MINIJUEGOS = {
     }
   },
   /* -------------------------------------------------------------------
-     G9. ¡CALOR SEGURO! (Ola de frío polar)
+     G9. ¡CALOR SEGURO! (Ola de frío)
      5 peligros domésticos y un detector de monóxido de carbono (CO):
      el CO sube con el horno y el grupo electrógeno encendidos adentro y baja al
      abrir la rendija. Si llega a 100 % -> error crítico.
